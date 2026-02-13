@@ -182,18 +182,18 @@ Jmeter-Learn/
 
 | # | Section | Status |
 |---|---------|--------|
-| 1 | Install Tools | Not Started |
-| 2 | Understand Requirements | Not Started |
-| 3 | JMeter Elements | Not Started |
-| 4 | Recording | Not Started |
-| 5 | Correlation & Parameterization | Not Started |
-| 6 | Script Enhancement | Not Started |
-| 7 | Debug | Not Started |
-| 8 | Load Model | Not Started |
-| 9 | Execute & Analyze | Not Started |
-| 10 | Reporting | Not Started |
-| 11 | Backend Listener | Not Started |
-| 12 | Distributed Testing | Not Started |
-| 13 | Test Data (Python) | Not Started |
-| 14 | Automation (Batch) | Not Started |
-| 99 | Future / To Explore | Not Started |
+| 1 | Install Tools | Done |
+| 2 | Understand Requirements | Done |
+| 3 | JMeter Elements | Done |
+| 4 | Recording | Done |
+| 5 | Correlation & Parameterization | Done |
+| 6 | Script Enhancement | Done |
+| 7 | Debug | Done |
+| 8 | Load Model | Done |
+| 9 | Execute & Analyze | Done |
+| 10 | Reporting | Done |
+| 11 | Backend Listener | Done |
+| 12 | Distributed Testing | Done |
+| 13 | Test Data (Python) | Done |
+| 14 | Automation (Batch) | Done |
+| 99 | Future / To Explore | Done |
