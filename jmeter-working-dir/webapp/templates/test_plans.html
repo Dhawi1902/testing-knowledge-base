@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block title %}Test Plans & Runner{% endblock %}
+{% block page_title %}Test Plans & Runner{% endblock %}
+
+{% block content %}
+<!-- Test Runner -->
+<div class="card" id="runnerCard">
+    <div class="card-header">
+        <span class="card-title">Test Runner</span>
+        <span class="badge badge-info" id="runnerStatus">Idle</span>
+    </div>
+
+    <div class="flex gap-16 mb-16" style="flex-wrap: wrap;">
+        <div class="form-group" style="flex: 2; min-width: 250px;">
+            <label class="form-label">Test Plan</label>
+            <div class="flex gap-8">
+                <select class="form-select" id="selectedPlan" onchange="onPlanSelected()" style="flex:1;">
+                    <option value="">Select a test plan...</option>
+                </select>
+                <button class="btn btn-outline btn-sm" id="editPlanBtn" onclick="openInJmeter(document.getElementById('selectedPlan').value)" disabled title="Open in JMeter GUI">Edit</button>
+            </div>
+            <span class="text-light text-sm" id="planInfo" style="margin-top:4px;display:none;"></span>
+        </div>
+        <div class="form-group" style="flex: 1; min-width: 200px;">
+            <label class="form-label">Preset</label>
+            <div class="flex gap-8">
+                <select class="form-select" id="presetSelect" onchange="applyPreset()" style="flex:1;">
+                    <option value="">No preset</option>
+                </select>
+                <button class="btn btn-outline btn-sm" onclick="savePreset()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="paramForm" class="mb-16">
+        <p class="text-light text-sm">Select a test plan to configure parameters.</p>
+    </div>
+
+    <!-- Command Preview -->
+    <div class="form-group mb-16">
+        <label class="form-label">Command Preview</label>
+        <div class="form-input form-input-mono" id="cmdPreview" style="background: #f8fafc; min-height: 40px; white-space: pre-wrap; word-break: break-all; cursor: default;">
+            Select a test plan to see the command.
+        </div>
+    </div>
+
+    <div class="flex gap-8 mb-16" id="inlineRunnerBtns">
+        <button class="btn btn-primary" id="startTestBtn" onclick="startTest()" disabled>Start Test</button>
+        <button class="btn btn-danger" id="stopTestBtn" onclick="stopTest()" disabled>Stop Test</button>
+    </div>
+
+    <!-- Mobile bottom action bar (visible only on mobile via CSS) -->
+    <div class="mobile-action-bar" id="mobileActionBar">
+        <button class="btn btn-primary" onclick="startTest()">Start Test</button>
+        <button class="btn btn-danger" onclick="stopTest()">Stop Test</button>
+    </div>
+
+    <label class="form-label">Live Output</label>
+    <div class="log-output" id="logOutput"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allPlans = [];
+let allParams = [];
+let presets = {};
+let ws = null;
+
+// ===== Load plans =====
+async function loadPlans() {
+    const data = await api('/api/plans/list');
+    allPlans = data.plans || [];
+    populatePlanSelect();
+}
+
+function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+    return (bytes/(1024*1024)).toFixed(1) + ' MB';
+}
+
+function populatePlanSelect() {
+    const sel = document.getElementById('selectedPlan');
+    const current = sel.value;
+    sel.innerHTML = '<option value="">Select a test plan...</option>';
+    allPlans.forEach(p => {
+        sel.innerHTML += `<option value="${escHtml(p.filename)}">${escHtml(p.filename)}</option>`;
+    });
+    if (current) sel.value = current;
+}
+
+async function openInJmeter(filename) {
+    showToast('Opening JMeter... (may take a moment)', 'info');
+    await api(`/api/plans/${encodeURIComponent(filename)}/open`, { method: 'POST' });
+}
+
+// ===== Parameters =====
+async function onPlanSelected() {
+    const filename = document.getElementById('selectedPlan').value;
+    const editBtn = document.getElementById('editPlanBtn');
+    const planInfo = document.getElementById('planInfo');
+    if (!filename) {
+        document.getElementById('paramForm').innerHTML = '<p class="text-light text-sm">Select a test plan to configure parameters.</p>';
+        document.getElementById('startTestBtn').disabled = true;
+        document.getElementById('cmdPreview').textContent = 'Select a test plan to see the command.';
+        editBtn.disabled = true;
+        planInfo.style.display = 'none';
+        return;
+    }
+    editBtn.disabled = false;
+    document.getElementById('startTestBtn').disabled = false;
+
+    // Show plan info
+    const plan = allPlans.find(p => p.filename === filename);
+    if (plan) {
+        planInfo.textContent = `${formatSize(plan.size)} · Modified ${new Date(plan.modified).toLocaleString()}`;
+        planInfo.style.display = 'block';
+    }
+
+    const data = await api(`/api/plans/${encodeURIComponent(filename)}/params`);
+    allParams = data.params || [];
+    renderParamForm();
+    updatePreview();
+}
+
+function renderParamForm() {
+    const container = document.getElementById('paramForm');
+    if (!allParams.length) {
+        container.innerHTML = '<p class="text-light text-sm">No __P() parameters detected in this JMX.</p>';
+        return;
+    }
+    let html = '<div class="flex gap-16" style="flex-wrap:wrap;">';
+    allParams.forEach(p => {
+        html += `<div class="form-group" style="min-width:140px;flex:1;max-width:250px;">
+            <label class="form-label">${escHtml(p.name)}</label>
+            <input class="form-input form-input-mono" data-param="${escHtml(p.name)}" value="${escHtml(p.default)}" oninput="updatePreview()">
+        </div>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function getOverrides() {
+    const overrides = {};
+    document.querySelectorAll('#paramForm [data-param]').forEach(input => {
+        const name = input.dataset.param;
+        const val = input.value.trim();
+        if (val) overrides[name] = val;
+    });
+    return overrides;
+}
+
+async function updatePreview() {
+    const filename = document.getElementById('selectedPlan').value;
+    if (!filename) return;
+    try {
+        const data = await api('/api/runner/preview', {
+            method: 'POST',
+            body: { filename, overrides: getOverrides() }
+        });
+        document.getElementById('cmdPreview').textContent = data.command;
+    } catch(e) {}
+}
+
+// ===== Presets =====
+async function loadPresets() {
+    const data = await api('/api/runner/presets');
+    presets = data.presets || {};
+    renderPresetSelect();
+}
+
+function renderPresetSelect() {
+    const sel = document.getElementById('presetSelect');
+    sel.innerHTML = '<option value="">No preset</option>';
+    for (const name of Object.keys(presets)) {
+        sel.innerHTML += `<option value="${escHtml(name)}">${escHtml(name)}</option>`;
+    }
+}
+
+function applyPreset() {
+    const name = document.getElementById('presetSelect').value;
+    if (!name || !presets[name]) return;
+    const values = presets[name];
+    document.querySelectorAll('#paramForm [data-param]').forEach(input => {
+        if (values[input.dataset.param] !== undefined) {
+            input.value = values[input.dataset.param];
+        }
+    });
+    updatePreview();
+    showToast('Preset "' + name + '" applied', 'info');
+}
+
+async function savePreset() {
+    const name = prompt('Preset name:');
+    if (!name) return;
+    const values = getOverrides();
+    await api('/api/runner/presets', { method: 'POST', body: { name, values } });
+    presets[name] = values;
+    renderPresetSelect();
+    showToast('Preset saved', 'success');
+}
+
+// ===== Runner =====
+async function startTest() {
+    const filename = document.getElementById('selectedPlan').value;
+    if (!filename) return;
+    document.getElementById('logOutput').textContent = '';
+    try {
+        const data = await api('/api/runner/start', {
+            method: 'POST',
+            body: { filename, overrides: getOverrides() }
+        });
+        showToast('Test started', 'success');
+        setRunnerState(true);
+        connectLogStream();
+    } catch(e) {}
+}
+
+async function stopTest() {
+    if (!confirmAction('Stop the running test?')) return;
+    await api('/api/runner/stop', { method: 'POST' });
+    setRunnerState(false);
+    showToast('Test stopped', 'warning');
+}
+
+function setRunnerState(running) {
+    const status = document.getElementById('runnerStatus');
+    document.getElementById('startTestBtn').disabled = running;
+    document.getElementById('stopTestBtn').disabled = !running;
+    status.textContent = running ? 'Running' : 'Idle';
+    status.className = running ? 'badge badge-warning' : 'badge badge-info';
+}
+
+function connectLogStream() {
+    if (ws) ws.close();
+    const wm = new WSManager('/ws/runner/logs');
+    wm.onMessage = (line) => appendLog('logOutput', line);
+    wm.onClose = () => {
+        appendLog('logOutput', '\n--- Connection closed ---', 'log-info');
+        setRunnerState(false);
+    };
+    wm.connect();
+    ws = wm;
+}
+
+// ===== Check initial status =====
+async function checkStatus() {
+    const data = await api('/api/runner/status');
+    if (data.running) {
+        setRunnerState(true);
+        connectLogStream();
+    }
+}
+
+function escHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+// ===== Init =====
+loadPlans();
+loadPresets();
+checkStatus();
+</script>
+{% endblock %}

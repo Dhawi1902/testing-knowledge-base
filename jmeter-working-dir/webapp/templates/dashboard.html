@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="card-grid mb-24">
+    <div class="stat-card">
+        <div class="stat-value" id="jmxCount">-</div>
+        <div class="stat-label">Test Plans</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="resultsCount">-</div>
+        <div class="stat-label">Result Folders</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value" id="slavesCount">-</div>
+        <div class="stat-label">Slaves</div>
+    </div>
+</div>
+
+<div class="card-grid">
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">Last Test Run</span>
+        </div>
+        <div id="lastRun">
+            <p class="text-light">Loading...</p>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">Quick Actions</span>
+        </div>
+        <div class="flex gap-8" style="flex-wrap: wrap;">
+            <a href="{{ bp }}/plans" class="btn btn-primary">Run Test</a>
+            <a href="{{ bp }}/results" class="btn btn-outline">View Results</a>
+            <a href="{{ bp }}/config" class="btn btn-outline">Edit Config</a>
+            <a href="{{ bp }}/data" class="btn btn-outline">Test Data</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+    return (bytes/(1024*1024)).toFixed(1) + ' MB';
+}
+
+async function loadDashboard() {
+    const [statsData, lastRunData] = await Promise.all([
+        api('/api/dashboard/stats'),
+        api('/api/dashboard/last-run'),
+    ]);
+
+    document.getElementById('jmxCount').textContent = statsData.jmx_count;
+    document.getElementById('resultsCount').textContent = statsData.results_count;
+    document.getElementById('slavesCount').textContent = statsData.slaves_count;
+
+    const lr = lastRunData.last_run;
+    const el = document.getElementById('lastRun');
+    if (!lr) {
+        el.innerHTML = '<p class="text-light">No test runs yet.</p>';
+    } else {
+        el.innerHTML = `
+            <table>
+                <tr><td class="text-light" style="width:100px;">Folder</td><td class="text-mono">${lr.name}</td></tr>
+                <tr><td class="text-light">Date</td><td>${new Date(lr.date).toLocaleString()}</td></tr>
+                <tr><td class="text-light">Size</td><td>${formatSize(lr.size)}</td></tr>
+                <tr><td class="text-light">Report</td><td>${lr.has_report ? '<span class="badge badge-success">Available</span>' : '<span class="badge badge-danger">N/A</span>'}</td></tr>
+            </table>
+            <div class="flex gap-8" style="margin-top:12px;">
+                ${lr.has_report ? '<a href="' + BASE_PATH + '/results" class="btn btn-outline btn-sm">View Report</a>' : ''}
+                ${lr.has_jtl ? '<a href="' + BASE_PATH + '/results" class="btn btn-outline btn-sm">View Stats</a>' : ''}
+            </div>`;
+    }
+}
+
+loadDashboard();
+</script>
+{% endblock %}

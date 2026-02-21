@@ -1,0 +1,59 @@
+{
+  "prefixes": {
+    "ABR": {
+      "start": 1,
+      "end": 8000
+    },
+    "ACR": {
+      "start": 1,
+      "end": 8000
+    },
+    "ADR": {
+      "start": 1,
+      "end": 8000
+    },
+    "AER": {
+      "start": 1,
+      "end": 8000
+    }
+  },
+  "output": {
+    "filename": "master_student_data.csv",
+    "column_name": "USERNAME",
+    "id_width": 6
+  }
+}
+
+{
+  "prefixes": {
+    "EAR": {
+      "start": 1,
+      "end": 5580
+    },
+    "EBR": {
+      "start": 1,
+      "end": 5580
+    },
+    "EDR": {
+      "start": 1,
+      "end": 5580
+    },
+    "EER": {
+      "start": 1,
+      "end": 5580
+    },
+    "EFR": {
+      "start": 1,
+      "end": 11160
+    },
+    "EGR": {
+      "start": 1,
+      "end": 11160
+    }
+  },
+  "output": {
+    "filename": "master_student_data.csv",
+    "column_name": "USERNAME",
+    "id_width": 6
+  }
+}

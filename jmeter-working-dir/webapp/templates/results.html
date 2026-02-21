@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+
+{% block title %}Results{% endblock %}
+{% block page_title %}Results{% endblock %}
+
+{% block content %}
+<div class="card mb-16">
+    <div class="card-header">
+        <span class="card-title">Test Results</span>
+        <div class="flex gap-8">
+            <button class="btn btn-outline btn-sm" id="compareBtn" onclick="compareSelected()" disabled>Compare Selected</button>
+            <button class="btn btn-outline btn-sm" onclick="loadResults()">Refresh</button>
+        </div>
+    </div>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:30px;"><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                    <th>Folder</th>
+                    <th>Date</th>
+                    <th>Size</th>
+                    <th>Report</th>
+                    <th>JTL</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="resultsList">
+                <tr><td colspan="7" class="text-light">Loading...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Stats Panel -->
+<div class="card hidden" id="statsPanel">
+    <div class="card-header">
+        <span class="card-title" id="statsPanelTitle">Statistics</span>
+        <button class="btn btn-sm btn-outline" onclick="document.getElementById('statsPanel').classList.add('hidden')">Close</button>
+    </div>
+    <div id="statsContent"></div>
+</div>
+
+<!-- Compare Panel -->
+<div class="card hidden" id="comparePanel">
+    <div class="card-header">
+        <span class="card-title">Comparison</span>
+        <button class="btn btn-sm btn-outline" onclick="document.getElementById('comparePanel').classList.add('hidden')">Close</button>
+    </div>
+    <div id="compareContent"></div>
+</div>
+
+<!-- Analysis Panel -->
+<div class="card hidden" id="analysisPanel">
+    <div class="card-header">
+        <span class="card-title" id="analysisPanelTitle">Analysis</span>
+        <div class="flex gap-8">
+            <button class="btn btn-outline btn-sm" id="aiAnalyzeBtn" onclick="runAiAnalysis()" style="display:none;">AI Analysis (Ollama)</button>
+            <button class="btn btn-sm btn-outline" onclick="document.getElementById('analysisPanel').classList.add('hidden')">Close</button>
+        </div>
+    </div>
+    <div id="analysisContent"></div>
+</div>
+
+<!-- Report Viewer Modal -->
+<div class="modal-overlay" id="reportModal">
+    <div class="modal modal-lg" style="max-width:95%;width:95%;height:85vh;display:flex;flex-direction:column;">
+        <div class="modal-header">
+            <span class="modal-title" id="reportTitle">HTML Report</span>
+            <button class="modal-close" onclick="closeModal('reportModal')">&times;</button>
+        </div>
+        <iframe id="reportFrame" style="flex:1;border:none;border-radius:4px;"></iframe>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allFolders = [];
+
+function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+    return (bytes/(1024*1024)).toFixed(1) + ' MB';
+}
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+async function loadResults() {
+    const data = await api('/api/results/list');
+    allFolders = data.folders || [];
+    renderResults();
+}
+
+function renderResults() {
+    const tbody = document.getElementById('resultsList');
+    if (!allFolders.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="text-light">No results found.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = allFolders.map(f => `<tr>
+        <td><input type="checkbox" class="result-check" value="${escHtml(f.name)}" onchange="updateCompareBtn()"></td>
+        <td class="text-mono">${escHtml(f.name)}</td>
+        <td class="text-sm">${new Date(f.date).toLocaleString()}</td>
+        <td>${formatSize(f.size)}</td>
+        <td>${f.has_report ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-danger">No</span>'}</td>
+        <td>${f.has_jtl ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-danger">No</span>'}</td>
+        <td class="table-actions">
+            <div class="flex gap-8">
+                ${f.has_report ? `<button class="btn btn-outline btn-sm" onclick="viewReport('${escHtml(f.name)}')">Report</button>` : ''}
+                ${f.has_jtl ? `<button class="btn btn-outline btn-sm" onclick="viewStats('${escHtml(f.name)}')">Stats</button>` : ''}
+                ${f.has_jtl ? `<button class="btn btn-outline btn-sm" onclick="analyzeResult('${escHtml(f.name)}')">Analyze</button>` : ''}
+                <button class="btn btn-outline btn-sm" onclick="openFolder('${escHtml(f.name)}')">Open</button>
+            </div>
+        </td>
+    </tr>`).join('');
+}
+
+function toggleSelectAll() {
+    const checked = document.getElementById('selectAll').checked;
+    document.querySelectorAll('.result-check').forEach(cb => cb.checked = checked);
+    updateCompareBtn();
+}
+function updateCompareBtn() {
+    document.getElementById('compareBtn').disabled = document.querySelectorAll('.result-check:checked').length !== 2;
+}
+
+function viewReport(folder) {
+    document.getElementById('reportTitle').textContent = 'Report: ' + folder;
+    document.getElementById('reportFrame').src = `${BASE_PATH}/api/results/${encodeURIComponent(folder)}/report/index.html`;
+    openModal('reportModal');
+}
+
+async function viewStats(folder) {
+    const panel = document.getElementById('statsPanel');
+    const content = document.getElementById('statsContent');
+    document.getElementById('statsPanelTitle').textContent = 'Statistics: ' + folder;
+    content.innerHTML = '<p class="text-light">Loading...</p>';
+    panel.classList.remove('hidden');
+    panel.scrollIntoView({ behavior: 'smooth' });
+
+    const data = await api(`/api/results/${encodeURIComponent(folder)}/stats`);
+    if (data.error) { content.innerHTML = `<p class="text-light">${escHtml(data.error)}</p>`; return; }
+    const o = data.overall;
+    let html = `<h3 class="text-sm mb-16" style="font-weight:600;">Overall</h3>
+    <div class="table-wrapper"><table>
+        <thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody>
+            <tr><td>Total Samples</td><td>${o.total_samples.toLocaleString()}</td></tr>
+            <tr><td>Duration</td><td>${o.duration_sec}s</td></tr>
+            <tr><td>Avg Response Time</td><td>${o.avg} ms</td></tr>
+            <tr><td>Median (p50)</td><td>${o.median} ms</td></tr>
+            <tr><td>p90</td><td>${o.p90} ms</td></tr>
+            <tr><td>p95</td><td>${o.p95} ms</td></tr>
+            <tr><td>p99</td><td>${o.p99} ms</td></tr>
+            <tr><td>Min</td><td>${o.min} ms</td></tr>
+            <tr><td>Max</td><td>${o.max} ms</td></tr>
+            <tr><td>Errors</td><td>${o.error_count} (${o.error_pct}%)</td></tr>
+            <tr><td>Throughput</td><td>${o.throughput} req/s</td></tr>
+        </tbody></table></div>`;
+
+    if (data.transactions && data.transactions.length) {
+        html += `<h3 class="text-sm mb-16" style="font-weight:600;margin-top:20px;">Per Transaction</h3>
+        <div class="table-wrapper"><table>
+            <thead><tr><th>Label</th><th>Samples</th><th>Avg</th><th>Median</th><th>p90</th><th>p95</th><th>Error%</th></tr></thead><tbody>`;
+        data.transactions.forEach(t => {
+            const cls = t.error_pct > 5 ? 'badge-danger' : t.error_pct > 2 ? 'badge-warning' : 'badge-success';
+            html += `<tr><td class="text-mono text-sm">${escHtml(t.label)}</td><td>${t.samples.toLocaleString()}</td><td>${t.avg}</td><td>${t.median}</td><td>${t.p90}</td><td>${t.p95}</td><td><span class="badge ${cls}">${t.error_pct}%</span></td></tr>`;
+        });
+        html += '</tbody></table></div>';
+    }
+    content.innerHTML = html;
+}
+
+async function openFolder(folder) { await api(`/api/results/${encodeURIComponent(folder)}/open`, { method: 'POST' }); }
+
+async function compareSelected() {
+    const checked = Array.from(document.querySelectorAll('.result-check:checked'));
+    if (checked.length !== 2) return;
+    const f1 = checked[0].value, f2 = checked[1].value;
+    const panel = document.getElementById('comparePanel');
+    const content = document.getElementById('compareContent');
+    content.innerHTML = '<p class="text-light">Loading...</p>';
+    panel.classList.remove('hidden');
+    panel.scrollIntoView({ behavior: 'smooth' });
+
+    const data = await api(`/api/results/compare?folder1=${encodeURIComponent(f1)}&folder2=${encodeURIComponent(f2)}`);
+    if (data.error) { content.innerHTML = `<p class="text-light">${escHtml(data.error)}</p>`; return; }
+    const d = data.diff;
+    let html = `<div class="table-wrapper"><table>
+        <thead><tr><th>Metric</th><th>${escHtml(f1)}</th><th>${escHtml(f2)}</th><th>Change</th></tr></thead><tbody>`;
+    for (const [key, v] of Object.entries(d)) {
+        const betterIfHigher = key === 'throughput';
+        const isGood = betterIfHigher ? v.change_pct > 0 : v.change_pct < 0;
+        const isBad = betterIfHigher ? v.change_pct < 0 : v.change_pct > 0;
+        const cls = Math.abs(v.change_pct) < 1 ? '' : isGood ? 'badge-success' : isBad ? 'badge-danger' : '';
+        const sign = v.change_pct > 0 ? '+' : '';
+        html += `<tr><td style="font-weight:500;">${key}</td><td>${v.a}</td><td>${v.b}</td>
+            <td>${cls ? `<span class="badge ${cls}">${sign}${v.change_pct}%</span>` : `${sign}${v.change_pct}%`}</td></tr>`;
+    }
+    html += '</tbody></table></div>';
+    content.innerHTML = html;
+}
+
+// ===== Analysis =====
+let currentAnalysisFolder = '';
+
+async function analyzeResult(folder) {
+    currentAnalysisFolder = folder;
+    const panel = document.getElementById('analysisPanel');
+    const content = document.getElementById('analysisContent');
+    document.getElementById('analysisPanelTitle').textContent = 'Analysis: ' + folder;
+    content.innerHTML = '<p class="text-light">Running rule-based analysis...</p>';
+    panel.classList.remove('hidden');
+    panel.scrollIntoView({ behavior: 'smooth' });
+
+    // Check if cached
+    try {
+        const cached = await fetch(`${BASE_PATH}/api/results/${encodeURIComponent(folder)}/analysis`);
+        if (cached.ok) {
+            const data = await cached.json();
+            renderAnalysis(data);
+            checkOllamaAvailable();
+            return;
+        }
+    } catch(e) {}
+
+    // Run fresh analysis
+    const data = await api(`/api/results/${encodeURIComponent(folder)}/analyze`, { method: 'POST', body: { mode: 'rules' } });
+    renderAnalysis(data);
+    checkOllamaAvailable();
+}
+
+function renderAnalysis(data) {
+    const content = document.getElementById('analysisContent');
+    const rules = data.rules || {};
+    const severityClass = rules.severity === 'critical' ? 'badge-danger' : rules.severity === 'warning' ? 'badge-warning' : 'badge-success';
+
+    let html = `<div class="flex gap-8 mb-16"><span class="badge ${severityClass}" style="font-size:0.85rem;">${rules.severity || 'info'}</span></div>`;
+
+    // Bottlenecks
+    if (rules.bottlenecks && rules.bottlenecks.length) {
+        html += '<h3 class="text-sm mb-16" style="font-weight:600;">Bottlenecks</h3><div class="table-wrapper mb-16"><table><thead><tr><th>Label</th><th>Avg/p50</th><th>p95</th><th>Ratio</th></tr></thead><tbody>';
+        rules.bottlenecks.forEach(b => {
+            html += `<tr><td class="text-mono text-sm">${escHtml(b.label)}</td><td>${b.avg || b.p50} ms</td><td>${b.p95} ms</td><td><span class="badge badge-warning">${b.ratio}x</span></td></tr>`;
+        });
+        html += '</tbody></table></div>';
+    }
+
+    // Degradation
+    if (rules.degradation_point) {
+        const dp = rules.degradation_point;
+        html += `<h3 class="text-sm mb-16" style="font-weight:600;">Degradation Point</h3>
+        <p class="mb-16">At <strong>${dp.interval}</strong>: response time jumped from ${dp.rt_before} ms to ${dp.rt_after} ms${dp.threads ? ` (${dp.threads} threads)` : ''}.</p>`;
+    }
+
+    // Error patterns
+    if (rules.error_patterns && rules.error_patterns.length) {
+        html += '<h3 class="text-sm mb-16" style="font-weight:600;">Error Patterns</h3><ul class="mb-16" style="padding-left:20px;">';
+        rules.error_patterns.forEach(e => {
+            if (e.type === 'overall_error_rate') {
+                html += `<li>Overall error rate: <span class="badge badge-${e.level === 'critical' ? 'danger' : 'warning'}">${e.rate}%</span></li>`;
+            } else {
+                html += `<li>${escHtml(e.label)}: ${e.rate}% errors</li>`;
+            }
+        });
+        html += '</ul>';
+    }
+
+    // Throughput saturation
+    if (rules.throughput_saturation) {
+        const sat = rules.throughput_saturation;
+        html += `<p class="mb-16"><strong>Throughput Saturation:</strong> Plateau at ~${sat.plateau_tps} req/s</p>`;
+    }
+
+    // Recommendations
+    if (rules.recommendations && rules.recommendations.length) {
+        html += '<h3 class="text-sm mb-16" style="font-weight:600;">Recommendations</h3><ul style="padding-left:20px;">';
+        rules.recommendations.forEach(r => { html += `<li>${escHtml(r)}</li>`; });
+        html += '</ul>';
+    }
+
+    // AI report if available
+    if (data.ai_report && data.ai_report.ok) {
+        html += `<h3 class="text-sm mb-16" style="font-weight:600;margin-top:20px;">AI Insights (Ollama)</h3>
+        <div style="background:#f8fafc;border:1px solid var(--color-border);border-radius:var(--radius);padding:16px;white-space:pre-wrap;font-size:0.9rem;">${escHtml(data.ai_report.report)}</div>`;
+    }
+
+    content.innerHTML = html;
+}
+
+async function checkOllamaAvailable() {
+    try {
+        const data = await api('/api/analysis/ollama-status');
+        if (data.available) {
+            document.getElementById('aiAnalyzeBtn').style.display = 'inline-flex';
+        }
+    } catch(e) {}
+}
+
+async function runAiAnalysis() {
+    if (!currentAnalysisFolder) return;
+    const btn = document.getElementById('aiAnalyzeBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Analyzing...';
+    try {
+        const data = await api(`/api/results/${encodeURIComponent(currentAnalysisFolder)}/analyze`, { method: 'POST', body: { mode: 'ai' } });
+        renderAnalysis(data);
+        showToast('AI analysis complete', 'success');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'AI Analysis (Ollama)';
+    }
+}
+
+loadResults();
+</script>
+{% endblock %}

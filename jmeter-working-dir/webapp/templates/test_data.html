@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+
+{% block title %}Test Data{% endblock %}
+{% block page_title %}Test Data{% endblock %}
+
+{% block content %}
+<div class="card mb-16">
+    <div class="card-header">
+        <span class="card-title">Master Data</span>
+        <div class="flex gap-8">
+            <button class="btn btn-primary btn-sm" onclick="generateData()" id="generateBtn">Generate</button>
+        </div>
+    </div>
+    <div id="masterDataInfo">
+        <p class="text-light">Loading...</p>
+    </div>
+</div>
+
+<div class="card mb-16">
+    <div class="card-header">
+        <span class="card-title">Split & Distribute</span>
+    </div>
+    <div class="flex gap-16 mb-16" style="flex-wrap: wrap;">
+        <div class="form-group" style="min-width: 120px;">
+            <label class="form-label">Offset</label>
+            <input type="number" class="form-input" id="splitOffset" value="0" min="0">
+        </div>
+        <div class="form-group" style="min-width: 120px;">
+            <label class="form-label">Size</label>
+            <input type="number" class="form-input" id="splitSize" value="15000" min="1">
+        </div>
+        <div style="display: flex; align-items: flex-end; gap: 8px;">
+            <button class="btn btn-outline btn-sm" id="splitBtn" onclick="splitData()">Split</button>
+            <button class="btn btn-primary btn-sm" id="distributeBtn" onclick="distributeData()">Distribute</button>
+        </div>
+    </div>
+    <div id="splitOutput" class="hidden">
+        <label class="form-label">Output</label>
+        <pre class="log-output" id="splitLog" style="height:200px;"></pre>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <span class="card-title">CSV Files</span>
+        <button class="btn btn-outline btn-sm" onclick="loadFiles()">Refresh</button>
+    </div>
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>File</th>
+                    <th>Rows</th>
+                    <th>Size</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="csvFilesList">
+                <tr><td colspan="4" class="text-light">Loading...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal-overlay" id="previewModal">
+    <div class="modal modal-lg">
+        <div class="modal-header">
+            <span class="modal-title" id="previewTitle">CSV Preview</span>
+            <button class="modal-close" onclick="closeModal('previewModal')">&times;</button>
+        </div>
+        <div id="previewContent" class="table-wrapper" style="max-height:60vh;overflow:auto;"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+    return (bytes/(1024*1024)).toFixed(1) + ' MB';
+}
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+async function loadFiles() {
+    const data = await api('/api/data/files');
+    const files = data.files || [];
+    const tbody = document.getElementById('csvFilesList');
+
+    // Show master data info
+    const master = files.find(f => f.filename.includes('master'));
+    const info = document.getElementById('masterDataInfo');
+    if (master) {
+        info.innerHTML = `<table>
+            <tr><td class="text-light" style="width:80px;">File</td><td class="text-mono">${escHtml(master.filename)}</td></tr>
+            <tr><td class="text-light">Rows</td><td>${master.rows.toLocaleString()}</td></tr>
+            <tr><td class="text-light">Size</td><td>${formatSize(master.size)}</td></tr>
+        </table>`;
+    } else {
+        info.innerHTML = '<p class="text-light">No master data file found. Click Generate to create one.</p>';
+    }
+
+    if (!files.length) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-light">No CSV files found.</td></tr>';
+        return;
+    }
+    tbody.innerHTML = files.map(f => `<tr>
+        <td class="text-mono text-sm">${escHtml(f.filename)}</td>
+        <td>${f.rows >= 0 ? f.rows.toLocaleString() : '-'}</td>
+        <td>${formatSize(f.size)}</td>
+        <td><button class="btn btn-outline btn-sm" onclick="previewFile('${escHtml(f.filename)}')">Preview</button></td>
+    </tr>`).join('');
+}
+
+async function previewFile(filename) {
+    document.getElementById('previewTitle').textContent = 'Preview: ' + filename;
+    document.getElementById('previewContent').innerHTML = '<p class="text-light">Loading...</p>';
+    openModal('previewModal');
+
+    const data = await api(`/api/data/preview/${encodeURIComponent(filename)}`);
+    if (data.error) {
+        document.getElementById('previewContent').innerHTML = `<p class="text-light">${escHtml(data.error)}</p>`;
+        return;
+    }
+    let html = '<table><thead><tr>';
+    data.columns.forEach(c => { html += `<th>${escHtml(c)}</th>`; });
+    html += '</tr></thead><tbody>';
+    data.rows.forEach(row => {
+        html += '<tr>';
+        row.forEach(cell => { html += `<td class="text-sm">${escHtml(cell || '')}</td>`; });
+        html += '</tr>';
+    });
+    html += '</tbody></table>';
+    if (data.total_preview >= 50) html += '<p class="text-light text-sm" style="margin-top:8px;">Showing first 50 rows.</p>';
+    document.getElementById('previewContent').innerHTML = html;
+}
+
+async function generateData() {
+    const btn = document.getElementById('generateBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Generating...';
+    try {
+        const data = await api('/api/data/generate', { method: 'POST' });
+        if (data.ok) {
+            showToast('Master data generated', 'success');
+        } else {
+            showToast('Generation failed', 'error');
+        }
+        if (data.output) {
+            document.getElementById('splitOutput').classList.remove('hidden');
+            document.getElementById('splitLog').textContent = data.output;
+        }
+        loadFiles();
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Generate';
+    }
+}
+
+async function splitData() {
+    const btn = document.getElementById('splitBtn');
+    btn.disabled = true;
+    const offset = parseInt(document.getElementById('splitOffset').value) || 0;
+    const size = parseInt(document.getElementById('splitSize').value) || 15000;
+    try {
+        const data = await api('/api/data/split', { method: 'POST', body: { offset, size } });
+        document.getElementById('splitOutput').classList.remove('hidden');
+        document.getElementById('splitLog').textContent = data.output || '';
+        if (data.ok) showToast('Data split complete', 'success');
+        else showToast('Split failed', 'error');
+        loadFiles();
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+async function distributeData() {
+    const btn = document.getElementById('distributeBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Distributing...';
+    const offset = parseInt(document.getElementById('splitOffset').value) || 0;
+    const size = parseInt(document.getElementById('splitSize').value) || 15000;
+    try {
+        const data = await api('/api/data/distribute', { method: 'POST', body: { offset, size } });
+        document.getElementById('splitOutput').classList.remove('hidden');
+        document.getElementById('splitLog').textContent = data.output || '';
+        if (data.ok) showToast('Data distributed to slaves', 'success');
+        else showToast('Distribution failed', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Distribute';
+    }
+}
+
+loadFiles();
+</script>
+{% endblock %}

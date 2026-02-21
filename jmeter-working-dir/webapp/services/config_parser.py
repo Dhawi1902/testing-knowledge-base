@@ -1,0 +1,192 @@
+import json
+import shutil
+from pathlib import Path
+
+
+def load_project_config(config_path: Path) -> dict:
+    """Load project.json and return as dict."""
+    with open(config_path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def save_project_config(config_path: Path, data: dict) -> None:
+    """Save dict to project.json."""
+    with open(config_path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+
+
+def auto_detect_project(config_path: Path) -> dict:
+    """Scan parent directory for known project folders and generate project.json."""
+    app_dir = config_path.parent
+    project_root = app_dir.parent
+
+    config = {
+        "name": project_root.name,
+        "project_root": "..",
+        "jmeter_path": "",
+        "paths": {
+            "jmx_dir": "",
+            "config_dir": "",
+            "config_properties": "",
+            "results_dir": "",
+            "test_data_dir": "",
+            "scripts_dirs": [],
+            "slaves_file": "",
+        },
+    }
+
+    # Auto-detect known directories
+    known_jmx_dirs = ["test_plan", "script/jmeter", "scripts/jmeter"]
+    for d in known_jmx_dirs:
+        if (project_root / d).is_dir():
+            config["paths"]["jmx_dir"] = d
+            break
+
+    if (project_root / "config").is_dir():
+        config["paths"]["config_dir"] = "config"
+
+    if (project_root / "config.properties").is_file():
+        config["paths"]["config_properties"] = "config.properties"
+
+    known_results_dirs = ["results", "result"]
+    for d in known_results_dirs:
+        if (project_root / d).is_dir():
+            config["paths"]["results_dir"] = d
+            break
+
+    known_data_dirs = ["test_data", "data", "testdata"]
+    for d in known_data_dirs:
+        if (project_root / d).is_dir():
+            config["paths"]["test_data_dir"] = d
+            break
+
+    scripts_dirs = []
+    for d in ["bin", "utils", "scripts"]:
+        if (project_root / d).is_dir():
+            scripts_dirs.append(d)
+    config["paths"]["scripts_dirs"] = scripts_dirs
+
+    if (project_root / "slaves.txt").is_file():
+        config["paths"]["slaves_file"] = "slaves.txt"
+
+    # Detect JMeter
+    config["jmeter_path"] = detect_jmeter_path()
+
+    save_project_config(config_path, config)
+    return config
+
+
+def detect_jmeter_path() -> str:
+    """Try to find JMeter in PATH or common install locations."""
+    # Check PATH first
+    jmeter = shutil.which("jmeter")
+    if jmeter:
+        return str(Path(jmeter).resolve())
+
+    jmeter_bat = shutil.which("jmeter.bat")
+    if jmeter_bat:
+        return str(Path(jmeter_bat).resolve())
+
+    # Common Windows install locations
+    common_paths = [
+        Path("C:/apache-jmeter-5.6.3/bin/jmeter.bat"),
+        Path("C:/apache-jmeter-5.6.2/bin/jmeter.bat"),
+        Path("C:/apache-jmeter-5.6.1/bin/jmeter.bat"),
+        Path("C:/apache-jmeter-5.6/bin/jmeter.bat"),
+        Path("C:/apache-jmeter-5.5/bin/jmeter.bat"),
+        Path("C:/Program Files/apache-jmeter/bin/jmeter.bat"),
+    ]
+    for p in common_paths:
+        if p.exists():
+            return str(p)
+
+    # Common Linux/Mac locations
+    linux_paths = [
+        Path("/opt/apache-jmeter/bin/jmeter"),
+        Path("/usr/local/bin/jmeter"),
+        Path.home() / "apache-jmeter" / "bin" / "jmeter",
+    ]
+    for p in linux_paths:
+        if p.exists():
+            return str(p)
+
+    return ""
+
+
+def resolve_path(project_config: dict, key: str) -> Path:
+    """Resolve a relative path from project.json to absolute path."""
+    app_dir = Path(__file__).resolve().parent.parent
+    project_root = (app_dir / project_config["project_root"]).resolve()
+    rel_path = project_config["paths"].get(key, "")
+    if not rel_path:
+        return project_root
+    return (project_root / rel_path).resolve()
+
+
+def get_project_root(project_config: dict) -> Path:
+    """Get the absolute project root path."""
+    app_dir = Path(__file__).resolve().parent.parent
+    return (app_dir / project_config["project_root"]).resolve()
+
+
+# --- Config file parsers ---
+
+def read_config_properties(path: Path) -> dict:
+    """Parse Java .properties file to ordered dict."""
+    props = {}
+    if not path.exists():
+        return props
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if "=" in line:
+                key, _, value = line.partition("=")
+                props[key.strip()] = value.strip()
+    return props
+
+
+def write_config_properties(path: Path, data: dict, comments: list[str] | None = None) -> None:
+    """Write dict back to .properties file."""
+    with open(path, "w", encoding="utf-8") as f:
+        if comments:
+            for c in comments:
+                f.write(f"# {c}\n")
+            f.write("\n")
+        for key, value in data.items():
+            f.write(f"{key}={value}\n")
+
+
+def read_json_config(path: Path) -> dict:
+    """Read a JSON config file."""
+    if not path.exists():
+        return {}
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def write_json_config(path: Path, data: dict) -> None:
+    """Write dict to JSON config file."""
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+
+
+def read_slaves_file(path: Path) -> list[str]:
+    """Parse slaves.txt to list of IPs (ignoring comments and blanks)."""
+    ips = []
+    if not path.exists():
+        return ips
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#"):
+                ips.append(line)
+    return ips
+
+
+def write_slaves_file(path: Path, ips: list[str]) -> None:
+    """Write list of IPs to slaves.txt."""
+    with open(path, "w", encoding="utf-8") as f:
+        for ip in ips:
+            f.write(f"{ip}\n")

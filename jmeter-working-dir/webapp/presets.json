@@ -1,0 +1,5 @@
+{
+  "Baseline": {"student": "10", "rampUp": "10", "loop": "1", "thinkTime": "3000"},
+  "Stress": {"student": "100", "rampUp": "60", "loop": "1", "thinkTime": "500"},
+  "Spike": {"student": "500", "rampUp": "30", "loop": "1", "thinkTime": "100", "syncTimer": "true"}
+}

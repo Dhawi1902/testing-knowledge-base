@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}Slave VMs{% endblock %}
+{% block page_title %}Slave VMs{% endblock %}
+
+{% block content %}
+<!-- Summary bar -->
+<div class="card mb-24">
+    <div class="flex gap-8" style="align-items:center;justify-content:space-between;flex-wrap:wrap;">
+        <div class="flex gap-16" style="align-items:center;">
+            <span class="text-sm" id="slaveSummary">Loading...</span>
+        </div>
+        <div class="flex gap-8">
+            <button class="btn btn-outline btn-sm" onclick="refreshStatus()" id="refreshBtn">Refresh</button>
+            <button class="btn btn-primary btn-sm" onclick="startAll()" id="startAllBtn">Start All</button>
+            <button class="btn btn-outline btn-sm" onclick="stopAll()" id="stopAllBtn" style="color:var(--color-danger);border-color:var(--color-danger);">Stop All</button>
+        </div>
+    </div>
+</div>
+
+<!-- VM grid -->
+<div class="card-grid" id="slaveGrid" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr));">
+    <div class="text-light" style="grid-column:1/-1;text-align:center;padding:32px;">
+        Checking slave VMs...
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+.vm-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.vm-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.vm-ip {
+    font-family: 'SF Mono', 'Consolas', monospace;
+    font-size: 14px;
+    font-weight: 600;
+}
+.vm-status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+}
+.vm-status-dot.up { background: #22c55e; }
+.vm-status-dot.down { background: #ef4444; }
+.vm-status-dot.checking { background: #f59e0b; animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+.vm-meta {
+    font-size: 12px;
+    color: var(--color-text-light);
+}
+.vm-error {
+    font-size: 11px;
+    color: var(--color-danger);
+    word-break: break-all;
+}
+</style>
+<script>
+let slaveData = [];
+let checking = false;
+
+async function refreshStatus() {
+    if (checking) return;
+    checking = true;
+    const btn = document.getElementById('refreshBtn');
+    btn.disabled = true;
+    btn.textContent = 'Checking...';
+
+    // Show loading state
+    if (slaveData.length > 0) {
+        renderSlaves(slaveData.map(s => ({ ...s, status: 'checking' })));
+    } else {
+        document.getElementById('slaveGrid').innerHTML =
+            '<div class="text-light" style="grid-column:1/-1;text-align:center;padding:32px;">Checking slave VMs...</div>';
+    }
+    document.getElementById('slaveSummary').textContent = 'Checking...';
+
+    try {
+        const data = await api('/api/slaves/status');
+        slaveData = data.slaves || [];
+        renderSlaves(slaveData);
+        updateSummary(slaveData);
+    } catch (e) {
+        document.getElementById('slaveSummary').textContent = 'Failed to check status';
+    }
+    btn.disabled = false;
+    btn.textContent = 'Refresh';
+    checking = false;
+}
+
+function renderSlaves(slaves) {
+    const grid = document.getElementById('slaveGrid');
+    if (!slaves.length) {
+        grid.innerHTML = '<div class="text-light" style="grid-column:1/-1;text-align:center;padding:32px;">No slave VMs configured. Add them in <a href="' + BASE_PATH + '/config">Configuration</a>.</div>';
+        return;
+    }
+    grid.innerHTML = slaves.map((s, i) => `
+        <div class="vm-card">
+            <div class="vm-card-header">
+                <div class="flex gap-8" style="align-items:center;">
+                    <span class="vm-status-dot ${s.status}"></span>
+                    <span class="vm-ip">${s.ip}</span>
+                </div>
+                <span class="badge ${s.status === 'up' ? 'badge-success' : s.status === 'checking' ? 'badge-warning' : 'badge-danger'}">
+                    ${s.status === 'up' ? 'Online' : s.status === 'checking' ? 'Checking' : 'Offline'}
+                </span>
+            </div>
+            <div class="vm-meta">VM #${i + 1}</div>
+            ${s.error ? '<div class="vm-error">' + escapeHtml(s.error) + '</div>' : ''}
+        </div>
+    `).join('');
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+function updateSummary(slaves) {
+    const total = slaves.length;
+    const up = slaves.filter(s => s.status === 'up').length;
+    const down = total - up;
+    let html = `<span class="badge badge-info">${total} VMs</span> `;
+    html += `<span class="badge badge-success">${up} Online</span> `;
+    if (down > 0) html += `<span class="badge badge-danger">${down} Offline</span>`;
+    document.getElementById('slaveSummary').innerHTML = html;
+}
+
+async function startAll() {
+    if (!confirmAction('Start JMeter servers on all slave VMs?')) return;
+    const btn = document.getElementById('startAllBtn');
+    btn.disabled = true;
+    btn.textContent = 'Starting...';
+    try {
+        const data = await api('/api/slaves/start', { method: 'POST' });
+        const results = data.results || [];
+        const ok = results.filter(r => r.ok).length;
+        const fail = results.length - ok;
+        showToast(`Started ${ok}/${results.length} servers${fail ? ` (${fail} failed)` : ''}`, fail ? 'warning' : 'success');
+    } catch (e) {
+        showToast('Failed to start servers', 'error');
+    }
+    btn.disabled = false;
+    btn.textContent = 'Start All';
+    // Refresh status after a delay to let servers boot
+    setTimeout(refreshStatus, 3000);
+}
+
+async function stopAll() {
+    if (!confirmAction('Stop JMeter servers on all slave VMs?')) return;
+    const btn = document.getElementById('stopAllBtn');
+    btn.disabled = true;
+    btn.textContent = 'Stopping...';
+    try {
+        const data = await api('/api/slaves/stop', { method: 'POST' });
+        const results = data.results || [];
+        const ok = results.filter(r => r.ok).length;
+        showToast(`Stopped ${ok}/${results.length} servers`, 'success');
+    } catch (e) {
+        showToast('Failed to stop servers', 'error');
+    }
+    btn.disabled = false;
+    btn.textContent = 'Stop All';
+    setTimeout(refreshStatus, 2000);
+}
+
+// Load on page open
+refreshStatus();
+</script>
+{% endblock %}

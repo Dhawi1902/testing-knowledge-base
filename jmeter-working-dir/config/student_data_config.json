@@ -1,0 +1,29 @@
+{
+  "prefixes": {
+    "AAR": {
+      "start": 1,
+      "end": 9000
+    },
+    "ABR": {
+      "start": 1,
+      "end": 9000
+    },
+    "ACR": {
+      "start": 1,
+      "end": 9000
+    },
+    "ADR": {
+      "start": 1,
+      "end": 9000
+    },
+    "AER": {
+      "start": 1,
+      "end": 9000
+    }
+  },
+  "output": {
+    "filename": "master_student_data.csv",
+    "column_name": "USERNAME",
+    "id_width": 6
+  }
+}
