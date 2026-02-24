@@ -4,7 +4,6 @@ import re
 import shutil
 import subprocess
 import sys
-import xml.etree.ElementTree as ET
 from datetime import datetime
 from pathlib import Path
 
@@ -15,18 +14,12 @@ from services.config_parser import (
     get_active_slaves,
 )
 
-APP_DIR = Path(__file__).resolve().parent.parent
-RESERVED_KEYS = {"test_plan", "results_dir", "filter_usernames", "filter_label_pattern"}
+from services.report_properties import get_properties_args
 
-# JMeter report properties to reduce report size
-# (forces CSV format for regeneration, disables heavy over-time graphs that bloat graph.js)
-REPORT_OPTIMIZE_PROPS = [
-    "-Jjmeter.save.saveservice.output_format=csv",
-    "-Jjmeter.reportgenerator.graph.responseTimeOverTime.enabled=false",
-    "-Jjmeter.reportgenerator.graph.latenciesOverTime.enabled=false",
-    "-Jjmeter.reportgenerator.graph.bytesThroughputOverTime.enabled=false",
-    "-Jjmeter.reportgenerator.graph.connectTimeOverTime.enabled=false",
-]
+APP_DIR = Path(__file__).resolve().parent.parent
+
+# Force CSV format for report regeneration from JTL files
+CSV_FORMAT_PROP = "-Jjmeter.save.saveservice.output_format=csv"
 
 
 def list_jmx_files(project_config: dict) -> list[dict]:
@@ -64,7 +57,10 @@ def extract_jmx_params(jmx_path: str | Path) -> list[dict]:
 
 def open_in_jmeter(jmeter_path: str, jmx_path: str) -> bool:
     """Launch JMeter GUI with a test plan (non-blocking)."""
-    if not jmeter_path or not Path(jmeter_path).exists():
+    if not jmeter_path:
+        return False
+    # Accept both full path and bare command name (e.g. "jmeter" on PATH)
+    if not shutil.which(jmeter_path) and not Path(jmeter_path).exists():
         return False
     try:
         subprocess.Popen(
@@ -82,8 +78,8 @@ def build_jmeter_command(
     project_config: dict,
     jmx_filename: str,
     overrides: dict | None = None,
-    filter_usernames: bool = False,
-    filter_label_pattern: str = "",
+    filter_sub_results: bool = False,
+    label_pattern: str = "",
     dry_run: bool = False,
 ) -> tuple[list[str], str, list[list[str]]]:
     """
@@ -168,21 +164,22 @@ def build_jmeter_command(
 
     # Post-commands for report generation
     post_commands: list[list[str]] = []
-    if filter_usernames:
+    if filter_sub_results:
         # Don't generate report inline — filter JTL first, then generate
         filtered_jtl = str(result_dir / "filtered.jtl")
         filter_cmd = [sys.executable, str(APP_DIR / "jtl_filter.py"), jtl_path, filtered_jtl]
-        if filter_label_pattern:
-            filter_cmd.append(filter_label_pattern)
+        if label_pattern:
+            filter_cmd.append(label_pattern)
         post_commands.append(filter_cmd)
-        post_commands.append([jmeter_path, "-g", filtered_jtl, "-o", report_dir] + REPORT_OPTIMIZE_PROPS)
+        post_commands.append(build_report_command(jmeter_path, filtered_jtl, report_dir))
     else:
         # Generate report inline with JMeter
-        cmd.extend(["-e", "-o", report_dir] + REPORT_OPTIMIZE_PROPS)
+        cmd.extend(["-e", "-o", report_dir, CSV_FORMAT_PROP] + get_properties_args())
 
     # Save config snapshot and run info (only on real runs)
     if not dry_run:
-        _save_run_snapshot(result_dir, props_path, jmx_filename, effective, slaves, filter_usernames)
+        _save_run_snapshot(result_dir, props_path, jmx_filename, effective, slaves,
+                          filter_sub_results, label_pattern)
 
     return cmd, str(result_dir), post_commands
 
@@ -193,7 +190,8 @@ def _save_run_snapshot(
     jmx_filename: str,
     overrides: dict,
     slaves: list[str],
-    filter_usernames: bool,
+    filter_sub_results: bool,
+    label_pattern: str = "",
 ):
     """Save config.properties copy and run_info.json to the result directory."""
     # Copy config.properties
@@ -207,11 +205,17 @@ def _save_run_snapshot(
         "overrides": overrides,
         "slaves": slaves,
         "mode": "distributed" if slaves else "local",
-        "filter_usernames": filter_usernames,
+        "filter_sub_results": filter_sub_results,
+        "label_pattern": label_pattern,
     }
     (result_dir / "run_info.json").write_text(
         json.dumps(run_info, indent=2, ensure_ascii=False), encoding="utf-8"
     )
+
+
+def build_report_command(jmeter_path: str, source_jtl: str, output_dir: str) -> list[str]:
+    """Build JMeter report generation command. Used by both test runs and regeneration."""
+    return [jmeter_path, "-g", source_jtl, "-o", output_dir, CSV_FORMAT_PROP] + get_properties_args()
 
 
 def get_command_preview(project_config: dict, jmx_filename: str, overrides: dict | None = None) -> str:

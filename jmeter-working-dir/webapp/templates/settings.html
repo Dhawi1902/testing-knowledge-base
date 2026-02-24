@@ -7,24 +7,30 @@
 <div class="card">
     <div class="card-header">
         <span class="card-title">App Settings</span>
-        {% if access_level != 'viewer' %}
-        <button class="btn btn-primary btn-sm" onclick="saveAllSettings()">Save</button>
-        {% endif %}
+        <div class="flex gap-8">
+            {% if access_level != 'viewer' %}
+            <button class="btn btn-outline btn-sm" onclick="exportSettings()" title="Export settings as JSON">Export</button>
+            <button class="btn btn-outline btn-sm" onclick="document.getElementById('importInput').click()" title="Import settings from JSON">Import</button>
+            <input type="file" id="importInput" accept=".json" style="display:none;" onchange="importSettings(this)">
+            <button class="btn btn-primary btn-sm" onclick="saveAllSettings()">Save</button>
+            {% endif %}
+        </div>
     </div>
 
-    <div class="tabs">
-        <button class="tab-btn active" data-tab="tab-general">General</button>
-        <button class="tab-btn" data-tab="tab-project">Project</button>
-        <button class="tab-btn" data-tab="tab-integrations">Integrations</button>
-        <button class="tab-btn" data-tab="tab-system">System</button>
+    <div class="tabs" role="tablist">
+        <button class="tab-btn active" data-tab="tab-general" role="tab" aria-selected="true" aria-controls="tab-general">General</button>
+        <button class="tab-btn" data-tab="tab-project" role="tab" aria-selected="false" aria-controls="tab-project">Project</button>
+        <button class="tab-btn" data-tab="tab-report" role="tab" aria-selected="false" aria-controls="tab-report">Report</button>
+        <button class="tab-btn" data-tab="tab-integrations" role="tab" aria-selected="false" aria-controls="tab-integrations">Integrations</button>
+        <button class="tab-btn" data-tab="tab-system" role="tab" aria-selected="false" aria-controls="tab-system">System</button>
     </div>
 
     <!-- ==================== General Tab ==================== -->
-    <div id="tab-general" class="tab-panel active">
+    <div id="tab-general" class="tab-panel active" role="tabpanel">
 
         <!-- Server -->
-        <h3 class="text-sm mb-16" style="font-weight:600;">Server</h3>
-        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
+        <h3 class="text-sm mb-16 section-title">Server</h3>
+        <div class="form-row mb-16">
             <div class="form-group" style="min-width:250px;flex:2;">
                 <label class="form-label">Domain</label>
                 <input class="form-input form-input-mono" id="set_domain" placeholder="e.g. maya-perf.example.com">
@@ -35,7 +41,7 @@
                 <input class="form-input" id="set_port" type="number" min="1024" max="65535" value="8080">
             </div>
         </div>
-        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
+        <div class="form-row mb-16">
             <div class="form-group" style="min-width:250px;flex:2;">
                 <label class="form-label">Base Path</label>
                 <input class="form-input form-input-mono" id="set_base_path" placeholder="e.g. /perftest" autocomplete="off">
@@ -56,11 +62,11 @@
         </div>
         {% endif %}
 
-        <hr style="border:none;border-top:1px solid var(--color-border);margin:20px 0;">
+        <hr class="hr-section">
 
         <!-- Appearance -->
-        <h3 class="text-sm mb-16" style="font-weight:600;">Appearance</h3>
-        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
+        <h3 class="text-sm mb-16 section-title">Appearance</h3>
+        <div class="form-row mb-16">
             <div class="form-group" style="min-width:180px;">
                 <label class="form-label">Theme</label>
                 <select class="form-select" id="set_theme" onchange="previewTheme(this.value)">
@@ -77,11 +83,11 @@
             </label>
         </div>
 
-        <hr style="border:none;border-top:1px solid var(--color-border);margin:20px 0;">
+        <hr class="hr-section">
 
         <!-- Test Runner -->
-        <h3 class="text-sm mb-16" style="font-weight:600;">Test Runner</h3>
-        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
+        <h3 class="text-sm mb-16 section-title">Test Runner</h3>
+        <div class="form-row mb-16">
             <div class="form-group" style="min-width:150px;">
                 <label class="form-label">Max Log Lines</label>
                 <select class="form-select" id="set_max_log_lines">
@@ -105,11 +111,11 @@
             </label>
         </div>
 
-        <hr style="border:none;border-top:1px solid var(--color-border);margin:20px 0;">
+        <hr class="hr-section">
 
         <!-- Results -->
-        <h3 class="text-sm mb-16" style="font-weight:600;">Results</h3>
-        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
+        <h3 class="text-sm mb-16 section-title">Results</h3>
+        <div class="form-row mb-16">
             <div class="form-group" style="min-width:180px;">
                 <label class="form-label">Default Sort Order</label>
                 <select class="form-select" id="set_sort_order">
@@ -119,33 +125,38 @@
             </div>
         </div>
 
-        <hr style="border:none;border-top:1px solid var(--color-border);margin:20px 0;">
+        <hr class="hr-section">
 
         <!-- Security -->
-        <h3 class="text-sm mb-16" style="font-weight:600;">Security</h3>
-        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
+        <h3 class="text-sm mb-16 section-title">Security</h3>
+        <div class="form-row mb-16">
             <div class="form-group" style="min-width:300px;flex:2;">
                 <label class="form-label">Access Token</label>
+                <div id="tokenStatusArea" style="margin-bottom:8px;"></div>
                 <div style="position:relative;">
-                    <input class="form-input form-input-mono" id="set_auth_token" type="password" placeholder="Leave empty to disable token auth" style="padding-right:40px;" autocomplete="new-password">
+                    <input class="form-input form-input-mono" id="set_auth_token" type="password" placeholder="Enter new token to change" style="padding-right:40px;" autocomplete="new-password">
                     <button type="button" onclick="toggleTokenVisibility()" id="tokenToggleBtn"
                         style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--color-text-light);font-size:13px;padding:2px 4px;">Show</button>
                 </div>
-                <span class="text-light text-sm">When set, remote users must enter this token to access the dashboard. Localhost always has full access.</span>
+                <span class="text-light text-sm">Leave empty to keep current token. Enter a new value to change it. Localhost always has full access.</span>
+                <div id="tokenClearArea" style="margin-top:8px;display:none;">
+                    <button class="btn btn-outline btn-sm" style="color:var(--color-danger);border-color:var(--color-danger);" onclick="clearToken()">Remove Token</button>
+                    <span class="text-light text-sm" style="margin-left:8px;">Disables token auth for remote users.</span>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- ==================== Project Tab ==================== -->
-    <div id="tab-project" class="tab-panel">
+    <div id="tab-project" class="tab-panel" role="tabpanel">
 
-        <h3 class="text-sm mb-16" style="font-weight:600;">Project Info</h3>
-        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
-            <div class="form-group" style="flex:1;min-width:250px;">
+        <h3 class="text-sm mb-16 section-title">Project Info</h3>
+        <div class="form-row mb-16">
+            <div class="form-group" class="form-col">
                 <label class="form-label">Project Name</label>
                 <input class="form-input" id="set_proj_name">
             </div>
-            <div class="form-group" style="flex:1;min-width:250px;">
+            <div class="form-group" class="form-col">
                 <label class="form-label">JMeter Path</label>
                 <div class="flex gap-8">
                     <input class="form-input form-input-mono" id="set_proj_jmeter" style="flex:1;">
@@ -156,38 +167,38 @@
             </div>
         </div>
 
-        <hr style="border:none;border-top:1px solid var(--color-border);margin:20px 0;">
+        <hr class="hr-section">
 
-        <h3 class="text-sm mb-16" style="font-weight:600;">Paths <span class="text-light" style="font-weight:400;">(relative to project root)</span></h3>
-        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
-            <div class="form-group" style="flex:1;min-width:200px;">
+        <h3 class="text-sm mb-16 section-title">Paths <span class="text-light" style="font-weight:400;">(relative to project root)</span></h3>
+        <div class="form-row mb-16">
+            <div class="form-group" class="form-col">
                 <label class="form-label">JMX Directory</label>
                 <input class="form-input form-input-mono" id="set_proj_jmx_dir">
             </div>
-            <div class="form-group" style="flex:1;min-width:200px;">
+            <div class="form-group" class="form-col">
                 <label class="form-label">Config Directory</label>
                 <input class="form-input form-input-mono" id="set_proj_config_dir">
             </div>
-            <div class="form-group" style="flex:1;min-width:200px;">
+            <div class="form-group" class="form-col">
                 <label class="form-label">Config Properties File</label>
                 <input class="form-input form-input-mono" id="set_proj_config_props">
             </div>
         </div>
-        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
-            <div class="form-group" style="flex:1;min-width:200px;">
+        <div class="form-row mb-16">
+            <div class="form-group" class="form-col">
                 <label class="form-label">Results Directory</label>
                 <input class="form-input form-input-mono" id="set_proj_results_dir">
             </div>
-            <div class="form-group" style="flex:1;min-width:200px;">
+            <div class="form-group" class="form-col">
                 <label class="form-label">Test Data Directory</label>
                 <input class="form-input form-input-mono" id="set_proj_data_dir">
             </div>
-            <div class="form-group" style="flex:1;min-width:200px;">
+            <div class="form-group" class="form-col">
                 <label class="form-label">Slaves File</label>
                 <input class="form-input form-input-mono" id="set_proj_slaves_file">
             </div>
         </div>
-        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
+        <div class="form-row mb-16">
             <div class="form-group" style="flex:1;min-width:300px;">
                 <label class="form-label">Script Directories (comma-separated)</label>
                 <input class="form-input form-input-mono" id="set_proj_scripts_dirs">
@@ -195,27 +206,83 @@
         </div>
     </div>
 
+    <!-- ==================== Report Tab ==================== -->
+    <div id="tab-report" class="tab-panel" role="tabpanel">
+
+        <h3 class="text-sm mb-16 section-title">Report Generation</h3>
+        <span class="text-light text-sm">Controls which graphs appear in JMeter HTML reports. Disabling heavy over-time graphs significantly reduces report size (graph.js can exceed 500 MB with all graphs enabled on large tests).</span>
+
+        <hr class="hr-section">
+
+        <!-- Granularity -->
+        <h3 class="text-sm mb-16 section-title">General</h3>
+        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;align-items:flex-end;">
+            <div class="form-group" style="min-width:180px;">
+                <label class="form-label">Granularity</label>
+                <select class="form-select" id="set_report_granularity">
+                    <option value="10000">10s</option>
+                    <option value="30000">30s</option>
+                    <option value="60000">1 min (default)</option>
+                    <option value="120000">2 min</option>
+                    <option value="300000">5 min</option>
+                    <option value="600000">10 min</option>
+                </select>
+                <span class="text-light text-sm">Aggregation interval for over-time graphs. Higher = smaller reports.</span>
+            </div>
+        </div>
+
+        <hr class="hr-section">
+
+        <!-- Graph toggles -->
+        <div class="flex gap-8 mb-16" style="align-items:center;flex-wrap:wrap;">
+            <h3 class="text-sm" style="font-weight:600;margin:0;">Graphs</h3>
+            {% if access_level != 'viewer' %}
+            <button class="btn btn-outline btn-sm" onclick="reportPreset('disable_heavy')">Disable All Heavy</button>
+            <button class="btn btn-outline btn-sm" onclick="reportPreset('enable_all')">Enable All</button>
+            <button class="btn btn-outline btn-sm" onclick="reportPreset('reset')">Reset to Default</button>
+            {% endif %}
+        </div>
+
+        <!-- Over-time (heavy) -->
+        <div class="mb-16" class="surface-card">
+            <div class="text-sm mb-8" class="section-title">Over-time graphs <span class="badge badge-warning" style="font-size:11px;margin-left:4px;">Heavy</span></div>
+            <span class="text-light text-sm mb-8" style="display:block;">One data point per granularity interval per sampler. Largest contributor to report size.</span>
+            <div id="reportGraphsOvertime" style="display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+
+        <!-- Summary (light) -->
+        <div class="mb-16" class="surface-card">
+            <div class="text-sm mb-8" class="section-title">Summary graphs <span class="badge badge-success" style="font-size:11px;margin-left:4px;">Light</span></div>
+            <span class="text-light text-sm mb-8" style="display:block;">Aggregate statistics. Minimal impact on report size.</span>
+            <div id="reportGraphsSummary" style="display:flex;flex-direction:column;gap:8px;"></div>
+        </div>
+
+        {% if access_level != 'viewer' %}
+        <button class="btn btn-primary btn-sm" onclick="saveReportSettings()">Save Report Settings</button>
+        {% endif %}
+    </div>
+
     <!-- ==================== Integrations Tab ==================== -->
-    <div id="tab-integrations" class="tab-panel">
+    <div id="tab-integrations" class="tab-panel" role="tabpanel">
 
         <!-- Monitoring -->
-        <h3 class="text-sm mb-16" style="font-weight:600;">Monitoring</h3>
-        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
-            <div class="form-group" style="flex:1;min-width:250px;">
+        <h3 class="text-sm mb-16 section-title">Monitoring</h3>
+        <div class="form-row mb-16">
+            <div class="form-group" class="form-col">
                 <label class="form-label">Grafana URL</label>
                 <input class="form-input form-input-mono" id="set_grafana_url" placeholder="http://grafana:3000">
             </div>
-            <div class="form-group" style="flex:1;min-width:250px;">
+            <div class="form-group" class="form-col">
                 <label class="form-label">InfluxDB URL</label>
                 <input class="form-input form-input-mono" id="set_influxdb_url" placeholder="http://influxdb:8086">
             </div>
         </div>
 
-        <hr style="border:none;border-top:1px solid var(--color-border);margin:20px 0;">
+        <hr class="hr-section">
 
         <!-- AI Analysis -->
-        <h3 class="text-sm mb-16" style="font-weight:600;">AI Analysis (Ollama)</h3>
-        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
+        <h3 class="text-sm mb-16 section-title">AI Analysis (Ollama)</h3>
+        <div class="form-row mb-16">
             <div class="form-group" style="flex:2;min-width:250px;">
                 <label class="form-label">Ollama Base URL</label>
                 <input class="form-input form-input-mono" id="set_ollama_url" placeholder="http://localhost:11434">
@@ -236,10 +303,10 @@
     </div>
 
     <!-- ==================== System Tab ==================== -->
-    <div id="tab-system" class="tab-panel">
+    <div id="tab-system" class="tab-panel" role="tabpanel">
 
-        <h3 class="text-sm mb-16" style="font-weight:600;">System Information</h3>
-        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;" id="systemInfoCards">
+        <h3 class="text-sm mb-16 section-title">System Information</h3>
+        <div class="form-row mb-16" id="systemInfoCards">
             <span class="text-light text-sm">Loading...</span>
         </div>
     </div>
@@ -285,7 +352,17 @@ function renderSettings() {
     document.getElementById('set_ollama_timeout').value = analysis.ollama_timeout || 120;
 
     const auth = s.auth || {};
-    document.getElementById('set_auth_token').value = auth.token || '';
+    document.getElementById('set_auth_token').value = '';  // Never pre-fill — token is hashed server-side
+    const tokenSet = auth.token_set || false;
+    const statusEl = document.getElementById('tokenStatusArea');
+    const clearArea = document.getElementById('tokenClearArea');
+    if (tokenSet) {
+        statusEl.innerHTML = '<span style="display:inline-block;padding:2px 10px;border-radius:4px;font-size:12px;background:var(--color-success);color:#fff;">Token is set</span>';
+        if (isAdmin) clearArea.style.display = 'block';
+    } else {
+        statusEl.innerHTML = '<span style="display:inline-block;padding:2px 10px;border-radius:4px;font-size:12px;background:var(--color-warning);color:#fff;">No token configured</span>';
+        clearArea.style.display = 'none';
+    }
 
     const monitoring = s.monitoring || {};
     document.getElementById('set_grafana_url').value = monitoring.grafana_url || '';
@@ -302,6 +379,19 @@ function toggleTokenVisibility() {
         inp.type = 'password';
         btn.textContent = 'Show';
     }
+}
+
+async function clearToken() {
+    if (!confirm('Remove the access token? Remote users will have full access without authentication.')) return;
+    const settings = { ...currentSettings };
+    settings.auth = {
+        ...(settings.auth || {}),
+        token: '',
+        clear_token: true,
+    };
+    await api('/api/settings', { method: 'PUT', body: { settings } });
+    showToast('Token removed', 'success');
+    loadSettings();
 }
 
 function applyAccessControl() {
@@ -443,9 +533,9 @@ async function loadSystemInfo() {
             { label: 'Disk', value: `${disk.free_gb || '?'} GB free / ${disk.total_gb || '?'} GB (${disk.percent || '?'}% used)` },
         ];
         container.innerHTML = items.map(i =>
-            `<div style="min-width:180px;flex:1;padding:10px 14px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:8px;">
+            `<div class="surface-card form-col" style="min-width:180px;">
                 <div class="text-light text-sm">${i.label}</div>
-                <div class="text-sm" style="font-family:var(--font-mono);margin-top:4px;word-break:break-word;">${i.value}</div>
+                <div class="text-sm text-mono" style="margin-top:4px;word-break:break-word;">${i.value}</div>
             </div>`
         ).join('');
     } catch(e) {
@@ -502,9 +592,97 @@ async function detectJmeter() {
     }
 }
 
+// ===== Report settings (report.properties) =====
+let reportGraphs = [];
+let reportSettings = {};
+
+async function loadReportSettings() {
+    const data = await api('/api/settings/report');
+    reportGraphs = data.graphs || [];
+    reportSettings = data.settings || {};
+    renderReportSettings();
+}
+
+function renderReportSettings() {
+    const graphs = reportSettings.graphs || {};
+    const gran = reportSettings.granularity || 60000;
+    document.getElementById('set_report_granularity').value = String(gran);
+
+    const overtimeContainer = document.getElementById('reportGraphsOvertime');
+    const summaryContainer = document.getElementById('reportGraphsSummary');
+    overtimeContainer.innerHTML = '';
+    summaryContainer.innerHTML = '';
+
+    for (const g of reportGraphs) {
+        const enabled = graphs[g.id] !== false;
+        const html = `<label class="toggle">
+            <input type="checkbox" id="rg_${g.id}" ${enabled ? 'checked' : ''}>
+            <span class="toggle-track"></span>
+            <span class="form-label" style="margin:0;">${g.title}</span>
+        </label>`;
+        if (g.category === 'overtime') {
+            overtimeContainer.insertAdjacentHTML('beforeend', html);
+        } else {
+            summaryContainer.insertAdjacentHTML('beforeend', html);
+        }
+    }
+}
+
+function reportPreset(preset) {
+    for (const g of reportGraphs) {
+        const el = document.getElementById('rg_' + g.id);
+        if (!el) continue;
+        if (preset === 'disable_heavy') {
+            el.checked = g.category !== 'overtime';
+        } else if (preset === 'enable_all') {
+            el.checked = true;
+        } else if (preset === 'reset') {
+            el.checked = g.default_enabled;
+        }
+    }
+}
+
+async function saveReportSettings() {
+    const graphs = {};
+    for (const g of reportGraphs) {
+        const el = document.getElementById('rg_' + g.id);
+        graphs[g.id] = el ? el.checked : true;
+    }
+    const settings = {
+        granularity: parseInt(document.getElementById('set_report_granularity').value) || 60000,
+        graphs,
+    };
+    await api('/api/settings/report', { method: 'PUT', body: { settings } });
+    reportSettings = settings;
+    showToast('Report settings saved', 'success');
+}
+
+// ===== Export/Import =====
+function exportSettings() {
+    const a = document.createElement('a');
+    a.href = `${BASE_PATH}/api/settings/export`;
+    a.download = 'settings_export.json';
+    a.click();
+}
+
+async function importSettings(input) {
+    const file = input.files[0];
+    if (!file) return;
+    try {
+        const text = await file.text();
+        const settings = JSON.parse(text);
+        await api('/api/settings/import', { method: 'POST', body: { settings } });
+        showToast('Settings imported', 'success');
+        await loadSettings();
+    } catch(e) {
+        showToast('Import failed: ' + (e.message || 'invalid file'), 'error');
+    }
+    input.value = '';
+}
+
 // Init
 initTabs('.tabs');
-Promise.all([loadSettings(), loadProjectConfig()]).then(() => applyAccessControl());
+Promise.all([loadSettings(), loadProjectConfig(), loadReportSettings()]).then(() => applyAccessControl());
 loadSystemInfo();
 </script>
 {% endblock %}

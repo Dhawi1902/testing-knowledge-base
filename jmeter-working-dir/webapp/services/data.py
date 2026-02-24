@@ -37,9 +37,9 @@ def preview_csv(file_path: Path, rows: int = 50) -> dict:
     if not file_path.exists():
         return {"error": "File not found"}
     try:
+        # Single read: get total count from raw line count, preview from pandas
         with open(file_path, "r", encoding="utf-8", errors="replace") as fh:
             total_rows = max(sum(1 for _ in fh) - 1, 0)
-
         df = pd.read_csv(file_path, nrows=rows, dtype=str)
         return {
             "columns": list(df.columns),
@@ -47,8 +47,8 @@ def preview_csv(file_path: Path, rows: int = 50) -> dict:
             "total_preview": len(df),
             "total_rows": total_rows,
         }
-    except Exception as e:
-        return {"error": str(e)}
+    except Exception:
+        return {"error": "Failed to read CSV file"}
 
 
 def build_csv(config: dict, data_dir: Path) -> dict:
@@ -191,8 +191,12 @@ def build_csv(config: dict, data_dir: Path) -> dict:
     ordered = {col["name"]: data[col["name"]] for col in columns if col["name"] in data}
     df = pd.DataFrame(ordered)
 
+    from services.auth import safe_join
+
     data_dir.mkdir(parents=True, exist_ok=True)
-    out_path = data_dir / filename
+    out_path = safe_join(data_dir, filename)
+    if out_path is None:
+        return {"error": "Invalid filename"}
     df.to_csv(out_path, index=False)
 
     return {
@@ -214,8 +218,8 @@ def preview_split(file_path: Path, slave_ips: list[str], offset: int = 0, size: 
         return {"error": "File not found"}
     try:
         df = pd.read_csv(file_path, dtype=str)
-    except Exception as e:
-        return {"error": f"Failed to read CSV: {e}"}
+    except Exception:
+        return {"error": "Failed to read CSV file"}
 
     subset = df.iloc[offset:offset + size] if size > 0 else df.iloc[offset:]
     if subset.empty:

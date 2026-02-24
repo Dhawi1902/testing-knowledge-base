@@ -1,3 +1,4 @@
+import json
 import os
 from datetime import datetime
 from pathlib import Path
@@ -24,14 +25,30 @@ def _folder_info(d: Path) -> dict:
     has_report = (d / "report" / "index.html").exists()
     jtl_files = list(d.glob("*.jtl"))
     has_jtl = len(jtl_files) > 0
+    date = datetime.fromtimestamp(stat.st_mtime).isoformat()
+
+    # Override date with actual run start time from cached JTL summary
+    if has_jtl and jtl_files:
+        cache_path = jtl_files[0].parent / f"{jtl_files[0].name}.summary.json"
+        if cache_path.exists():
+            try:
+                cached = json.loads(cache_path.read_text(encoding="utf-8"))
+                start_ms = cached.get("overall", {}).get("start_time")
+                if start_ms:
+                    date = datetime.fromtimestamp(start_ms / 1000).isoformat()
+            except Exception:
+                pass
+
     return {
         "name": d.name,
         "path": str(d),
-        "date": datetime.fromtimestamp(stat.st_mtime).isoformat(),
+        "date": date,
         "size": _quick_folder_size(d),
         "has_report": has_report,
         "has_jtl": has_jtl,
         "jtl_file": str(jtl_files[0]) if jtl_files else None,
+        "jtl_files": [f.name for f in jtl_files],
+        "has_analysis": (d / "analysis_cache.json").exists(),
     }
 
 
@@ -90,25 +107,47 @@ def find_result_folder(results_dir: Path, folder_name: str) -> Path | None:
     """Find a result folder by name, handling date-group nesting.
 
     Tries direct lookup first, then searches one level deeper.
+    Returns None if folder not found or if the path would escape results_dir.
     """
-    direct = results_dir / folder_name
-    if direct.is_dir():
+    from services.auth import safe_join
+
+    direct = safe_join(results_dir, folder_name)
+    if direct is not None and direct.is_dir():
         return direct
     # Search inside date-group folders
     if results_dir.is_dir():
         for d in results_dir.iterdir():
             if d.is_dir():
-                nested = d / folder_name
-                if nested.is_dir():
+                nested = safe_join(d, folder_name)
+                if nested is not None and nested.is_dir():
                     return nested
     return None
 
 
 def parse_jtl(jtl_path: str | Path) -> dict:
-    """Parse JTL CSV and return summary statistics."""
+    """Parse JTL CSV and return summary statistics.
+
+    Results are cached to a .summary.json file next to the JTL.
+    Cache is invalidated when the JTL file's mtime changes.
+    """
     jtl_path = Path(jtl_path)
     if not jtl_path.exists():
         return {"error": "JTL file not found"}
+
+    # Check cache
+    cache_path = jtl_path.parent / f"{jtl_path.name}.summary.json"
+    try:
+        jtl_mtime = jtl_path.stat().st_mtime
+    except OSError:
+        jtl_mtime = 0
+    if cache_path.exists():
+        try:
+            cached = json.loads(cache_path.read_text(encoding="utf-8"))
+            if abs(jtl_mtime - cached.get("_jtl_mtime", 0)) < 1:
+                cached.pop("_jtl_mtime", None)
+                return cached
+        except Exception:
+            pass
 
     try:
         df = pd.read_csv(jtl_path, low_memory=False)
@@ -124,9 +163,13 @@ def parse_jtl(jtl_path: str | Path) -> dict:
     total = len(df)
 
     # Time range
+    start_time = 0
+    end_time = 0
     if "timeStamp" in df.columns:
         ts = df["timeStamp"]
-        duration_ms = ts.max() - ts.min()
+        start_time = int(ts.min())
+        end_time = int(ts.max())
+        duration_ms = end_time - start_time
         duration_sec = duration_ms / 1000.0
         throughput = total / duration_sec if duration_sec > 0 else 0
     else:
@@ -146,6 +189,8 @@ def parse_jtl(jtl_path: str | Path) -> dict:
         "error_pct": round(error_count / total * 100, 2) if total > 0 else 0,
         "throughput": round(throughput, 2),
         "duration_sec": round(duration_sec, 1),
+        "start_time": start_time,
+        "end_time": end_time,
     }
 
     # Per-transaction breakdown
@@ -170,7 +215,16 @@ def parse_jtl(jtl_path: str | Path) -> dict:
             })
         transactions.sort(key=lambda x: x["label"])
 
-    return {"overall": overall, "transactions": transactions}
+    result = {"overall": overall, "transactions": transactions}
+
+    # Save cache
+    try:
+        cache_data = {**result, "_jtl_mtime": jtl_mtime}
+        cache_path.write_text(json.dumps(cache_data, indent=2), encoding="utf-8")
+    except OSError:
+        pass
+
+    return result
 
 
 def compare_runs(jtl_path_1: str | Path, jtl_path_2: str | Path) -> dict:

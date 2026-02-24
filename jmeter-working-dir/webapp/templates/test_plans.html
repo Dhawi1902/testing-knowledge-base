@@ -24,12 +24,13 @@
                 </select>
                 {% if is_localhost %}<button class="btn btn-outline btn-sm" id="editPlanBtn" onclick="openInJmeter(document.getElementById('selectedPlan').value)" disabled title="Open in JMeter GUI">Edit</button>{% endif %}
                 <button class="btn btn-outline btn-sm" id="downloadPlanBtn" onclick="downloadPlan()" disabled title="Download JMX file">Download</button>
-                {% if access_level != 'viewer' %}<button class="btn btn-outline btn-sm" onclick="document.getElementById('uploadInput').click()" title="Upload a .jmx file">Upload</button>
+                {% if access_level != 'viewer' %}<button class="btn btn-outline btn-sm" id="deletePlanBtn" onclick="deletePlan()" disabled title="Delete test plan" style="color:var(--color-danger);border-color:var(--color-danger);">Delete</button>
+                <button class="btn btn-outline btn-sm" onclick="document.getElementById('uploadInput').click()" title="Upload a .jmx file">Upload</button>
                 <input type="file" id="uploadInput" accept=".jmx" style="display:none;" onchange="uploadPlan(this)">{% endif %}
             </div>
             <span class="text-light text-sm" id="planInfo" style="margin-top:4px;display:none;"></span>
         </div>
-        <div class="form-group" style="flex: 1; min-width: 200px;">
+        <div class="form-group" class="form-col">
             <label class="form-label">Preset</label>
             <div class="flex gap-8">
                 <select class="form-select" id="presetSelect" onchange="applyPreset()" style="flex:1;">
@@ -65,8 +66,8 @@
     <div class="flex gap-8" style="align-items:center;justify-content:space-between;flex-wrap:wrap;">
         <div class="flex gap-8" style="align-items:center;flex-wrap:wrap;">
             {% if access_level != 'viewer' %}
-            <label class="toggle" title="Filter JTL labels using regex from Global Properties (filter_label_pattern)">
-                <input type="checkbox" id="filterUsernames" checked>
+            <label class="toggle" title="Filter JTL: remove sub-results and apply label pattern from config">
+                <input type="checkbox" id="filterSubResults" checked>
                 <span class="toggle-track"></span>
                 <span class="text-sm">Filter labels</span>
             </label>
@@ -147,14 +148,14 @@
 </div>
 
 <!-- Global Properties Modal -->
-<div class="modal-overlay" id="globalPropsModal">
+<div class="modal-overlay" id="globalPropsModal" role="dialog" aria-modal="true" aria-labelledby="globalPropsTitle">
     <div class="modal">
         <div class="modal-header">
             <div>
-                <span class="modal-title">Global Properties</span>
+                <span class="modal-title" id="globalPropsTitle">Global Properties</span>
                 <p class="text-light text-sm" style="margin-top:4px;">Shared defaults applied to every test run (<code>-G</code> flags)</p>
             </div>
-            <button class="modal-close" onclick="closeGlobalProps()">&times;</button>
+            <button class="modal-close" onclick="closeGlobalProps()" aria-label="Close">&times;</button>
         </div>
         <div class="flex gap-8 mb-16" style="justify-content:flex-end;">
             <button class="btn btn-outline btn-sm" onclick="addPropertyRow()">+ Add Property</button>
@@ -165,14 +166,14 @@
 </div>
 
 <!-- Preset Manager Modal -->
-<div class="modal-overlay" id="presetModal">
+<div class="modal-overlay" id="presetModal" role="dialog" aria-modal="true" aria-labelledby="presetModalTitle">
     <div class="modal">
         <div class="modal-header">
             <div>
-                <span class="modal-title">Manage Presets</span>
+                <span class="modal-title" id="presetModalTitle">Manage Presets</span>
                 <p class="text-light text-sm" style="margin-top:4px;">Save current parameter values as a reusable preset. Apply them anytime from the Preset dropdown.</p>
             </div>
-            <button class="modal-close" onclick="closePresetManager()">&times;</button>
+            <button class="modal-close" onclick="closePresetManager()" aria-label="Close">&times;</button>
         </div>
         <div style="border:1px solid var(--color-border);border-radius:8px;padding:12px;margin-bottom:16px;background:var(--color-surface-alt,var(--color-surface));">
             <label class="form-label text-sm" style="margin-bottom:6px;">Save current values as preset</label>
@@ -206,12 +207,6 @@ async function loadPlans() {
     const data = await api('/api/plans/list');
     allPlans = data.plans || [];
     populatePlanSelect();
-}
-
-function formatSize(bytes) {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
-    return (bytes/(1024*1024)).toFixed(1) + ' MB';
 }
 
 function populatePlanSelect() {
@@ -248,6 +243,8 @@ async function onPlanSelected() {
         if (savePresetBtn) savePresetBtn.style.display = 'none';
         if (editBtn) editBtn.disabled = true;
         if (dlBtn) dlBtn.disabled = true;
+        const delBtnEmpty = document.getElementById('deletePlanBtn');
+        if (delBtnEmpty) delBtnEmpty.disabled = true;
         planInfo.style.display = 'none';
         return;
     }
@@ -259,6 +256,8 @@ async function onPlanSelected() {
     const savePresetBtn = document.getElementById('saveAsPresetBtn');
     if (savePresetBtn) savePresetBtn.style.display = '';
     if (dlBtn) dlBtn.disabled = false;
+    const delBtn = document.getElementById('deletePlanBtn');
+    if (delBtn) delBtn.disabled = isTestRunning;
 
     // Show plan info
     const plan = allPlans.find(p => p.filename === filename);
@@ -302,7 +301,7 @@ function getOverrides() {
 
 function getPresetValues() {
     const values = getOverrides();
-    if (filterLabelPattern) values._filter_label_pattern = filterLabelPattern;
+    if (labelPattern) values._filter_label_pattern = labelPattern;
     return values;
 }
 
@@ -315,7 +314,7 @@ async function updatePreview() {
             body: { filename, overrides: getOverrides() }
         });
         document.getElementById('cmdPreview').textContent = data.command;
-    } catch(e) {}
+    } catch(e) { console.error(e); }
 }
 
 // ===== Presets =====
@@ -355,7 +354,7 @@ function applyPreset() {
     });
     // Apply filter pattern if preset includes one
     if (values._filter_label_pattern) {
-        filterLabelPattern = values._filter_label_pattern;
+        labelPattern = values._filter_label_pattern;
         changed++;
     }
     updatePreview();
@@ -410,8 +409,8 @@ function renderPresetList() {
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
                 <div class="text-sm" style="font-weight:600;">${escHtml(name)}</div>
                 <div style="display:flex;gap:16px;flex-shrink:0;">
-                    <button class="btn btn-primary btn-sm" onclick="applyPresetByName('${escHtml(name)}')">Apply</button>
-                    <button class="btn btn-sm btn-outline" onclick="deletePresetByName('${escHtml(name)}')" style="color:var(--color-danger);border-color:var(--color-danger);">Delete</button>
+                    <button class="btn btn-primary btn-sm" onclick="applyPresetByName('${escAttr(name)}')">Apply</button>
+                    <button class="btn btn-sm btn-outline" onclick="deletePresetByName('${escAttr(name)}')" style="color:var(--color-danger);border-color:var(--color-danger);">Delete</button>
                 </div>
             </div>
             <div style="line-height:1.8;">${valuesHtml}</div>
@@ -452,15 +451,15 @@ async function savePresetFromModal() {
 }
 
 // ===== Filter Config =====
-let filterLabelPattern = '';
+let labelPattern = '';
 
 async function loadFilterConfig() {
     try {
         const data = await api('/api/runner/filter-config');
-        const el = document.getElementById('filterUsernames');
-        if (el) el.checked = data.filter_usernames;
-        filterLabelPattern = data.filter_label_pattern || '';
-    } catch(e) {}
+        const el = document.getElementById('filterSubResults');
+        if (el) el.checked = data.filter_sub_results;
+        labelPattern = data.label_pattern || '';
+    } catch(e) { console.error('loadFilterConfig:', e); }
 }
 
 // ===== Runner =====
@@ -474,16 +473,16 @@ async function startTest() {
     // Request notification permission for completion alert
     if (Notification.permission === 'default') Notification.requestPermission();
     try {
-        const filter_usernames = document.getElementById('filterUsernames').checked;
-        const filter_label_pattern = filter_usernames ? filterLabelPattern : '';
+        const filter_sub_results = document.getElementById('filterSubResults').checked;
+        const label_pattern = filter_sub_results ? labelPattern : '';
         const data = await api('/api/runner/start', {
             method: 'POST',
-            body: { filename, overrides: getOverrides(), filter_usernames, filter_label_pattern }
+            body: { filename, overrides: getOverrides(), filter_sub_results, label_pattern }
         });
         showToast('Test started', 'success');
         setRunnerState(true);
         connectLogStream();
-    } catch(e) {}
+    } catch(e) { console.error(e); }
 }
 
 async function stopTest() {
@@ -525,7 +524,7 @@ function setRunnerState(running) {
 function setConfigLocked(locked) {
     document.getElementById('selectedPlan').disabled = locked;
     document.getElementById('presetSelect').disabled = locked;
-    const filterEl = document.getElementById('filterUsernames');
+    const filterEl = document.getElementById('filterSubResults');
     if (filterEl) filterEl.disabled = locked;
     const editBtn = document.getElementById('editPlanBtn');
     if (editBtn) editBtn.disabled = locked;
@@ -574,7 +573,7 @@ async function connectLogStream() {
             appendLog('logOutput', line);
             parseLogLine(line);
         });
-    } catch(e) {}
+    } catch(e) { console.error(e); }
 
     // Connect WebSocket from where buffer left off
     const wm = new WSManager('/ws/runner/logs?from=' + startIndex);
@@ -683,12 +682,6 @@ async function checkStatus() {
         }
         connectLogStream();
     }
-}
-
-function escHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
 }
 
 // ===== Mode indicator =====
@@ -815,7 +808,7 @@ async function loadLastRun() {
             link.textContent = 'Last: ' + latest.folder;
             link.style.display = '';
         }
-    } catch(e) {}
+    } catch(e) { console.error(e); }
 }
 
 // ===== Upload / Download =====
@@ -833,6 +826,20 @@ async function downloadPlan() {
         URL.revokeObjectURL(a.href);
     } catch(e) {
         showToast('Download failed', 'error');
+    }
+}
+
+async function deletePlan() {
+    const filename = document.getElementById('selectedPlan').value;
+    if (!filename) return;
+    if (!confirmAction(`Delete test plan "${filename}"? This cannot be undone.`)) return;
+    try {
+        await api(`/api/plans/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+        showToast(`Deleted ${filename}`, 'success');
+        await loadPlans();
+        onPlanSelected();
+    } catch(e) {
+        showToast('Delete failed', 'error');
     }
 }
 

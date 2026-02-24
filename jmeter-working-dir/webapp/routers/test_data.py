@@ -5,20 +5,14 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
 from services.config_parser import resolve_path, get_project_root, get_active_slaves, read_json_config
+from services.auth import check_access as _check_access, safe_join
 from services.data import list_csv_files, preview_csv, preview_split, build_csv
-from services.slaves import distribute_files
+from services.slaves import distribute_files, build_ssh_configs
 
 TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 router = APIRouter()
-
-
-def _check_access(request: Request):
-    """Return 403 JSONResponse if viewer, None if allowed."""
-    if getattr(request.state, "access_level", "viewer") == "viewer":
-        return JSONResponse(status_code=403, content={"error": "Access denied — token required"})
-    return None
 
 
 @router.get("/data")
@@ -43,9 +37,8 @@ async def api_list_data_files(request: Request):
 async def api_preview_csv(request: Request, filename: str, rows: int = 50):
     project = request.app.state.project
     data_dir = resolve_path(project, "test_data_dir")
-    file_path = (data_dir / filename).resolve()
-    # Security check
-    if not str(file_path).startswith(str(data_dir.resolve())):
+    file_path = safe_join(data_dir, filename)
+    if file_path is None:
         return JSONResponse(status_code=403, content={"error": "Access denied"})
     result = preview_csv(file_path, rows=min(rows, 10000))
     return result
@@ -55,8 +48,8 @@ async def api_preview_csv(request: Request, filename: str, rows: int = 50):
 async def api_download_csv(request: Request, filename: str):
     project = request.app.state.project
     data_dir = resolve_path(project, "test_data_dir")
-    file_path = (data_dir / filename).resolve()
-    if not str(file_path).startswith(str(data_dir.resolve())):
+    file_path = safe_join(data_dir, filename)
+    if file_path is None:
         return JSONResponse(status_code=403, content={"error": "Access denied"})
     if not file_path.exists():
         return JSONResponse(status_code=404, content={"error": "File not found"})
@@ -71,8 +64,8 @@ async def api_delete_csv(request: Request, filename: str):
         return denied
     project = request.app.state.project
     data_dir = resolve_path(project, "test_data_dir")
-    file_path = (data_dir / filename).resolve()
-    if not str(file_path).startswith(str(data_dir.resolve())):
+    file_path = safe_join(data_dir, filename)
+    if file_path is None:
         return JSONResponse(status_code=403, content={"error": "Access denied"})
     if not file_path.exists():
         return JSONResponse(status_code=404, content={"error": "File not found"})
@@ -96,11 +89,10 @@ async def api_rename_csv(request: Request):
 
     project = request.app.state.project
     data_dir = resolve_path(project, "test_data_dir")
-    data_dir_resolved = str(data_dir.resolve())
 
-    old_path = (data_dir / old_name).resolve()
-    new_path = (data_dir / new_name).resolve()
-    if not str(old_path).startswith(data_dir_resolved) or not str(new_path).startswith(data_dir_resolved):
+    old_path = safe_join(data_dir, old_name)
+    new_path = safe_join(data_dir, new_name)
+    if old_path is None or new_path is None:
         return JSONResponse(status_code=403, content={"error": "Access denied"})
     if not old_path.exists():
         return JSONResponse(status_code=404, content={"error": f"File not found: {old_name}"})
@@ -138,12 +130,32 @@ async def api_upload_data(request: Request, file: UploadFile):
     if not file.filename or not file.filename.endswith(".csv"):
         return JSONResponse(status_code=400, content={"error": "Only .csv files are accepted"})
 
+    MAX_UPLOAD_SIZE = 100 * 1024 * 1024  # 100 MB
+    CHUNK_SIZE = 1024 * 1024  # 1 MB
     data_dir.mkdir(parents=True, exist_ok=True)
-    dest = data_dir / file.filename
-    content = await file.read()
-    dest.write_bytes(content)
+    dest = safe_join(data_dir, file.filename)
+    if dest is None:
+        return JSONResponse(status_code=403, content={"error": "Invalid filename"})
 
-    return {"ok": True, "filename": file.filename, "size": len(content)}
+    # Stream to disk in chunks to avoid loading entire file into memory
+    total_size = 0
+    try:
+        with open(dest, "wb") as f:
+            while True:
+                chunk = await file.read(CHUNK_SIZE)
+                if not chunk:
+                    break
+                total_size += len(chunk)
+                if total_size > MAX_UPLOAD_SIZE:
+                    f.close()
+                    dest.unlink(missing_ok=True)
+                    return JSONResponse(status_code=413, content={"error": f"File too large (>{MAX_UPLOAD_SIZE // (1024*1024)} MB). Maximum is 100 MB."})
+                f.write(chunk)
+    except Exception:
+        dest.unlink(missing_ok=True)
+        return JSONResponse(status_code=500, content={"error": "Upload failed"})
+
+    return {"ok": True, "filename": file.filename, "size": total_size}
 
 
 @router.post("/api/distribute/preview")
@@ -156,11 +168,10 @@ async def api_preview_split(request: Request):
     project = request.app.state.project
     project_root = get_project_root(project)
     data_dir = resolve_path(project, "test_data_dir")
-    data_dir_resolved = str(data_dir.resolve())
 
     fname = body.get("file", "")
-    fpath = (data_dir / fname).resolve()
-    if not str(fpath).startswith(data_dir_resolved):
+    fpath = safe_join(data_dir, fname)
+    if fpath is None:
         return JSONResponse(status_code=403, content={"error": "Access denied"})
     if not fpath.exists():
         return JSONResponse(status_code=404, content={"error": f"File not found: {fname}"})
@@ -192,7 +203,6 @@ async def api_distribute_data(request: Request):
     project = request.app.state.project
     project_root = get_project_root(project)
     data_dir = resolve_path(project, "test_data_dir")
-    data_dir_resolved = str(data_dir.resolve())
 
     raw_items = body.get("items", [])
     if not raw_items:
@@ -205,8 +215,8 @@ async def api_distribute_data(request: Request):
         mode = item.get("mode", "copy")
         if mode not in ("copy", "split"):
             return JSONResponse(status_code=400, content={"error": f"Invalid mode '{mode}' for {fname}"})
-        fpath = (data_dir / fname).resolve()
-        if not str(fpath).startswith(data_dir_resolved):
+        fpath = safe_join(data_dir, fname)
+        if fpath is None:
             return JSONResponse(status_code=403, content={"error": f"Access denied: {fname}"})
         if not fpath.exists():
             return JSONResponse(status_code=404, content={"error": f"File not found: {fname}"})
@@ -228,19 +238,7 @@ async def api_distribute_data(request: Request):
     config_dir = resolve_path(project, "config_dir")
     vm_config = read_json_config(config_dir / "vm_config.json")
     all_slaves = _read_slaves(slaves_path)
-    global_ssh = vm_config.get("ssh_config", {})
-    ssh_configs = {}
-    for s in all_slaves:
-        ip = s["ip"]
-        overrides = s.get("overrides", {})
-        merged = {**global_ssh}
-        if overrides.get("user"):
-            merged["user"] = overrides["user"]
-        if overrides.get("password"):
-            merged["password"] = overrides["password"]
-        if overrides.get("dest_path"):
-            merged["dest_path"] = overrides["dest_path"]
-        ssh_configs[ip] = merged
+    ssh_configs = build_ssh_configs(all_slaves, vm_config)
 
     results = await distribute_files(slave_ips, ssh_configs, items, data_dir)
 

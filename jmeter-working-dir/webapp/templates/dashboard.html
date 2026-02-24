@@ -23,8 +23,8 @@
     </div>
 </div>
 
-<div class="card-grid">
-    <!-- Runner Status -->
+<!-- Row 2: Runner Status (1fr) + Last Test Run (2fr) -->
+<div class="dashboard-row mb-16" style="grid-template-columns:1fr 2fr;">
     <div class="card">
         <div class="card-header">
             <span class="card-title">Runner Status</span>
@@ -34,8 +34,6 @@
             <p class="text-light">Loading...</p>
         </div>
     </div>
-
-    <!-- Last Test Run -->
     <div class="card">
         <div class="card-header">
             <span class="card-title">Last Test Run</span>
@@ -44,8 +42,35 @@
             <p class="text-light">Loading...</p>
         </div>
     </div>
+</div>
 
-    <!-- Quick Actions -->
+<!-- Row 3: Run History with Trend Chart (full width) -->
+<div class="mb-16">
+    <div class="card" style="margin-bottom:0;">
+        <div class="card-header">
+            <span class="card-title">Run History</span>
+            <span class="text-sm text-light">Last 10 runs</span>
+        </div>
+        <div id="trendChart" style="display:none;margin-bottom:12px;"></div>
+        <div id="runHistory">
+            <p class="text-light">Loading...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Row 4: Alerts (full width, hidden when empty) -->
+<div class="mb-16" id="alertsRow" style="display:none;">
+    <div class="card" style="margin-bottom:0;">
+        <div class="card-header">
+            <span class="card-title">Alerts</span>
+            <span class="badge" id="alertCount">0</span>
+        </div>
+        <div id="alertsList"></div>
+    </div>
+</div>
+
+<!-- Row 5: Quick Actions + Disk Usage + Monitoring (equal thirds) -->
+<div class="dashboard-row" style="grid-template-columns:repeat(3,1fr);">
     <div class="card">
         <div class="card-header">
             <span class="card-title">Quick Actions</span>
@@ -57,8 +82,14 @@
             <a href="{{ bp }}/data" class="btn btn-outline">Test Data</a>
         </div>
     </div>
-
-    <!-- Monitoring -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">Disk Usage</span>
+        </div>
+        <div id="diskUsage">
+            <p class="text-light">Loading...</p>
+        </div>
+    </div>
     <div class="card">
         <div class="card-header">
             <span class="card-title">Monitoring</span>
@@ -72,17 +103,63 @@
 
 {% block scripts %}
 <script>
-function formatSize(bytes) {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
-    return (bytes/(1024*1024)).toFixed(1) + ' MB';
+function trendArrow(current, previous, lowerIsBetter) {
+    if (previous === null || previous === undefined) return '';
+    const diff = current - previous;
+    if (Math.abs(diff) < 0.01) return '<span class="text-light">-</span>';
+    const better = lowerIsBetter ? diff < 0 : diff > 0;
+    const arrow = diff > 0 ? '&#9650;' : '&#9660;';
+    const color = better ? 'var(--color-success)' : 'var(--color-danger)';
+    return `<span style="color:${color};font-size:11px;">${arrow}</span>`;
+}
+
+function renderTrendChart(runs) {
+    const data = runs.filter(r => r.stats).reverse(); // oldest first for chart
+    if (data.length < 2) return '';
+    const values = data.map(r => r.stats.avg);
+    const labels = data.map(r => r.name);
+    const w = 600, h = 80;
+    const pad = {t: 10, r: 20, b: 20, l: 50};
+    const cw = w - pad.l - pad.r, ch = h - pad.t - pad.b;
+    const mn = Math.min(...values) * 0.9, mx = Math.max(...values) * 1.1;
+    const rng = mx - mn || 1;
+    const pts = values.map((v, i) => {
+        const x = pad.l + (i / (values.length - 1)) * cw;
+        const y = pad.t + (1 - (v - mn) / rng) * ch;
+        return [x, y];
+    });
+    const line = pts.map(p => p.join(',')).join(' ');
+    // Gradient fill area
+    const area = `${pts[0][0]},${h - pad.b} ${line} ${pts[pts.length-1][0]},${h - pad.b}`;
+    let svg = `<svg width="100%" viewBox="0 0 ${w} ${h}" role="img" aria-label="Response time trend chart">
+        <defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="var(--color-primary)" stop-opacity="0.2"/>
+            <stop offset="100%" stop-color="var(--color-primary)" stop-opacity="0"/>
+        </linearGradient></defs>
+        <polygon points="${area}" fill="url(#tg)"/>
+        <polyline points="${line}" fill="none" stroke="var(--color-primary)" stroke-width="2" stroke-linejoin="round"/>`;
+    pts.forEach((p, i) => {
+        svg += `<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="var(--color-surface)" stroke="var(--color-primary)" stroke-width="2">
+            <title>${escAttr(labels[i])}: ${values[i].toFixed(0)} ms</title></circle>`;
+    });
+    // Y-axis labels
+    svg += `<text x="${pad.l - 4}" y="${pad.t + 4}" text-anchor="end" fill="var(--color-text-light)" font-size="10">${Math.round(mx)}</text>`;
+    svg += `<text x="${pad.l - 4}" y="${h - pad.b}" text-anchor="end" fill="var(--color-text-light)" font-size="10">${Math.round(mn)}</text>`;
+    svg += `<text x="${w / 2}" y="${h - 2}" text-anchor="middle" fill="var(--color-text-light)" font-size="10">Avg Response Time (ms)</text>`;
+    svg += '</svg>';
+    return svg;
 }
 
 async function loadDashboard() {
-    const [statsData, lastRunData] = await Promise.all([
-        api('/api/dashboard/stats'),
-        api('/api/dashboard/last-run'),
+    const [statsData, lastRunData, recentData, diskData, alertsData, slaveHealthData] = await Promise.all([
+        api('/api/dashboard/stats').catch(() => null),
+        api('/api/dashboard/last-run').catch(() => null),
+        api('/api/dashboard/recent-runs').catch(() => null),
+        api('/api/dashboard/disk-usage').catch(() => null),
+        api('/api/dashboard/alerts').catch(() => null),
+        api('/api/dashboard/slave-health').catch(() => null),
     ]);
+    if (!statsData) return;
 
     document.getElementById('jmxCount').textContent = statsData.jmx_count;
     document.getElementById('resultsCount').textContent = statsData.results_count;
@@ -101,13 +178,23 @@ async function loadDashboard() {
     // Runner status
     const badge = document.getElementById('runnerBadge');
     const runnerInfo = document.getElementById('runnerInfo');
+    // Slave health dots (E2)
+    const slaves = slaveHealthData ? (slaveHealthData.slaves || []) : [];
+    const healthHtml = slaves.length > 0
+        ? `<tr><td class="text-light">Health</td><td>${slaves.map(s => {
+            const cls = s.status === 'up' ? 'up' : s.status === 'down' ? 'down' : 'unknown';
+            return `<span class="status-dot ${cls}" title="${escAttr(s.ip)}: ${s.status}" aria-label="${escAttr(s.ip)}: ${s.status}" role="img" style="margin-right:4px;"></span>`;
+          }).join('')}</td></tr>`
+        : '';
+
     if (statsData.runner_active) {
         badge.textContent = 'Running';
         badge.className = 'badge badge-warning';
         runnerInfo.innerHTML = `
             <table>
-                <tr><td class="text-light" style="width:100px;">Test Plan</td><td class="text-mono">${statsData.runner_label || 'Unknown'}</td></tr>
+                <tr><td class="text-light" style="width:100px;">Test Plan</td><td class="text-mono">${escAttr(statsData.runner_label || 'Unknown')}</td></tr>
                 <tr><td class="text-light">Slaves</td><td>${statsData.active_slaves_count} active</td></tr>
+                ${healthHtml}
             </table>
             <div style="margin-top:12px;">
                 <a href="${BASE_PATH}/plans" class="btn btn-outline btn-sm">View Logs</a>
@@ -115,26 +202,136 @@ async function loadDashboard() {
     } else {
         badge.textContent = 'Idle';
         badge.className = 'badge badge-info';
-        runnerInfo.innerHTML = '<p class="text-light">No test currently running.</p><a href="' + BASE_PATH + '/plans" class="btn btn-primary btn-sm" style="margin-top:8px;">Start a Test</a>';
+        runnerInfo.innerHTML = `<p class="text-light">No test currently running.</p>
+            ${healthHtml ? `<table style="margin:8px 0;">${healthHtml}</table>` : ''}
+            <a href="${BASE_PATH}/plans" class="btn btn-primary btn-sm" style="margin-top:8px;">Start a Test</a>`;
     }
 
-    // Last run
-    const lr = lastRunData.last_run;
+    // Last run — now with performance stats
+    const lr = lastRunData ? lastRunData.last_run : null;
     const el = document.getElementById('lastRun');
     if (!lr) {
         el.innerHTML = '<p class="text-light">No test runs yet.</p>';
     } else {
+        let statsHtml = '';
+        if (lr.stats) {
+            const s = lr.stats;
+            statsHtml = `
+                <div class="card-grid" style="grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; margin-bottom: 12px;">
+                    <div class="stat-card" style="padding:8px;">
+                        <div class="stat-value" style="font-size:18px;">${s.avg.toFixed(0)} ms</div>
+                        <div class="stat-label" style="font-size:11px;">Avg RT</div>
+                    </div>
+                    <div class="stat-card" style="padding:8px;">
+                        <div class="stat-value" style="font-size:18px;">${s.p95.toFixed(0)} ms</div>
+                        <div class="stat-label" style="font-size:11px;">P95</div>
+                    </div>
+                    <div class="stat-card" style="padding:8px;">
+                        <div class="stat-value" style="font-size:18px;${s.error_pct > 0 ? 'color:var(--color-danger);' : ''}">${s.error_pct}%</div>
+                        <div class="stat-label" style="font-size:11px;">Errors</div>
+                    </div>
+                    <div class="stat-card" style="padding:8px;">
+                        <div class="stat-value" style="font-size:18px;">${s.throughput.toFixed(1)}/s</div>
+                        <div class="stat-label" style="font-size:11px;">Throughput</div>
+                    </div>
+                </div>`;
+        }
         el.innerHTML = `
+            ${statsHtml}
             <table>
-                <tr><td class="text-light" style="width:100px;">Folder</td><td class="text-mono">${lr.name}</td></tr>
+                <tr><td class="text-light" style="width:100px;">Folder</td><td class="text-mono">${escAttr(lr.name)}</td></tr>
                 <tr><td class="text-light">Date</td><td>${new Date(lr.date).toLocaleString()}</td></tr>
                 <tr><td class="text-light">Size</td><td>${formatSize(lr.size)}</td></tr>
                 <tr><td class="text-light">Report</td><td>${lr.has_report ? '<span class="badge badge-success">Available</span>' : '<span class="badge badge-danger">N/A</span>'}</td></tr>
             </table>
             <div class="flex gap-8" style="margin-top:12px;">
-                ${lr.has_report ? '<a href="' + BASE_PATH + '/results" class="btn btn-outline btn-sm">View Report</a>' : ''}
-                ${lr.has_jtl ? '<a href="' + BASE_PATH + '/results" class="btn btn-outline btn-sm">View Stats</a>' : ''}
+                ${lr.has_report ? `<a href="${BASE_PATH}/results" class="btn btn-outline btn-sm">View Report</a>` : ''}
+                ${lr.has_jtl ? `<a href="${BASE_PATH}/results" class="btn btn-outline btn-sm">View Stats</a>` : ''}
             </div>`;
+    }
+
+    // Run History + Trend Chart (E1)
+    const histEl = document.getElementById('runHistory');
+    const trendEl = document.getElementById('trendChart');
+    const runs = recentData ? (recentData.runs || []) : [];
+    if (runs.length === 0) {
+        histEl.innerHTML = '<p class="text-light">No test runs yet.</p>';
+    } else {
+        // Render trend chart if we have 2+ runs with stats
+        const chartSvg = renderTrendChart(runs);
+        if (chartSvg) {
+            trendEl.innerHTML = chartSvg;
+            trendEl.style.display = '';
+        }
+        let html = `<div style="overflow-x:auto;"><table style="width:100%;">
+            <thead><tr>
+                <th>Run</th><th>Date</th><th>Samples</th>
+                <th>Avg RT</th><th>P95</th><th>Error %</th><th>Throughput</th>
+            </tr></thead><tbody>`;
+        for (let i = 0; i < runs.length; i++) {
+            const r = runs[i];
+            const prev = (i + 1 < runs.length && runs[i + 1].stats) ? runs[i + 1].stats : null;
+            if (r.stats) {
+                const s = r.stats;
+                html += `<tr>
+                    <td class="text-mono">${escAttr(r.name)}</td>
+                    <td>${new Date(r.date).toLocaleDateString()}</td>
+                    <td>${s.total_samples.toLocaleString()}</td>
+                    <td>${s.avg.toFixed(0)} ms ${trendArrow(s.avg, prev?.avg, true)}</td>
+                    <td>${s.p95.toFixed(0)} ms ${trendArrow(s.p95, prev?.p95, true)}</td>
+                    <td style="${s.error_pct > 0 ? 'color:var(--color-danger);' : ''}">${s.error_pct}% ${trendArrow(s.error_pct, prev?.error_pct, true)}</td>
+                    <td>${s.throughput.toFixed(1)}/s ${trendArrow(s.throughput, prev?.throughput, false)}</td>
+                </tr>`;
+            } else {
+                html += `<tr>
+                    <td class="text-mono">${escAttr(r.name)}</td>
+                    <td>${new Date(r.date).toLocaleDateString()}</td>
+                    <td colspan="5" class="text-light">No JTL data</td>
+                </tr>`;
+            }
+        }
+        html += '</tbody></table></div>';
+        histEl.innerHTML = html;
+    }
+
+    // Alerts (E3)
+    const alertItems = alertsData ? (alertsData.alerts || []) : [];
+    const alertsRow = document.getElementById('alertsRow');
+    if (alertItems.length > 0) {
+        alertsRow.style.display = '';
+        const countBadge = document.getElementById('alertCount');
+        const hasError = alertItems.some(a => a.level === 'danger');
+        countBadge.textContent = alertItems.length;
+        countBadge.className = `badge badge-${hasError ? 'danger' : 'warning'}`;
+        let aHtml = '';
+        alertItems.forEach(a => {
+            const icon = a.level === 'danger' ? '&#9888;' : a.level === 'warning' ? '&#9888;' : '&#8505;';
+            aHtml += `<div class="alert-item alert-${a.level}">
+                <span class="alert-icon">${icon}</span>
+                <div>
+                    <div class="alert-msg">${escAttr(a.message)}</div>
+                    ${a.detail ? `<div class="alert-detail text-sm text-light">${escAttr(a.detail)}</div>` : ''}
+                </div>
+            </div>`;
+        });
+        document.getElementById('alertsList').innerHTML = aHtml;
+    }
+
+    // Disk Usage
+    const diskEl = document.getElementById('diskUsage');
+    if (diskData) {
+        const isWarning = diskData.total_bytes > 1024 * 1024 * 1024; // > 1 GB
+        diskEl.innerHTML = `
+            <div style="text-align:center;padding:8px 0;">
+                <div style="font-size:24px;font-weight:700;${isWarning ? 'color:var(--color-warning);' : ''}">${formatSize(diskData.total_bytes)}</div>
+                <div class="text-sm text-light" style="margin-top:4px;">
+                    ${diskData.folder_count} result${diskData.folder_count !== 1 ? 's' : ''} &middot;
+                    ${diskData.file_count.toLocaleString()} files
+                </div>
+                ${isWarning ? '<div class="text-sm" style="color:var(--color-warning);margin-top:8px;">Results directory exceeds 1 GB</div>' : ''}
+            </div>`;
+    } else {
+        diskEl.innerHTML = '<p class="text-light">Could not load disk usage.</p>';
     }
 
     // Monitoring cards
@@ -144,11 +341,11 @@ async function loadDashboard() {
     let monHtml = '';
     monHtml += `<div style="flex:1;min-width:140px;padding:12px;border:1px solid var(--color-border);border-radius:8px;${grafana ? '' : 'opacity:0.5;'}">
         <div class="text-sm" style="font-weight:600;">Grafana</div>
-        ${grafana ? `<a href="${grafana}" target="_blank" class="text-sm" style="color:var(--color-primary);">Open Dashboard</a>` : '<span class="text-sm text-light">Not configured</span>'}
+        ${grafana ? `<a href="${escAttr(grafana)}" target="_blank" class="text-sm" style="color:var(--color-primary);">Open Dashboard</a>` : '<span class="text-sm text-light">Not configured</span>'}
     </div>`;
     monHtml += `<div style="flex:1;min-width:140px;padding:12px;border:1px solid var(--color-border);border-radius:8px;${influxdb ? '' : 'opacity:0.5;'}">
         <div class="text-sm" style="font-weight:600;">InfluxDB</div>
-        ${influxdb ? `<a href="${influxdb}" target="_blank" class="text-sm" style="color:var(--color-primary);">Open UI</a>` : '<span class="text-sm text-light">Not configured</span>'}
+        ${influxdb ? `<a href="${escAttr(influxdb)}" target="_blank" class="text-sm" style="color:var(--color-primary);">Open UI</a>` : '<span class="text-sm text-light">Not configured</span>'}
     </div>`;
     mc.innerHTML = monHtml;
 }

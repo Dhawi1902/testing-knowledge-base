@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
+from services.auth import check_access as _check_access
 from services.config_parser import (
     load_project_config,
     save_project_config,
@@ -25,13 +26,6 @@ PROJECT_JSON = Path(__file__).resolve().parent.parent / "project.json"
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 router = APIRouter()
-
-
-def _check_access(request: Request):
-    """Return 403 JSONResponse if viewer, None if allowed."""
-    if getattr(request.state, "access_level", "viewer") == "viewer":
-        return JSONResponse(status_code=403, content={"error": "Access denied — token required"})
-    return None
 
 
 @router.get("/slaves")
@@ -60,6 +54,9 @@ class PropertiesUpdate(BaseModel):
 
 @router.put("/api/config/properties")
 async def save_properties(request: Request, data: PropertiesUpdate):
+    denied = _check_access(request)
+    if denied:
+        return denied
     project = request.app.state.project
     props_path = resolve_path(project, "config_properties")
     write_config_properties(props_path, data.properties)
@@ -141,44 +138,45 @@ async def detect_jmeter(request: Request):
 
 # --- Slave Management ---
 
-from services.slaves import check_all_slaves, start_all_servers, stop_all_servers  # noqa: E402
+from services.slaves import (  # noqa: E402
+    check_all_slaves, start_all_servers, stop_all_servers,
+    start_jmeter_server, stop_jmeter_server, build_ssh_configs,
+)
+
+# Cache last slave status check for dashboard health dots (E2)
+_last_slave_status: list[dict] = []
 
 
-def _build_ssh_configs(slaves: list[dict], vm_config: dict) -> dict[str, dict]:
-    """Build per-slave SSH configs by merging global defaults with per-slave overrides.
-    Returns {ip: merged_ssh_config}.
+def get_cached_slave_status() -> list[dict]:
+    """Return results from the most recent slave status check."""
+    return list(_last_slave_status)
+
+
+def _get_slaves(project: dict) -> tuple[list[dict], list[str], dict[str, dict]]:
+    """Load slaves, active IPs, and SSH configs from project config.
+    Returns (slaves, active_ips, ssh_configs).
     """
-    global_ssh = vm_config.get("ssh_config", {})
-    global_scripts = vm_config.get("jmeter_scripts", {})
-    configs = {}
-    for s in slaves:
-        ip = s["ip"]
-        overrides = s.get("overrides", {})
-        merged = {**global_ssh, "jmeter_scripts": global_scripts}
-        if overrides.get("user"):
-            merged["user"] = overrides["user"]
-        if overrides.get("password"):
-            merged["password"] = overrides["password"]
-        if overrides.get("dest_path"):
-            merged["dest_path"] = overrides["dest_path"]
-        configs[ip] = merged
-    return configs
+    project_root = get_project_root(project)
+    slaves_path = project_root / project["paths"].get("slaves_file", "slaves.txt")
+    slaves = read_slaves(slaves_path)
+    active_ips = [s["ip"] for s in slaves if s.get("enabled", True)]
+    config_dir = resolve_path(project, "config_dir")
+    vm_config = read_json_config(config_dir / "vm_config.json")
+    ssh_configs = build_ssh_configs(slaves, vm_config)
+    return slaves, active_ips, ssh_configs
 
 
 @router.get("/api/slaves/status")
 async def api_slave_status(request: Request):
+    denied = _check_access(request)
+    if denied:
+        return denied
     project = request.app.state.project
-    project_root = get_project_root(project)
-    slaves_path = project_root / project["paths"].get("slaves_file", "slaves.txt")
-    slaves = read_slaves(slaves_path)
+    slaves, active_ips, ssh_configs = _get_slaves(project)
     if not slaves:
         return {"slaves": []}
-    active_ips = [s["ip"] for s in slaves if s.get("enabled", True)]
     if not active_ips:
         return {"slaves": [{"ip": s["ip"], "status": "disabled", "enabled": s.get("enabled", True)} for s in slaves]}
-    config_dir = resolve_path(project, "config_dir")
-    vm_config = read_json_config(config_dir / "vm_config.json")
-    ssh_configs = _build_ssh_configs(slaves, vm_config)
     results = await check_all_slaves(active_ips, ssh_configs)
     # Merge enabled flag and include disabled slaves
     result_map = {r["ip"]: r for r in results}
@@ -190,6 +188,9 @@ async def api_slave_status(request: Request):
             merged.append(entry)
         else:
             merged.append({"ip": s["ip"], "status": "disabled", "enabled": s.get("enabled", True)})
+    # Cache for dashboard health dots
+    global _last_slave_status
+    _last_slave_status = merged
     return {"slaves": merged}
 
 
@@ -199,16 +200,10 @@ async def api_start_servers(request: Request):
     if denied:
         return denied
     project = request.app.state.project
-    project_root = get_project_root(project)
-    slaves_path = project_root / project["paths"].get("slaves_file", "slaves.txt")
-    slaves = read_slaves(slaves_path)
-    ips = [s["ip"] for s in slaves if s.get("enabled", True)]
-    if not ips:
+    slaves, active_ips, ssh_configs = _get_slaves(project)
+    if not active_ips:
         return {"results": []}
-    config_dir = resolve_path(project, "config_dir")
-    vm_config = read_json_config(config_dir / "vm_config.json")
-    ssh_configs = _build_ssh_configs(slaves, vm_config)
-    results = await start_all_servers(ips, ssh_configs)
+    results = await start_all_servers(active_ips, ssh_configs)
     return {"results": results}
 
 
@@ -218,14 +213,111 @@ async def api_stop_servers(request: Request):
     if denied:
         return denied
     project = request.app.state.project
-    project_root = get_project_root(project)
-    slaves_path = project_root / project["paths"].get("slaves_file", "slaves.txt")
-    slaves = read_slaves(slaves_path)
-    ips = [s["ip"] for s in slaves if s.get("enabled", True)]
-    if not ips:
+    slaves, active_ips, ssh_configs = _get_slaves(project)
+    if not active_ips:
         return {"results": []}
-    config_dir = resolve_path(project, "config_dir")
-    vm_config = read_json_config(config_dir / "vm_config.json")
-    ssh_configs = _build_ssh_configs(slaves, vm_config)
-    results = await stop_all_servers(ips, ssh_configs)
+    results = await stop_all_servers(active_ips, ssh_configs)
     return {"results": results}
+
+
+@router.post("/api/slaves/{ip}/start")
+async def api_start_single_slave(request: Request, ip: str):
+    """Start JMeter server on a single slave (F8)."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    project = request.app.state.project
+    slaves, active_ips, ssh_configs = _get_slaves(project)
+    if ip not in ssh_configs:
+        return JSONResponse(status_code=404, content={"error": f"Slave {ip} not found"})
+    result = await start_jmeter_server(ip, ssh_configs[ip])
+    return {"result": result}
+
+
+@router.post("/api/slaves/{ip}/stop")
+async def api_stop_single_slave(request: Request, ip: str):
+    """Stop JMeter server on a single slave (F8)."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    project = request.app.state.project
+    slaves, active_ips, ssh_configs = _get_slaves(project)
+    if ip not in ssh_configs:
+        return JSONResponse(status_code=404, content={"error": f"Slave {ip} not found"})
+    result = await stop_jmeter_server(ip, ssh_configs[ip])
+    return {"result": result}
+
+
+# --- JMeter Properties Management (F2/F3/F4) ---
+
+from services.slaves import distribute_files  # noqa: E402
+
+PROPS_FILE = Path(__file__).resolve().parent.parent / "jmeter_properties.json"
+
+
+def _read_jmeter_properties() -> list[dict]:
+    """Read user-defined JMeter properties from jmeter_properties.json."""
+    if not PROPS_FILE.exists():
+        return []
+    try:
+        import json as _json
+        return _json.loads(PROPS_FILE.read_text(encoding="utf-8"))
+    except Exception:
+        return []
+
+
+def _write_jmeter_properties(props: list[dict]) -> None:
+    import json as _json
+    PROPS_FILE.write_text(_json.dumps(props, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+@router.get("/api/config/jmeter-properties")
+async def api_get_jmeter_properties(request: Request):
+    """Return user-defined JMeter properties (F2)."""
+    return {"properties": _read_jmeter_properties()}
+
+
+@router.put("/api/config/jmeter-properties")
+async def api_save_jmeter_properties(request: Request):
+    """Save user-defined JMeter properties (F2)."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    body = await request.json()
+    props = body.get("properties", [])
+    _write_jmeter_properties(props)
+    return {"ok": True}
+
+
+@router.post("/api/config/push-properties")
+async def api_push_properties(request: Request):
+    """Generate jmeter.properties from defined properties and push to all slaves via SCP (F3)."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    project = request.app.state.project
+    slaves, active_ips, ssh_configs = _get_slaves(project)
+    if not active_ips:
+        return {"results": [], "error": "No active slaves"}
+
+    # Generate properties file content
+    props = _read_jmeter_properties()
+    if not props:
+        return {"results": [], "error": "No properties defined"}
+
+    # Write temp properties file
+    import tempfile
+    content = "# Auto-generated JMeter properties\n"
+    for p in props:
+        if p.get("key") and p.get("enabled", True):
+            content += f"{p['key']}={p.get('value', '')}\n"
+
+    tmp = Path(tempfile.mktemp(suffix=".properties"))
+    tmp.write_text(content, encoding="utf-8")
+
+    try:
+        items = [{"file_path": tmp, "mode": "copy"}]
+        results = await distribute_files(active_ips, ssh_configs, items, tmp.parent)
+        return {"results": results}
+    finally:
+        tmp.unlink(missing_ok=True)

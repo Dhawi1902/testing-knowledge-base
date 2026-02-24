@@ -1,4 +1,5 @@
 import json
+import re
 import time
 from pathlib import Path
 
@@ -13,6 +14,7 @@ from services.jmeter import (
     build_jmeter_command,
     get_command_preview,
 )
+from services.auth import check_access as _check_access, safe_join
 from services.config_parser import get_project_root, resolve_path, read_config_properties
 from services.process_manager import jmeter_process_manager
 
@@ -21,13 +23,6 @@ PRESETS_FILE = Path(__file__).resolve().parent.parent / "presets.json"
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 router = APIRouter()
-
-
-def _check_access(request: Request):
-    """Return 403 JSONResponse if viewer, None if allowed."""
-    if getattr(request.state, "access_level", "viewer") == "viewer":
-        return JSONResponse(status_code=403, content={"error": "Access denied — token required"})
-    return None
 
 
 def _load_presets() -> dict:
@@ -60,7 +55,9 @@ async def api_list_plans(request: Request):
 async def api_plan_params(request: Request, filename: str):
     project = request.app.state.project
     jmx_dir = resolve_path(project, "jmx_dir")
-    jmx_path = jmx_dir / filename
+    jmx_path = safe_join(jmx_dir, filename)
+    if jmx_path is None:
+        return JSONResponse(status_code=403, content={"error": "Access denied"})
     if not jmx_path.exists():
         return JSONResponse(status_code=404, content={"error": "JMX file not found"})
     params = extract_jmx_params(jmx_path)
@@ -73,10 +70,10 @@ async def api_open_plan(request: Request, filename: str):
         return JSONResponse(status_code=403, content={"error": "Edit is only available from localhost"})
     project = request.app.state.project
     jmx_dir = resolve_path(project, "jmx_dir")
-    jmx_path = jmx_dir / filename
-    jmeter_path = project.get("jmeter_path", "")
-    if not jmeter_path:
-        return JSONResponse(status_code=400, content={"error": "JMeter path not configured"})
+    jmx_path = safe_join(jmx_dir, filename)
+    if jmx_path is None:
+        return JSONResponse(status_code=403, content={"error": "Access denied"})
+    jmeter_path = project.get("jmeter_path", "") or "jmeter"
     ok = open_in_jmeter(jmeter_path, str(jmx_path))
     if not ok:
         return JSONResponse(status_code=500, content={"error": "Failed to launch JMeter"})
@@ -104,12 +101,17 @@ async def api_start_test(request: Request):
     project = request.app.state.project
     filename = body.get("filename", "")
     overrides = body.get("overrides", {})
-    filter_usernames = body.get("filter_usernames", False)
-    filter_label_pattern = body.get("filter_label_pattern", "")
+    filter_sub_results = body.get("filter_sub_results", False)
+    label_pattern = body.get("label_pattern", "")
+    if label_pattern:
+        try:
+            re.compile(label_pattern)
+        except re.error as e:
+            return JSONResponse(status_code=400, content={"error": f"Invalid regex pattern: {e}"})
     cmd, result_dir, post_commands = build_jmeter_command(
         project, filename, overrides,
-        filter_usernames=filter_usernames,
-        filter_label_pattern=filter_label_pattern,
+        filter_sub_results=filter_sub_results,
+        label_pattern=label_pattern,
     )
     project_root = get_project_root(project)
     run_info = {
@@ -117,8 +119,8 @@ async def api_start_test(request: Request):
         "overrides": overrides,
         "command": " ".join(cmd),
         "result_dir": result_dir,
-        "filter_usernames": filter_usernames,
-        "filter_label_pattern": filter_label_pattern,
+        "filter_sub_results": filter_sub_results,
+        "label_pattern": label_pattern,
         "started_at": time.time(),
     }
     jmeter_process_manager.start(cmd, cwd=project_root, label=filename,
@@ -183,8 +185,8 @@ async def api_filter_config(request: Request):
     props_path = resolve_path(project, "config_properties")
     props = read_config_properties(props_path)
     return {
-        "filter_usernames": props.get("filter_usernames", "false").lower() == "true",
-        "filter_label_pattern": props.get("filter_label_pattern", ""),
+        "filter_sub_results": props.get("filter_sub_results", "false").lower() == "true",
+        "label_pattern": props.get("label_pattern", ""),
     }
 
 
@@ -222,13 +224,31 @@ async def api_delete_preset(request: Request, name: str):
     return {"ok": True}
 
 
-# --- Upload / Download ---
+# --- Delete / Upload / Download ---
+
+@router.delete("/api/plans/{filename}")
+async def api_delete_plan(request: Request, filename: str):
+    denied = _check_access(request)
+    if denied:
+        return denied
+    project = request.app.state.project
+    jmx_dir = resolve_path(project, "jmx_dir")
+    jmx_path = safe_join(jmx_dir, filename)
+    if jmx_path is None:
+        return JSONResponse(status_code=403, content={"error": "Access denied"})
+    if not jmx_path.exists() or not jmx_path.suffix == ".jmx":
+        return JSONResponse(status_code=404, content={"error": "File not found"})
+    jmx_path.unlink()
+    return {"ok": True}
+
 
 @router.get("/api/plans/{filename}/download")
 async def api_download_plan(request: Request, filename: str):
     project = request.app.state.project
     jmx_dir = resolve_path(project, "jmx_dir")
-    jmx_path = jmx_dir / filename
+    jmx_path = safe_join(jmx_dir, filename)
+    if jmx_path is None:
+        return JSONResponse(status_code=403, content={"error": "Access denied"})
     if not jmx_path.exists() or not jmx_path.suffix == ".jmx":
         return JSONResponse(status_code=404, content={"error": "File not found"})
     return FileResponse(jmx_path, filename=filename, media_type="application/xml")
@@ -244,9 +264,29 @@ async def api_upload_plan(request: Request, file: UploadFile):
     project = request.app.state.project
     jmx_dir = resolve_path(project, "jmx_dir")
     jmx_dir.mkdir(parents=True, exist_ok=True)
-    dest = jmx_dir / file.filename
+    dest = safe_join(jmx_dir, file.filename)
+    if dest is None:
+        return JSONResponse(status_code=403, content={"error": "Invalid filename"})
     if dest.exists():
         return JSONResponse(status_code=409, content={"error": f"{file.filename} already exists"})
-    content = await file.read()
-    dest.write_bytes(content)
+
+    MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50 MB
+    CHUNK_SIZE = 1024 * 1024  # 1 MB
+    total_size = 0
+    try:
+        with open(dest, "wb") as f:
+            while True:
+                chunk = await file.read(CHUNK_SIZE)
+                if not chunk:
+                    break
+                total_size += len(chunk)
+                if total_size > MAX_UPLOAD_SIZE:
+                    f.close()
+                    dest.unlink(missing_ok=True)
+                    return JSONResponse(status_code=413, content={"error": f"File too large (>{MAX_UPLOAD_SIZE // (1024*1024)} MB). Maximum is 50 MB."})
+                f.write(chunk)
+    except Exception:
+        dest.unlink(missing_ok=True)
+        return JSONResponse(status_code=500, content={"error": "Upload failed"})
+
     return {"ok": True, "filename": file.filename}

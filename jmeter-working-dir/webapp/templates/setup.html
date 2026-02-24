@@ -39,7 +39,7 @@
             </div>
         </div>
 
-        <h3 class="text-sm mb-16" style="font-weight:600;margin-top:20px;">Detected Paths</h3>
+        <h3 class="text-sm mb-16 section-title" style="margin-top:20px;">Detected Paths</h3>
         <div id="detectedPaths">
             {% for key, value in project.paths.items() %}
             <div class="detected-item">
@@ -53,6 +53,24 @@
             {% endfor %}
         </div>
 
+        {% if setup_token %}
+        <div style="margin-top:20px;padding:16px;background:var(--color-surface);border:2px solid var(--color-warning);border-radius:8px;">
+            <h3 style="font-size:0.95rem;margin:0 0 8px;color:var(--color-warning);">Access Token Generated</h3>
+            <p class="text-light" style="font-size:0.85rem;margin:0 0 12px;">
+                This token is required for remote access. Copy it now — it will not be shown again.
+            </p>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <input class="form-input form-input-mono" id="generatedToken"
+                    value="{{ setup_token }}" readonly
+                    style="flex:1;font-size:0.9rem;background:var(--color-bg);">
+                <button class="btn btn-outline btn-sm" onclick="copyToken()">Copy</button>
+            </div>
+            <p class="text-light" style="font-size:0.8rem;margin:8px 0 0;color:var(--color-warning);">
+                Remote users need this token to access the dashboard. Localhost always has full access.
+            </p>
+        </div>
+        {% endif %}
+
         <div style="margin-top: 24px; text-align: center;">
             <button class="btn btn-primary" onclick="completeSetup()" style="min-width:200px;">Save & Continue</button>
         </div>
@@ -65,11 +83,23 @@
             const data = await api('/api/config/detect-jmeter', { method: 'POST' });
             document.getElementById('setupJmeter').value = data.path;
             showToast('JMeter found', 'success');
-        } catch(e) {}
+        } catch(e) { console.error(e); }
+    }
+
+    function copyToken() {
+        const input = document.getElementById('generatedToken');
+        if (input) {
+            navigator.clipboard.writeText(input.value).then(() => {
+                showToast('Token copied to clipboard', 'success');
+            }).catch(() => {
+                input.select();
+                document.execCommand('copy');
+                showToast('Token copied', 'success');
+            });
+        }
     }
 
     async function completeSetup() {
-        // Read current project config
         const resp = await api('/api/config/project');
         const config = resp.config;
         config.name = document.getElementById('setupName').value;

@@ -3,52 +3,6 @@
 {% block title %}Test Data{% endblock %}
 {% block page_title %}Test Data{% endblock %}
 
-{% block head %}
-<style>
-/* Sidebar preset list */
-.csv-builder-layout { display:flex; gap:0; min-height:300px; }
-.preset-sidebar { width:180px; flex-shrink:0; border-right:1px solid var(--color-border); padding:10px 0; display:flex; flex-direction:column; }
-.preset-sidebar .sidebar-label { font-size:10px; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-light); padding:0 12px; margin-bottom:4px; }
-.preset-sidebar .sidebar-sep { font-size:10px; color:var(--color-text-light); padding:6px 12px 2px; margin-top:4px; }
-.preset-item { display:flex; align-items:center; padding:5px 12px; cursor:pointer; font-size:13px; border:none; background:none; width:100%; text-align:left; color:var(--color-text); transition:background 0.1s; }
-.preset-item:hover { background:var(--color-bg-secondary); }
-.preset-item.active { background:var(--color-primary); color:#fff; border-radius:0; }
-.preset-item .preset-del { margin-left:auto; opacity:0; font-size:14px; padding:0 2px; background:none; border:none; color:inherit; cursor:pointer; }
-.preset-item:hover .preset-del { opacity:0.5; }
-.preset-item .preset-del:hover { opacity:1; }
-.builder-main { flex:1; padding:12px 16px; min-width:0; display:flex; flex-direction:column; }
-.builder-main .builder-actions { margin-top:16px; display:flex; gap:8px; flex-wrap:wrap; }
-/* Column cards */
-.builder-col { border:1px solid var(--color-border); border-radius:6px; padding:10px 12px; margin-bottom:6px; max-width:520px; }
-.builder-col .form-input { padding:6px 8px; font-size:13px; min-width:0; }
-.builder-col-header { display:flex; gap:6px; align-items:center; }
-.builder-col-header .col-name { flex:1; min-width:0; }
-.builder-col-header .col-type { width:140px; flex-shrink:0; }
-.builder-col-body { margin-top:8px; }
-.seq-range { display:flex; gap:6px; align-items:center; margin-bottom:4px; }
-.seq-range-header { font-size:11px; color:var(--color-text-light); margin-bottom:2px; }
-.seq-range-header span { display:inline-block; }
-.type-help { color:var(--color-text-light); font-size:12px; margin-top:4px; }
-.col-remove { background:none; border:none; color:var(--color-text-light); cursor:pointer; font-size:18px; line-height:1; padding:0 2px; opacity:0.5; transition:opacity 0.15s, color 0.15s; flex-shrink:0; }
-.col-remove:hover { opacity:1; color:#ef4444; }
-/* Flex-fill input classes */
-.fx-prefix { width:70px; flex-shrink:0; }
-.fx-grow { flex:1; }
-.fx-pad { width:55px; flex-shrink:0; }
-.fx-count { width:90px; flex-shrink:0; }
-/* Distribute items */
-.dist-item { display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid var(--color-border); flex-wrap:wrap; }
-.dist-item:last-child { border-bottom:none; }
-.dist-item .dist-split-opts { display:inline-flex; gap:6px; align-items:center; }
-.dist-item .dist-split-opts .form-input { padding:4px 6px; font-size:12px; width:70px; }
-.dist-item .dist-remove { background:none; border:none; color:var(--color-text-light); cursor:pointer; font-size:15px; padding:0 2px; opacity:0.3; transition:opacity 0.15s, color 0.15s; }
-.dist-item .dist-remove:hover { opacity:1; color:#ef4444; }
-/* Rename trigger */
-.rename-trigger { cursor:pointer; border-bottom:1px dashed var(--color-text-light); padding-bottom:1px; }
-.rename-trigger:hover { color:var(--color-primary); border-color:var(--color-primary); }
-</style>
-{% endblock %}
-
 {% block content %}
 <!-- CSV Files -->
 <div class="card mb-16">
@@ -154,11 +108,11 @@
 </div>
 
 <!-- Preview Modal -->
-<div class="modal-overlay" id="previewModal">
+<div class="modal-overlay" id="previewModal" role="dialog" aria-modal="true" aria-labelledby="previewTitle">
     <div class="modal modal-lg">
         <div class="modal-header">
             <span class="modal-title" id="previewTitle">CSV Preview</span>
-            <button class="modal-close" onclick="closeModal('previewModal')">&times;</button>
+            <button class="modal-close" onclick="closeModal('previewModal')" aria-label="Close">&times;</button>
         </div>
         <div id="previewContent" class="table-wrapper" style="max-height:60vh;overflow:auto;"></div>
     </div>
@@ -167,13 +121,6 @@
 
 {% block scripts %}
 <script>
-function formatSize(bytes) {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
-    return (bytes/(1024*1024)).toFixed(1) + ' MB';
-}
-function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-
 const ACCESS_LEVEL = '{{ access_level | default("viewer") }}';
 
 const COL_TYPES = [
@@ -452,7 +399,7 @@ async function buildCsv() {
         const data = await api('/api/data/build', { method: 'POST', body });
         showToast(`Generated ${data.rows.toLocaleString()} rows \u2192 ${data.filename}`, 'success');
         loadFiles();
-    } catch(e) {} finally {
+    } catch(e) { console.error(e); } finally {
         btn.disabled = false;
         btn.textContent = 'Generate';
     }
@@ -556,9 +503,9 @@ function renderPresetList() {
         for (const [key, p] of Object.entries(custom)) {
             const fullKey = 'custom:' + key;
             const cls = fullKey === activePresetKey ? ' active' : '';
-            html += `<button class="preset-item${cls}" onclick="selectPreset('custom:${escHtml(key)}')">
+            html += `<button class="preset-item${cls}" onclick="selectPreset('custom:${escAttr(key)}')">
                 <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(p.label)}</span>
-                <span class="preset-del" onclick="event.stopPropagation();deleteCustomPreset('${escHtml(key)}')" title="Delete">&times;</span>
+                <span class="preset-del" onclick="event.stopPropagation();deleteCustomPreset('${escAttr(key)}')" title="Delete">&times;</span>
             </button>`;
         }
     }
@@ -888,22 +835,23 @@ async function loadFiles() {
         const colColors = ['#3b82f6','#8b5cf6','#06b6d4','#f59e0b','#ef4444','#10b981','#ec4899','#6366f1'];
         const canEdit = ACCESS_LEVEL !== 'viewer';
         tbody.innerHTML = mainFiles.map(f => {
+            const aFn = escAttr(f.filename);
             const eFn = escHtml(f.filename);
             const nameCell = canEdit
-                ? `<td class="text-mono text-sm"><span class="rename-trigger" onclick="startRename(this, '${eFn}')" title="Click to rename">${eFn}</span></td>`
+                ? `<td class="text-mono text-sm"><span class="rename-trigger" onclick="startRename(this, '${aFn}')" title="Click to rename">${eFn}</span></td>`
                 : `<td class="text-mono text-sm">${eFn}</td>`;
             const delBtn = canEdit
-                ? `<button class="btn btn-outline btn-sm" style="color:var(--color-error,#ef4444);border-color:var(--color-error,#ef4444);" onclick="deleteFile('${eFn}')">Delete</button>`
+                ? `<button class="btn btn-outline btn-sm" style="color:var(--color-error,#ef4444);border-color:var(--color-error,#ef4444);" onclick="deleteFile('${aFn}')">Delete</button>`
                 : '';
             return `<tr>
             ${nameCell}
             <td class="text-sm">${(f.columns || []).map((c, i) => '<code style="padding:1px 6px;border-radius:3px;background:' + colColors[i % colColors.length] + '22;color:' + colColors[i % colColors.length] + ';border:1px solid ' + colColors[i % colColors.length] + '33;white-space:nowrap;display:inline-block;margin:1px 2px;">' + escHtml(c) + '</code>').join('')}</td>
             <td>${f.rows >= 0 ? f.rows.toLocaleString() : '-'}</td>
             <td>${formatSize(f.size)}</td>
-            <td><span style="display:inline-flex;gap:4px;"><button class="btn btn-outline btn-sm" onclick="previewFile('${eFn}')">Preview</button><a class="btn btn-outline btn-sm" href="${BASE_PATH}/api/data/download/${encodeURIComponent(f.filename)}" download style="text-decoration:none;">Download</a>${delBtn}</span></td>
+            <td><span style="display:inline-flex;gap:4px;"><button class="btn btn-outline btn-sm" onclick="previewFile('${aFn}')">Preview</button><a class="btn btn-outline btn-sm" href="${BASE_PATH}/api/data/download/${encodeURIComponent(f.filename)}" download style="text-decoration:none;">Download</a>${delBtn}</span></td>
         </tr>`;
         }).join('');
-    } catch(e) {}
+    } catch(e) { console.error(e); }
 }
 
 
@@ -912,8 +860,8 @@ async function loadFiles() {
 function startRename(el, oldName) {
     const td = el.parentElement;
     const base = oldName.replace(/\.csv$/i, '');
-    td.innerHTML = `<form onsubmit="return doRename(this, '${escHtml(oldName)}')" style="display:inline-flex;gap:4px;align-items:center;">
-        <input type="text" class="form-input text-mono" value="${escHtml(base)}" style="padding:2px 6px;font-size:13px;width:180px;" autofocus>
+    td.innerHTML = `<form onsubmit="return doRename(this, '${escAttr(oldName)}')" style="display:inline-flex;gap:4px;align-items:center;">
+        <input type="text" class="form-input text-mono" value="${escAttr(base)}" style="padding:2px 6px;font-size:13px;width:180px;" autofocus>
         <span class="text-mono text-sm" style="color:var(--color-text-light);">.csv</span>
         <button type="submit" class="btn btn-outline btn-sm">OK</button>
     </form>`;
@@ -963,7 +911,7 @@ async function deleteFile(filename) {
         await api(`/api/data/delete/${encodeURIComponent(filename)}`, { method: 'DELETE' });
         showToast(`Deleted ${filename}`, 'success');
         loadFiles();
-    } catch(e) {}
+    } catch(e) { console.error(e); }
 }
 
 
@@ -998,9 +946,9 @@ async function previewFile(filename, rows = 50) {
             const nextBatch = Math.min(remaining, 500);
             html += `<div style="margin-top:8px;display:flex;align-items:center;gap:12px;">`;
             html += `<span class="text-light text-sm">Showing ${data.total_preview.toLocaleString()} of ${data.total_rows.toLocaleString()} rows</span>`;
-            html += `<button class="btn btn-outline btn-sm" onclick="previewFile('${escHtml(filename)}', ${data.total_preview + nextBatch})">Load ${nextBatch.toLocaleString()} more</button>`;
+            html += `<button class="btn btn-outline btn-sm" onclick="previewFile('${escAttr(filename)}', ${data.total_preview + nextBatch})">Load ${nextBatch.toLocaleString()} more</button>`;
             if (data.total_rows <= 10000) {
-                html += `<button class="btn btn-outline btn-sm" onclick="previewFile('${escHtml(filename)}', ${data.total_rows})">Load all</button>`;
+                html += `<button class="btn btn-outline btn-sm" onclick="previewFile('${escAttr(filename)}', ${data.total_rows})">Load all</button>`;
             }
             html += `</div>`;
         }

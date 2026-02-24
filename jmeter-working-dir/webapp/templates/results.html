@@ -8,7 +8,9 @@
     <div class="card-header">
         <span class="card-title">Test Results</span>
         <div class="flex gap-8">
+            <button class="btn btn-sm hidden" id="stopRegenBtn" onclick="stopRegenerate()" style="color:var(--color-danger);border:1px solid var(--color-danger);">Stop Regeneration</button>
             <button class="btn btn-outline btn-sm" id="downloadBundleBtn" onclick="downloadBundle()" disabled>Download Selected</button>
+            <button class="btn btn-outline btn-sm" id="bulkRegenBtn" onclick="bulkRegenerate()" disabled style="display:none;">Regenerate Selected</button>
             <button class="btn btn-outline btn-sm" id="compareBtn" onclick="compareSelected()" disabled>Compare Selected</button>
             <button class="btn btn-outline btn-sm" onclick="loadResults()">Refresh</button>
         </div>
@@ -22,12 +24,12 @@
             <thead>
                 <tr>
                     <th style="width:30px;"><label class="check"><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"><span class="check-box"></span></label></th>
-                    <th>Folder</th>
-                    <th>Date</th>
-                    <th>Size</th>
-                    <th>Report</th>
-                    <th>JTL</th>
-                    <th>Actions</th>
+                    <th class="sortable" data-sort="name" onclick="sortBy('name')" onkeydown="if(event.key==='Enter')sortBy('name')" tabindex="0" scope="col" aria-sort="none">Folder</th>
+                    <th class="sortable" data-sort="date" onclick="sortBy('date')" onkeydown="if(event.key==='Enter')sortBy('date')" tabindex="0" scope="col" aria-sort="none">Date</th>
+                    <th class="sortable" data-sort="size" onclick="sortBy('size')" onkeydown="if(event.key==='Enter')sortBy('size')" tabindex="0" scope="col" aria-sort="none">Size</th>
+                    <th scope="col">Report</th>
+                    <th scope="col">JTL</th>
+                    <th scope="col">Actions</th>
                 </tr>
             </thead>
             <tbody id="resultsList">
@@ -46,6 +48,53 @@
     <div id="compareContent"></div>
 </div>
 
+<!-- Regenerate Modal -->
+<div class="modal-overlay" id="regenModal" role="dialog" aria-modal="true" aria-labelledby="regenModalTitle">
+    <div class="modal" style="max-width:480px;">
+        <div class="modal-header">
+            <span class="modal-title" id="regenModalTitle">Regenerate Report</span>
+            <button onclick="closeModal('regenModal')" class="btn-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="text-sm mb-16" id="regenModalInfo"></div>
+
+            <h4 class="text-sm mb-8 section-title">Filtering</h4>
+            <div style="display:flex;flex-direction:column;gap:10px;" class="mb-16">
+                <label class="toggle">
+                    <input type="checkbox" id="regen_filter_sub" checked>
+                    <span class="toggle-track"></span>
+                    <span class="form-label" style="margin:0;">Remove sub-results (transaction children)</span>
+                </label>
+                <div class="form-group" style="margin:0;">
+                    <label class="form-label">Label pattern (regex, optional)</label>
+                    <input class="form-input form-input-mono" id="regen_label_pattern" placeholder="e.g. ^(A|B|C) -.*">
+                    <span class="text-light text-sm">Only keep labels matching this pattern. Leave empty for no filter.</span>
+                    <div class="flex gap-8 mt-8" style="flex-wrap:wrap;">
+                        <span class="text-sm text-light" style="line-height:26px;">Presets:</span>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="setLabelPreset('^\\d{2}\\w? - ')" title="00 - Login, 22a - Poll, etc.">Numbered (00-xx)</button>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="setLabelPreset('^[A-Z] - ')" title="A - Login Page, B - Click Login, etc.">Lettered (A-Z)</button>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="setLabelPreset('^(\\d{2}\\w? - |[A-Z] - )')" title="Both numbered and lettered — filters out usernames/IDs">All Transactions</button>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="setLabelPreset('')" title="Clear pattern">Clear</button>
+                    </div>
+                    <span class="text-light text-sm mt-8" style="display:block;">Tip: Use &quot;All Transactions&quot; to filter out username/ID rows (e.g. ABR000001).</span>
+                    <div id="labelPicker" style="display:none;margin-top:8px;">
+                        <span class="text-sm text-bold">Labels in JTL:</span>
+                        <div id="labelPickerList" style="max-height:150px;overflow-y:auto;border:1px solid var(--color-border);border-radius:6px;padding:4px 8px;margin-top:4px;font-size:12px;"></div>
+                        <button type="button" class="btn btn-outline btn-sm" style="margin-top:4px;" onclick="buildPatternFromPicker()">Build pattern from selected</button>
+                    </div>
+                </div>
+            </div>
+
+            <h4 class="text-sm mb-8 section-title">Graph settings</h4>
+            <span class="text-light text-sm">Uses graph configuration from <a href="settings" style="color:var(--color-primary);">Settings &gt; Report</a> tab.</span>
+        </div>
+        <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--color-border);">
+            <button class="btn btn-outline btn-sm" onclick="closeModal('regenModal')">Cancel</button>
+            <button class="btn btn-primary btn-sm" id="regenModalBtn" onclick="doRegenerate()">Regenerate</button>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -54,13 +103,8 @@ const ACCESS_LEVEL = '{{ access_level | default("viewer") }}';
 const isAdmin = ACCESS_LEVEL !== 'viewer';
 const isLocalhost = {{ 'true' if is_localhost else 'false' }};
 let allFolders = [];
-
-function formatSize(bytes) {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
-    return (bytes/(1024*1024)).toFixed(1) + ' MB';
-}
-function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+let sortKey = 'date';
+let sortDesc = true;
 
 async function loadResults() {
     const data = await api('/api/results/list');
@@ -68,10 +112,29 @@ async function loadResults() {
     renderResults();
 }
 
+function sortBy(key) {
+    if (sortKey === key) sortDesc = !sortDesc;
+    else { sortKey = key; sortDesc = key === 'date' || key === 'size'; }
+    // Update sort indicators
+    document.querySelectorAll('.sortable').forEach(th => {
+        th.classList.remove('sort-asc', 'sort-desc');
+        if (th.dataset.sort === sortKey) th.classList.add(sortDesc ? 'sort-desc' : 'sort-asc');
+    });
+    renderResults();
+}
+
 function renderResults() {
     const tbody = document.getElementById('resultsList');
     const query = (document.getElementById('resultSearch').value || '').toLowerCase();
-    const filtered = query ? allFolders.filter(f => f.name.toLowerCase().includes(query)) : allFolders;
+    let filtered = query ? allFolders.filter(f => f.name.toLowerCase().includes(query)) : [...allFolders];
+    // Sort
+    filtered.sort((a, b) => {
+        let va = a[sortKey], vb = b[sortKey];
+        if (sortKey === 'name') { va = va.toLowerCase(); vb = vb.toLowerCase(); }
+        if (va < vb) return sortDesc ? 1 : -1;
+        if (va > vb) return sortDesc ? -1 : 1;
+        return 0;
+    });
     document.getElementById('resultCount').textContent = filtered.length === allFolders.length
         ? `${allFolders.length} results`
         : `${filtered.length} of ${allFolders.length} results`;
@@ -81,21 +144,26 @@ function renderResults() {
     }
     tbody.innerHTML = filtered.map(f => {
         const eName = escHtml(f.name);
+        const aName = escAttr(f.name);
         let actions = '';
-        if (f.has_report) actions += `<button class="btn btn-outline btn-sm" onclick="openReport('${eName}')">Report &#8599;</button>`;
-        if (f.has_report) actions += `<button class="btn btn-outline btn-sm" onclick="downloadReport('${eName}')" title="Download report as zip">Download</button>`;
-        if (f.has_jtl && isAdmin) actions += `<button class="btn btn-outline btn-sm" id="regen-${eName}" onclick="regenerateReport('${eName}')">Regenerate</button>`;
-        if (isLocalhost) actions += `<button class="btn btn-outline btn-sm" onclick="openFolder('${eName}')">Open</button>`;
-        if (isAdmin) actions += `<button class="btn btn-sm btn-outline" onclick="deleteResult('${eName}')" style="color:var(--color-danger);border-color:var(--color-danger);">Delete</button>`;
+        if (f.has_jtl) actions += `<button class="btn btn-outline btn-sm" onclick="toggleStats('${aName}')" title="Preview stats">Stats</button>`;
+        if (f.has_report) actions += `<button class="btn btn-outline btn-sm" onclick="openReport('${aName}')">Report &#8599;</button>`;
+        if (f.has_report) actions += `<button class="btn btn-outline btn-sm" onclick="downloadReport('${aName}')" title="Download report as zip">Download</button>`;
+        if (f.has_jtl && isAdmin) actions += `<button class="btn btn-outline btn-sm" id="regen-${eName}" onclick="regenerateReport('${aName}')">Regenerate</button>`;
+        if (isLocalhost) actions += `<button class="btn btn-outline btn-sm" onclick="openFolder('${aName}')">Open</button>`;
+        if (isAdmin) actions += `<button class="btn btn-sm btn-outline" onclick="deleteResult('${aName}')" style="color:var(--color-danger);border-color:var(--color-danger);">Delete</button>`;
+        const analysisBadge = f.has_analysis ? ' <span class="badge badge-info" title="Analysis available">AI</span>' : '';
+        const jtlNames = (f.jtl_files || []).join(', ');
         return `<tr>
-            <td><label class="check"><input type="checkbox" class="result-check" value="${eName}" onchange="updateSelectionBtns()"><span class="check-box"></span></label></td>
-            <td class="text-mono">${eName}</td>
+            <td><label class="check"><input type="checkbox" class="result-check" value="${aName}" onchange="updateSelectionBtns()"><span class="check-box"></span></label></td>
+            <td class="text-mono">${eName}${analysisBadge}</td>
             <td class="text-sm">${new Date(f.date).toLocaleString()}</td>
             <td>${formatSize(f.size)}</td>
             <td>${f.has_report ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-danger">No</span>'}</td>
-            <td>${f.has_jtl ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-danger">No</span>'}</td>
+            <td>${f.has_jtl ? `<span class="badge badge-success" title="${escAttr(jtlNames)}">Yes</span>` : '<span class="badge badge-danger">No</span>'}</td>
             <td class="table-actions"><div class="flex gap-8" style="flex-wrap:wrap;">${actions}</div></td>
-        </tr>`;
+        </tr>
+        <tr class="stats-row hidden" id="stats-${eName}"><td colspan="7" style="padding:0;"></td></tr>`;
     }).join('');
 }
 
@@ -110,14 +178,28 @@ function updateSelectionBtns() {
     const count = document.querySelectorAll('.result-check:checked').length;
     document.getElementById('compareBtn').disabled = count !== 2;
     document.getElementById('downloadBundleBtn').disabled = count === 0;
+    const bulkBtn = document.getElementById('bulkRegenBtn');
+    if (isAdmin) {
+        bulkBtn.style.display = count > 0 ? '' : 'none';
+        bulkBtn.disabled = count === 0;
+    }
 }
 
-function downloadReport(folder) {
+function downloadReport(folder, includeJtl) {
     if (!folder) return;
+    if (includeJtl === undefined) {
+        // Ask user
+        if (confirm('Include JTL file(s) in download? (Can be very large)')) {
+            includeJtl = true;
+        } else {
+            includeJtl = false;
+        }
+    }
     showToast('Preparing download...', 'info');
     const a = document.createElement('a');
-    a.href = `${BASE_PATH}/api/results/${encodeURIComponent(folder)}/download`;
-    a.download = folder + '_report.zip';
+    const qs = includeJtl ? '?include_jtl=true' : '';
+    a.href = `${BASE_PATH}/api/results/${encodeURIComponent(folder)}/download${qs}`;
+    a.download = folder + (includeJtl ? '_full.zip' : '_report.zip');
     a.click();
 }
 
@@ -145,24 +227,81 @@ async function downloadBundle() {
     }
 }
 
+let regenFolder = '';
+let regenAbortController = null;
+
+function setLabelPreset(pattern) {
+    document.getElementById('regen_label_pattern').value = pattern;
+}
+
 async function regenerateReport(folder) {
-    if (!confirmAction('Regenerate HTML report for ' + folder + '?\n\nThis may take several minutes for large JTL files.')) return;
+    regenFolder = folder;
+    document.getElementById('regenModalInfo').textContent = 'Folder: ' + folder;
+    document.getElementById('labelPicker').style.display = 'none';
+    // Pre-fill from saved filter info (regen_info.json or run_info.json)
+    try {
+        const info = await api(`/api/results/${encodeURIComponent(folder)}/filter-info`);
+        document.getElementById('regen_filter_sub').checked = info.filter_sub_results !== false;
+        document.getElementById('regen_label_pattern').value = info.label_pattern || '';
+    } catch(e) {
+        document.getElementById('regen_filter_sub').checked = true;
+        document.getElementById('regen_label_pattern').value = '';
+    }
+    // Load labels for picker (F9)
+    loadLabelsForPicker(folder);
+    openModal('regenModal');
+}
+
+async function doRegenerate() {
+    const folder = regenFolder;
+    if (!folder) return;
+    closeModal('regenModal');
+
     const btn = document.getElementById('regen-' + folder);
     if (btn) { btn.disabled = true; btn.textContent = 'Regenerating...'; }
-    showToast('Regenerating report — this may take several minutes for large files...', 'info', 30000);
+    showToast('Regenerating report — this may take several minutes for large files...', 'info', 600000, 'regen-toast');
+    document.getElementById('stopRegenBtn').classList.remove('hidden');
+
+    regenAbortController = new AbortController();
+
+    const body = {
+        filter_sub_results: document.getElementById('regen_filter_sub').checked,
+        label_pattern: document.getElementById('regen_label_pattern').value.trim(),
+    };
+
     try {
-        const data = await api(`/api/results/${encodeURIComponent(folder)}/regenerate`, {
+        const resp = await fetch(`${BASE_PATH}/api/results/${encodeURIComponent(folder)}/regenerate`, {
             method: 'POST',
-            body: {}
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+            signal: regenAbortController.signal,
         });
+        const data = await resp.json();
         if (data.ok) {
             showToast('Report regenerated', 'success');
             loadResults();
+        } else {
+            showToast(data.error || 'Failed to regenerate report', 'error');
         }
     } catch(e) {
-        showToast('Failed to regenerate report', 'error');
+        if (e.name === 'AbortError') {
+            // User cancelled — send stop to backend
+            try { await fetch(`${BASE_PATH}/api/results/stop-regenerate`, { method: 'POST' }); } catch(_) {}
+            showToast('Regeneration stopped', 'info');
+        } else {
+            showToast('Failed to regenerate report', 'error');
+        }
     } finally {
+        regenAbortController = null;
+        document.getElementById('stopRegenBtn').classList.add('hidden');
+        dismissToast('regen-toast');
         if (btn) { btn.disabled = false; btn.textContent = 'Regenerate'; }
+    }
+}
+
+function stopRegenerate() {
+    if (regenAbortController) {
+        regenAbortController.abort();
     }
 }
 
@@ -172,7 +311,7 @@ async function deleteResult(folder) {
         await api(`/api/results/${encodeURIComponent(folder)}`, { method: 'DELETE' });
         showToast('Result deleted', 'success');
         loadResults();
-    } catch(e) {}
+    } catch(e) { console.error(e); }
 }
 
 async function openReport(folder) {
@@ -217,6 +356,99 @@ async function compareSelected() {
     } catch(e) {
         content.innerHTML = `<p class="text-light">Compare failed: ${escHtml(e.message)}</p>`;
     }
+}
+
+// ===== Stats Preview (F10) =====
+async function toggleStats(folder) {
+    const row = document.getElementById('stats-' + folder);
+    if (!row) return;
+    if (!row.classList.contains('hidden')) {
+        row.classList.add('hidden');
+        return;
+    }
+    const cell = row.querySelector('td');
+    cell.innerHTML = '<div style="padding:12px;"><span class="text-light">Loading stats...</span></div>';
+    row.classList.remove('hidden');
+    try {
+        const data = await api(`/api/results/${encodeURIComponent(folder)}/stats`);
+        if (data.error) { cell.innerHTML = `<div style="padding:12px;" class="text-light">${escHtml(data.error)}</div>`; return; }
+        const o = data.overall;
+        let html = `<div style="padding:12px;background:var(--color-surface-alt);border-top:1px solid var(--color-border);">
+            <div class="form-row mb-8">
+                <div class="surface-card"><span class="text-sm text-light">Samples</span><div class="text-bold">${o.total_samples.toLocaleString()}</div></div>
+                <div class="surface-card"><span class="text-sm text-light">Avg RT</span><div class="text-bold">${o.avg.toFixed(0)} ms</div></div>
+                <div class="surface-card"><span class="text-sm text-light">P95</span><div class="text-bold">${o.p95.toFixed(0)} ms</div></div>
+                <div class="surface-card"><span class="text-sm text-light">Error %</span><div class="text-bold" style="${o.error_pct > 0 ? 'color:var(--color-danger)' : ''}">${o.error_pct}%</div></div>
+                <div class="surface-card"><span class="text-sm text-light">Throughput</span><div class="text-bold">${o.throughput.toFixed(1)}/s</div></div>
+                <div class="surface-card"><span class="text-sm text-light">Duration</span><div class="text-bold">${o.duration_sec.toFixed(0)}s</div></div>
+            </div>`;
+        if (data.transactions && data.transactions.length > 0) {
+            html += `<div style="overflow-x:auto;"><table style="width:100%;font-size:12px;">
+                <thead><tr><th>Label</th><th>Samples</th><th>Avg</th><th>Median</th><th>P90</th><th>P95</th><th>Min</th><th>Max</th><th>Error %</th></tr></thead><tbody>`;
+            data.transactions.forEach(t => {
+                html += `<tr><td class="text-mono">${escHtml(t.label)}</td><td>${t.samples}</td><td>${t.avg}</td><td>${t.median}</td><td>${t.p90}</td><td>${t.p95}</td><td>${t.min}</td><td>${t.max}</td>
+                    <td style="${t.error_pct > 0 ? 'color:var(--color-danger)' : ''}">${t.error_pct}%</td></tr>`;
+            });
+            html += '</tbody></table></div>';
+        }
+        html += '</div>';
+        cell.innerHTML = html;
+    } catch(e) {
+        cell.innerHTML = `<div style="padding:12px;" class="text-light">Failed to load stats</div>`;
+    }
+}
+
+// ===== Bulk Regenerate (F11) =====
+async function bulkRegenerate() {
+    const checked = Array.from(document.querySelectorAll('.result-check:checked'));
+    if (!checked.length) return;
+    const folders = checked.map(cb => cb.value);
+    if (!confirmAction(`Regenerate reports for ${folders.length} result(s)? This may take a while.`)) return;
+    const btn = document.getElementById('bulkRegenBtn');
+    btn.disabled = true;
+    btn.textContent = `Regenerating 0/${folders.length}...`;
+    showToast(`Regenerating ${folders.length} reports...`, 'info', 600000, 'bulk-regen');
+    try {
+        const data = await api('/api/results/bulk-regenerate', {
+            method: 'POST',
+            body: { folders, filter_sub_results: true, label_pattern: '' },
+        });
+        const results = data.results || [];
+        const ok = results.filter(r => r.ok).length;
+        const fail = results.length - ok;
+        showToast(`Regenerated ${ok}/${results.length}${fail ? ` (${fail} failed)` : ''}`, fail ? 'warning' : 'success');
+        loadResults();
+    } catch(e) {
+        showToast('Bulk regeneration failed', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Regenerate Selected';
+        dismissToast('bulk-regen');
+    }
+}
+
+// ===== Label Picker (F9) =====
+let pickerLabels = [];
+async function loadLabelsForPicker(folder) {
+    try {
+        const data = await api(`/api/results/${encodeURIComponent(folder)}/labels`);
+        pickerLabels = data.labels || [];
+        if (pickerLabels.length > 0) {
+            const picker = document.getElementById('labelPicker');
+            const list = document.getElementById('labelPickerList');
+            picker.style.display = '';
+            list.innerHTML = pickerLabels.map(l =>
+                `<label class="check" style="display:flex;padding:2px 0;"><input type="checkbox" class="label-pick" value="${escAttr(l)}" checked><span class="check-box"></span><span class="text-mono">${escHtml(l)}</span></label>`
+            ).join('');
+        }
+    } catch(e) { /* ignore */ }
+}
+
+function buildPatternFromPicker() {
+    const checked = Array.from(document.querySelectorAll('.label-pick:checked'));
+    if (!checked.length) return;
+    const pattern = '^(' + checked.map(cb => cb.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')$';
+    document.getElementById('regen_label_pattern').value = pattern;
 }
 
 loadResults();

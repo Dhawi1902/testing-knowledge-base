@@ -1,19 +1,24 @@
+import asyncio
 import io
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
 import zipfile
+from datetime import datetime
 from pathlib import Path
 
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 
+from services.auth import check_access as _check_access, safe_join
 from services.config_parser import resolve_path, read_json_config
-from services.jmeter import REPORT_OPTIMIZE_PROPS
+from services.report_properties import cleanup_report_html
+from services.jmeter import build_report_command
 from services.jtl_parser import list_result_folders, find_result_folder, parse_jtl, compare_runs
 from services.analysis import (
     preprocess_jtl,
@@ -29,12 +34,10 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 router = APIRouter()
 
-
-def _check_access(request: Request):
-    """Return 403 JSONResponse if viewer, None if allowed."""
-    if getattr(request.state, "access_level", "viewer") == "viewer":
-        return JSONResponse(status_code=403, content={"error": "Access denied — token required"})
-    return None
+# Track active regeneration — lock prevents concurrent runs, folder tracks which one
+_regen_lock = asyncio.Lock()
+_active_regen: subprocess.Popen | None = None
+_active_regen_folder: str | None = None
 
 
 @router.get("/results")
@@ -90,8 +93,8 @@ async def api_open_report(request: Request, folder: str):
         else:
             subprocess.Popen(["xdg-open", str(report_index)])
         return {"ok": True}
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
+    except Exception:
+        return JSONResponse(status_code=500, content={"error": "Failed to open report"})
 
 
 @router.get("/api/results/{folder}/report/{path:path}")
@@ -102,9 +105,9 @@ async def api_serve_report(request: Request, folder: str, path: str):
     folder_path = find_result_folder(results_dir, folder)
     if not folder_path:
         return JSONResponse(status_code=404, content={"error": "Folder not found"})
-    file_path = (folder_path / "report" / path).resolve()
-    # Security: ensure path is within results dir
-    if not str(file_path).startswith(str(results_dir.resolve())):
+    report_dir = folder_path / "report"
+    file_path = safe_join(report_dir, path)
+    if file_path is None:
         return JSONResponse(status_code=403, content={"error": "Access denied"})
     if not file_path.exists():
         return JSONResponse(status_code=404, content={"error": "File not found"})
@@ -129,8 +132,8 @@ async def api_open_folder(request: Request, folder: str):
         else:
             subprocess.Popen(["xdg-open", str(folder_path)])
         return {"ok": True}
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
+    except Exception:
+        return JSONResponse(status_code=500, content={"error": "Failed to open folder"})
 
 
 @router.delete("/api/results/{folder}")
@@ -144,22 +147,28 @@ async def api_delete_result(request: Request, folder: str):
     folder_path = find_result_folder(results_dir, folder)
     if not folder_path:
         return JSONResponse(status_code=404, content={"error": "Folder not found"})
-    # Security: ensure path is within results dir
-    if not str(folder_path.resolve()).startswith(str(results_dir.resolve())):
-        return JSONResponse(status_code=403, content={"error": "Access denied"})
     try:
         shutil.rmtree(str(folder_path))
         return {"ok": True}
-    except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
+    except Exception:
+        return JSONResponse(status_code=500, content={"error": "Failed to delete result folder"})
 
 
 @router.post("/api/results/{folder}/regenerate")
 async def api_regenerate_report(request: Request, folder: str):
-    """Regenerate HTML report: always filters JTL first, then generates report."""
+    """Regenerate HTML report: filter JTL, then generate report with current graph settings."""
     denied = _check_access(request)
     if denied:
         return denied
+
+    # Parse optional filter parameters from request body
+    body = {}
+    try:
+        body = await request.json()
+    except Exception:
+        pass
+    filter_sub_results = body.get("filter_sub_results", True)
+    label_pattern = body.get("label_pattern", "")
 
     project = request.app.state.project
     results_dir = resolve_path(project, "results_dir")
@@ -185,39 +194,215 @@ async def api_regenerate_report(request: Request, folder: str):
     if filtered_jtl_path.exists():
         filtered_jtl_path.unlink()
 
+    # Validate regex pattern before spawning subprocess
+    if label_pattern:
+        try:
+            re.compile(label_pattern)
+        except re.error as e:
+            return JSONResponse(status_code=400, content={"error": f"Invalid regex pattern: {e}"})
+
     jmeter_path = project.get("jmeter_path", "jmeter")
-
-    # Step 1: Always filter JTL (removes sub-results + variables)
     app_dir = Path(__file__).resolve().parent.parent
-    filter_result = subprocess.run(
-        [sys.executable, str(app_dir / "jtl_filter.py"), str(jtl_path), str(filtered_jtl_path)],
-        capture_output=True, text=True, timeout=600,
-    )
-    if filter_result.returncode != 0:
-        return JSONResponse(status_code=500, content={"error": f"Filter failed: {filter_result.stderr}"})
 
-    # Step 2: Generate report to temp dir (don't destroy old report until success)
-    result = subprocess.run(
-        [jmeter_path, "-g", str(filtered_jtl_path), "-o", str(report_tmp)] + REPORT_OPTIMIZE_PROPS,
-        capture_output=True, text=True, timeout=600,
-    )
+    global _active_regen, _active_regen_folder
 
-    # Clean up filtered JTL
-    if filtered_jtl_path.exists():
-        filtered_jtl_path.unlink()
+    if _regen_lock.locked():
+        return JSONResponse(status_code=409, content={"error": f"Regeneration already in progress for '{_active_regen_folder}'"})
 
-    if result.returncode != 0:
-        # Failed — clean up temp, keep old report intact
+    async with _regen_lock:
+        _active_regen_folder = folder
+        try:
+            # Step 1: Filter JTL (removes sub-results + unresolved variables + optional label pattern)
+            source_jtl = jtl_path
+            if filter_sub_results:
+                filter_cmd = [sys.executable, str(app_dir / "jtl_filter.py"), str(jtl_path), str(filtered_jtl_path)]
+                if label_pattern:
+                    filter_cmd.append(label_pattern)
+                filter_result = subprocess.run(filter_cmd, capture_output=True, text=True, timeout=600)
+                if filter_result.returncode != 0:
+                    return JSONResponse(status_code=500, content={"error": f"Filter failed: {filter_result.stderr}"})
+                source_jtl = filtered_jtl_path
+
+            # Step 2: Generate report to temp dir (don't destroy old report until success)
+            proc = subprocess.Popen(
+                build_report_command(jmeter_path, str(source_jtl), str(report_tmp)),
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+            )
+            _active_regen = proc
+            try:
+                stdout, stderr = proc.communicate(timeout=600)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                proc.communicate()
+                if report_tmp.exists():
+                    shutil.rmtree(str(report_tmp))
+                return JSONResponse(status_code=500, content={"error": "Report generation timed out (10 min)"})
+            finally:
+                _active_regen = None
+            # Clean up filtered JTL
+            if filtered_jtl_path.exists():
+                filtered_jtl_path.unlink()
+
+            if proc.returncode != 0:
+                # Failed — clean up temp, keep old report intact
+                if report_tmp.exists():
+                    shutil.rmtree(str(report_tmp))
+                return JSONResponse(status_code=500, content={"error": f"Report generation failed: {stderr[:500]}"})
+
+            # Post-process: remove disabled graph panels from HTML
+            cleanup_report_html(report_tmp)
+
+            # Success — swap temp report in
+            if report_dir.exists():
+                shutil.rmtree(str(report_dir))
+            report_tmp.rename(report_dir)
+
+            # Save regeneration filter params for future pre-fill
+            regen_info = {
+                "timestamp": datetime.now().isoformat(),
+                "filter_sub_results": filter_sub_results,
+                "label_pattern": label_pattern,
+            }
+            (folder_path / "regen_info.json").write_text(
+                json.dumps(regen_info, indent=2), encoding="utf-8"
+            )
+
+            return {"ok": True, "message": "Report regenerated"}
+        finally:
+            _active_regen_folder = None
+
+
+@router.get("/api/results/{folder}/labels")
+async def api_result_labels(request: Request, folder: str):
+    """Return unique labels from JTL for the label picker (F9)."""
+    project = request.app.state.project
+    results_dir = resolve_path(project, "results_dir")
+    folder_path = find_result_folder(results_dir, folder)
+    if not folder_path:
+        return JSONResponse(status_code=404, content={"error": "Folder not found"})
+    jtl_files = list(folder_path.glob("*.jtl"))
+    if not jtl_files:
+        return JSONResponse(status_code=404, content={"error": "No JTL file found"})
+    stats = parse_jtl(jtl_files[0])
+    labels = [t["label"] for t in stats.get("transactions", [])]
+    return {"labels": labels}
+
+
+@router.post("/api/results/bulk-regenerate")
+async def api_bulk_regenerate(request: Request):
+    """Regenerate reports for multiple result folders sequentially (F11)."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    body = await request.json()
+    folders = body.get("folders", [])
+    filter_sub_results = body.get("filter_sub_results", True)
+    label_pattern = body.get("label_pattern", "")
+    if not folders:
+        return JSONResponse(status_code=400, content={"error": "No folders specified"})
+
+    project = request.app.state.project
+    results_dir = resolve_path(project, "results_dir")
+    jmeter_path = project.get("jmeter_path", "jmeter")
+    app_dir = Path(__file__).resolve().parent.parent
+    results = []
+
+    for folder_name in folders:
+        folder_path = find_result_folder(results_dir, folder_name)
+        if not folder_path:
+            results.append({"folder": folder_name, "ok": False, "error": "Not found"})
+            continue
+        jtl_path = folder_path / "results.jtl"
+        if not jtl_path.exists():
+            jtl_files = [f for f in folder_path.glob("*.jtl") if f.name != "filtered.jtl"]
+            if not jtl_files:
+                results.append({"folder": folder_name, "ok": False, "error": "No JTL"})
+                continue
+            jtl_path = jtl_files[0]
+
+        report_dir = folder_path / "report"
+        report_tmp = folder_path / "report_tmp"
+        filtered_jtl = folder_path / "filtered.jtl"
+
         if report_tmp.exists():
             shutil.rmtree(str(report_tmp))
-        return JSONResponse(status_code=500, content={"error": f"Report generation failed: {result.stderr[:500]}"})
+        if filtered_jtl.exists():
+            filtered_jtl.unlink()
 
-    # Success — swap temp report in
-    if report_dir.exists():
-        shutil.rmtree(str(report_dir))
-    report_tmp.rename(report_dir)
+        try:
+            source = jtl_path
+            if filter_sub_results:
+                filter_cmd = [sys.executable, str(app_dir / "jtl_filter.py"), str(jtl_path), str(filtered_jtl)]
+                if label_pattern:
+                    filter_cmd.append(label_pattern)
+                fr = subprocess.run(filter_cmd, capture_output=True, text=True, timeout=600)
+                if fr.returncode != 0:
+                    results.append({"folder": folder_name, "ok": False, "error": "Filter failed"})
+                    continue
+                source = filtered_jtl
 
-    return {"ok": True, "message": "Report regenerated"}
+            proc = subprocess.run(
+                build_report_command(jmeter_path, str(source), str(report_tmp)),
+                capture_output=True, text=True, timeout=600,
+            )
+            if filtered_jtl.exists():
+                filtered_jtl.unlink()
+            if proc.returncode != 0:
+                if report_tmp.exists():
+                    shutil.rmtree(str(report_tmp))
+                results.append({"folder": folder_name, "ok": False, "error": "Report gen failed"})
+                continue
+
+            cleanup_report_html(report_tmp)
+            if report_dir.exists():
+                shutil.rmtree(str(report_dir))
+            report_tmp.rename(report_dir)
+            results.append({"folder": folder_name, "ok": True})
+        except Exception:
+            results.append({"folder": folder_name, "ok": False, "error": "Unexpected error"})
+            if report_tmp.exists():
+                shutil.rmtree(str(report_tmp))
+
+    return {"results": results}
+
+
+@router.get("/api/results/{folder}/filter-info")
+async def api_filter_info(request: Request, folder: str):
+    """Return saved filter params from run_info.json or regen_info.json for modal pre-fill."""
+    project = request.app.state.project
+    results_dir = resolve_path(project, "results_dir")
+    folder_path = find_result_folder(results_dir, folder)
+    if not folder_path:
+        return {"filter_sub_results": True, "label_pattern": ""}
+    # Prefer regen_info (last regeneration), fall back to run_info (original test run)
+    regen_info = folder_path / "regen_info.json"
+    run_info = folder_path / "run_info.json"
+    for info_file in (regen_info, run_info):
+        if info_file.exists():
+            try:
+                data = json.loads(info_file.read_text(encoding="utf-8"))
+                return {
+                    "filter_sub_results": data.get("filter_sub_results", True),
+                    "label_pattern": data.get("label_pattern", ""),
+                }
+            except Exception:
+                pass
+    return {"filter_sub_results": True, "label_pattern": ""}
+
+
+@router.post("/api/results/stop-regenerate")
+async def api_stop_regenerate(request: Request):
+    """Stop a running report regeneration."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    global _active_regen, _active_regen_folder
+    if _active_regen and _active_regen.poll() is None:
+        _active_regen.kill()
+        _active_regen = None
+        _active_regen_folder = None
+        return {"ok": True, "message": "Regeneration stopped"}
+    return {"ok": True, "message": "No active regeneration"}
 
 
 @router.get("/api/results/compare")
@@ -242,18 +427,26 @@ async def api_compare_results(request: Request, folder1: str, folder2: str):
 
 # --- Download ---
 
+def _add_report_to_zip(zf: zipfile.ZipFile, folder_path: Path, folder_name: str, include_jtl: bool = False):
+    """Add a result folder's report + metadata to an open ZipFile."""
+    report_dir = folder_path / "report"
+    if report_dir.is_dir():
+        for f in report_dir.rglob("*"):
+            if f.is_file():
+                zf.write(f, f"{folder_name}/report/{f.relative_to(report_dir)}")
+    for meta in ("run_info.json", "config.properties"):
+        meta_path = folder_path / meta
+        if meta_path.exists():
+            zf.write(meta_path, f"{folder_name}/{meta}")
+    if include_jtl:
+        for jtl in folder_path.glob("*.jtl"):
+            zf.write(jtl, f"{folder_name}/{jtl.name}")
+
+
 def _zip_report_to_file(folder_path: Path, folder_name: str, zip_path: Path):
     """Create a zip of the report directory on disk (excludes JTL files)."""
-    report_dir = folder_path / "report"
     with zipfile.ZipFile(str(zip_path), "w", zipfile.ZIP_STORED) as zf:
-        if report_dir.is_dir():
-            for f in report_dir.rglob("*"):
-                if f.is_file():
-                    zf.write(f, f"{folder_name}/report/{f.relative_to(report_dir)}")
-        for meta in ("run_info.json", "config.properties"):
-            meta_path = folder_path / meta
-            if meta_path.exists():
-                zf.write(meta_path, f"{folder_name}/{meta}")
+        _add_report_to_zip(zf, folder_path, folder_name)
 
 
 def _dir_size(path: Path) -> int:
@@ -280,8 +473,8 @@ async def api_result_size(request: Request, folder: str):
 
 
 @router.get("/api/results/{folder}/download")
-async def api_download_report(request: Request, folder: str):
-    """Download the report folder as a zip (no JTL). Writes to temp file to handle large reports."""
+async def api_download_report(request: Request, folder: str, include_jtl: bool = False):
+    """Download the report folder as a zip. Optionally include JTL files."""
     project = request.app.state.project
     results_dir = resolve_path(project, "results_dir")
     folder_path = find_result_folder(results_dir, folder)
@@ -293,16 +486,18 @@ async def api_download_report(request: Request, folder: str):
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")
     tmp.close()
     try:
-        _zip_report_to_file(folder_path, folder, Path(tmp.name))
+        with zipfile.ZipFile(str(tmp.name), "w", zipfile.ZIP_STORED) as zf:
+            _add_report_to_zip(zf, folder_path, folder, include_jtl=include_jtl)
+        suffix = "_full" if include_jtl else "_report"
         return FileResponse(
             tmp.name,
             media_type="application/zip",
-            filename=f"{folder}_report.zip",
+            filename=f"{folder}{suffix}.zip",
             background=_cleanup_temp(tmp.name),
         )
-    except Exception as e:
+    except Exception:
         os.unlink(tmp.name)
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        return JSONResponse(status_code=500, content={"error": "Failed to create download archive"})
 
 
 @router.post("/api/results/download-bundle")
@@ -323,24 +518,16 @@ async def api_download_bundle(request: Request):
                 folder_path = find_result_folder(results_dir, folder_name)
                 if not folder_path:
                     continue
-                report_dir = folder_path / "report"
-                if report_dir.is_dir():
-                    for f in report_dir.rglob("*"):
-                        if f.is_file():
-                            zf.write(f, f"{folder_name}/report/{f.relative_to(report_dir)}")
-                for meta in ("run_info.json", "config.properties"):
-                    meta_path = folder_path / meta
-                    if meta_path.exists():
-                        zf.write(meta_path, f"{folder_name}/{meta}")
+                _add_report_to_zip(zf, folder_path, folder_name)
         return FileResponse(
             tmp.name,
             media_type="application/zip",
             filename="reports_bundle.zip",
             background=_cleanup_temp(tmp.name),
         )
-    except Exception as e:
+    except Exception:
         os.unlink(tmp.name)
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        return JSONResponse(status_code=500, content={"error": "Failed to create download bundle"})
 
 
 class _cleanup_temp:

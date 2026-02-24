@@ -8,12 +8,8 @@ from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
 
-
-def _check_access(request: Request):
-    """Return 403 JSONResponse if viewer, None if allowed."""
-    if getattr(request.state, "access_level", "viewer") == "viewer":
-        return JSONResponse(status_code=403, content={"error": "Access denied — token required"})
-    return None
+from services.auth import check_access as _check_access
+from services import report_properties
 
 TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
 APP_DIR = Path(__file__).resolve().parent.parent
@@ -96,7 +92,43 @@ async def settings_page(request: Request):
 
 @router.get("/api/settings")
 async def api_get_settings():
-    return {"settings": load_settings()}
+    settings = load_settings()
+    # Redact token — never expose the hash to clients
+    auth = settings.get("auth", {})
+    auth["token_set"] = bool(auth.get("token", ""))
+    auth.pop("token", None)
+    settings["auth"] = auth
+    return {"settings": settings}
+
+
+def _validate_settings(settings: dict) -> str | None:
+    """Return error message if settings are invalid, else None."""
+    server = settings.get("server", {})
+    port = server.get("port")
+    if port is not None:
+        try:
+            port = int(port)
+            if not (1 <= port <= 65535):
+                return "Port must be between 1 and 65535"
+        except (ValueError, TypeError):
+            return "Port must be a number"
+    for key in ("grafana_url", "influxdb_url"):
+        url = settings.get("monitoring", {}).get(key, "")
+        if url and not url.startswith(("http://", "https://")):
+            return f"{key} must start with http:// or https://"
+    analysis = settings.get("analysis", {})
+    ollama_url = analysis.get("ollama_url", "")
+    if ollama_url and not ollama_url.startswith(("http://", "https://")):
+        return "Ollama URL must start with http:// or https://"
+    timeout = analysis.get("ollama_timeout")
+    if timeout is not None:
+        try:
+            timeout = int(timeout)
+            if timeout < 1:
+                return "Ollama timeout must be positive"
+        except (ValueError, TypeError):
+            return "Ollama timeout must be a number"
+    return None
 
 
 @router.put("/api/settings")
@@ -106,7 +138,61 @@ async def api_save_settings(request: Request):
         return denied
     body = await request.json()
     settings = body.get("settings", {})
+
+    # Validate
+    error = _validate_settings(settings)
+    if error:
+        return JSONResponse(status_code=400, content={"error": error})
+
+    # Handle token: hash if new token provided, preserve existing hash if empty
+    auth = settings.get("auth", {})
+    submitted_token = auth.get("token", "")
+    if submitted_token:
+        from services.auth import hash_token
+        auth["token"] = hash_token(submitted_token)
+    elif auth.get("clear_token"):
+        auth["token"] = ""
+        auth.pop("clear_token", None)
+    else:
+        # Empty token submitted — preserve existing stored hash
+        existing = load_settings()
+        auth["token"] = existing.get("auth", {}).get("token", "")
+    settings["auth"] = auth
+
     save_settings(settings)
+    return {"ok": True}
+
+
+@router.get("/api/settings/export")
+async def api_export_settings(request: Request):
+    """Export settings as a downloadable JSON file."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    settings = load_settings()
+    # Redact auth token for security
+    settings.get("auth", {}).pop("token", None)
+    return JSONResponse(content=settings, headers={
+        "Content-Disposition": "attachment; filename=settings_export.json"
+    })
+
+
+@router.post("/api/settings/import")
+async def api_import_settings(request: Request):
+    """Import settings from a JSON body."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    body = await request.json()
+    imported = body.get("settings", body)
+    error = _validate_settings(imported)
+    if error:
+        return JSONResponse(status_code=400, content={"error": error})
+    # Preserve existing auth token (don't allow import to overwrite)
+    existing = load_settings()
+    imported.setdefault("auth", {})
+    imported["auth"]["token"] = existing.get("auth", {}).get("token", "")
+    save_settings(imported)
     return {"ok": True}
 
 
@@ -119,7 +205,10 @@ def _run_cmd(cmd: list[str]) -> str:
 
 
 @router.get("/api/settings/system-info")
-async def api_system_info():
+async def api_system_info(request: Request):
+    denied = _check_access(request)
+    if denied:
+        return denied
     # JMeter version
     jmeter_version = _run_cmd(["jmeter", "--version"])
     # Extract just the version line if verbose output
@@ -154,3 +243,25 @@ async def api_system_info():
         "os": os_info,
         "disk": disk,
     }
+
+
+# --- Report Properties (graph toggles + granularity) ---
+
+@router.get("/api/settings/report")
+async def api_get_report_settings():
+    """Return current report generation settings (graph states + granularity)."""
+    settings = report_properties.load()
+    graphs = report_properties.graph_metadata()
+    return {"settings": settings, "graphs": graphs}
+
+
+@router.put("/api/settings/report")
+async def api_save_report_settings(request: Request):
+    """Save report generation settings and regenerate properties file."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    body = await request.json()
+    settings = body.get("settings", {})
+    report_properties.save(settings)
+    return {"ok": True}

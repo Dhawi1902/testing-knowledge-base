@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Dashboard{% endblock %} — {{ project_name }}</title>
     <meta name="base-path" content="{{ bp }}">
-    <link rel="stylesheet" href="{{ bp }}/static/css/style.css?v=7">
+    <link rel="stylesheet" href="{{ bp }}/static/css/style.css?v={{ asset_v }}">
     {% block head %}{% endblock %}
 </head>
 <body>
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <h2 class="sidebar-title">{{ project_name }}</h2>
-            <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar">&laquo;</button>
+            <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar" aria-label="Toggle sidebar">&laquo;</button>
         </div>
         <nav class="sidebar-nav">
             <a href="{{ bp }}/" class="nav-item {% if active_page == 'dashboard' %}active{% endif %}">
@@ -35,13 +35,7 @@
                 <span class="nav-icon">&#9731;</span>
                 <span class="nav-label">Slave VMs</span>
             </a>
-            {% if is_localhost %}
-            <a href="{{ bp }}/scripts" class="nav-item {% if active_page == 'scripts' %}active{% endif %}">
-                <span class="nav-icon">&#9000;</span>
-                <span class="nav-label">Scripts</span>
-            </a>
-            {% endif %}
-            <a href="{{ bp }}/settings" class="nav-item {% if active_page == 'settings' %}active{% endif %}" style="margin-top:auto;">
+<a href="{{ bp }}/settings" class="nav-item {% if active_page == 'settings' %}active{% endif %}" style="margin-top:auto;">
                 <span class="nav-icon">&#9881;</span>
                 <span class="nav-label">Settings</span>
             </a>
@@ -53,7 +47,7 @@
 
     <main class="main-content" id="mainContent">
         <header class="topbar">
-            <button class="menu-btn" id="menuBtn" title="Open menu">&#9776;</button>
+            <button class="menu-btn" id="menuBtn" title="Open menu" aria-label="Open menu">&#9776;</button>
             <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
         </header>
         <div class="content">
@@ -88,7 +82,7 @@
     <!-- Toast container -->
     <div class="toast-container" id="toastContainer"></div>
 
-    <script src="{{ bp }}/static/js/app.js?v=2"></script>
+    <script src="{{ bp }}/static/js/app.js?v={{ asset_v }}"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

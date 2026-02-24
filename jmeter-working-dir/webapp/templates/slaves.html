@@ -56,95 +56,33 @@
         <div id="vmForm"></div>
     </div>
 </div>
+<!-- JMeter Properties (F2/F3/F4) -->
+<div class="card" style="margin-top:24px;">
+    <div class="card-header" style="cursor:pointer;" onclick="document.getElementById('propsBody').style.display = document.getElementById('propsBody').style.display === 'none' ? '' : 'none'; this.querySelector('.collapse-icon').textContent = document.getElementById('propsBody').style.display === 'none' ? '\u25B6' : '\u25BC';">
+        <span class="card-title"><span class="collapse-icon">&#9654;</span> JMeter Properties</span>
+        <span class="text-light text-sm">Override properties &amp; backend listener settings</span>
+    </div>
+    <div id="propsBody" style="display:none;">
+        {% if access_level != 'viewer' %}
+        <div class="flex gap-8 mb-16" style="justify-content:space-between;align-items:center;">
+            <div class="flex gap-8">
+                <button class="btn btn-outline btn-sm" onclick="addProperty()">+ Add Property</button>
+                <span class="text-sm text-light" style="line-height:28px;">Presets:</span>
+                <button class="btn btn-outline btn-sm" onclick="addInfluxPreset()">InfluxDB Backend</button>
+            </div>
+            <div class="flex gap-8">
+                <button class="btn btn-outline btn-sm" onclick="pushProperties()" title="Push properties file to all slaves via SCP">Push to Slaves</button>
+                <button class="btn btn-primary btn-sm" onclick="saveProperties()">Save</button>
+            </div>
+        </div>
+        {% endif %}
+        <div id="propsForm"></div>
+        <div class="text-sm text-light" style="margin-top:8px;">These properties are passed as <code>-J</code> flags when running JMeter tests. Use "Push to Slaves" to upload as a properties file.</div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
-<style>
-/* Uses global .toggle and .check classes from style.css */
-
-/* Grid view */
-.slave-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
-.vm-card {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: 8px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-.vm-card.disabled { opacity:0.5; }
-.vm-card.selected { border-color:var(--color-primary); box-shadow:0 0 0 1px var(--color-primary); }
-.vm-ip { font-family:var(--font-mono); font-size:14px; font-weight:600; cursor:pointer; }
-.vm-ip:hover { text-decoration:underline; text-decoration-style:dashed; text-underline-offset:3px; }
-.ip-edit { font-family:var(--font-mono); font-size:14px; font-weight:600; background:transparent; border:1px solid var(--color-primary); border-radius:4px; padding:2px 6px; outline:none; color:inherit; width:160px; }
-.vm-meta { font-size:12px; color:var(--color-text-light); }
-.vm-error { font-size:11px; color:var(--color-danger); word-break:break-all; }
-
-/* List view */
-.slave-list { display:flex; flex-direction:column; gap:0; }
-.slave-entry {
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-bottom: none;
-}
-.slave-entry:first-child { border-radius: 8px 8px 0 0; }
-.slave-entry:last-child { border-bottom: 1px solid var(--color-border); border-radius: 0 0 8px 8px; }
-.slave-entry:only-child { border-radius: 8px; border-bottom: 1px solid var(--color-border); }
-.slave-entry.disabled { opacity:0.5; }
-.slave-entry.selected { border-color:var(--color-primary); background:color-mix(in srgb, var(--color-primary) 5%, var(--color-surface)); }
-.slave-list .slave-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 10px 16px;
-}
-.slave-list .slave-row .slave-ip { font-family:var(--font-mono); font-size:13px; font-weight:600; min-width:140px; cursor:pointer; }
-.slave-list .slave-row .slave-ip:hover { text-decoration:underline; text-decoration-style:dashed; text-underline-offset:3px; }
-.slave-list .slave-row .slave-meta { font-size:12px; color:var(--color-text-light); flex:1; }
-.slave-list .slave-row .slave-actions { display:flex; align-items:center; gap:8px; margin-left:auto; }
-
-/* Select checkbox */
-.select-cb { width:16px; height:16px; cursor:pointer; accent-color:var(--color-primary); flex-shrink:0; }
-
-/* Gear / delete buttons */
-.gear-btn, .del-btn { background:none; border:none; cursor:pointer; font-size:15px; padding:2px 4px; opacity:0.4; transition:opacity 0.15s; color:inherit; }
-.gear-btn:hover, .gear-btn.active { opacity:1; }
-.del-btn { font-size:13px; }
-.del-btn:hover { opacity:1; color:var(--color-danger); }
-
-/* Select-all header */
-.slave-list-header {
-    display:flex; align-items:center; gap:12px; padding:6px 16px;
-    font-size:11px; color:var(--color-text-light); border-bottom:1px solid var(--color-border);
-}
-
-/* Slave config override panel */
-.slave-config-panel {
-    padding: 8px 16px 12px;
-    border-top: 1px dashed var(--color-border);
-    background: color-mix(in srgb, var(--color-surface) 95%, var(--color-border));
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    align-items: flex-end;
-}
-.slave-config-panel .form-group { margin:0; flex:1; min-width:120px; }
-.slave-config-panel .form-label { font-size:11px; margin-bottom:2px; }
-.slave-config-panel .form-input { font-size:12px; padding:4px 8px; }
-.slave-config-panel .override-hint { font-size:10px; color:var(--color-text-light); margin-top:8px; width:100%; }
-
-/* View toggle active state */
-.view-toggle.active { background:var(--color-primary); color:white; border-color:var(--color-primary); }
-
-/* Status dot */
-.status-dot { width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0; }
-.status-dot.up { background:#22c55e; }
-.status-dot.down { background:#ef4444; }
-.status-dot.checking { background:#f59e0b; animation:pulse 1s ease-in-out infinite; }
-.status-dot.unknown { background:var(--color-border); }
-@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
-</style>
 <script>
 const ACCESS_LEVEL = '{{ access_level | default("viewer") }}';
 const isAdmin = ACCESS_LEVEL !== 'viewer';
@@ -160,6 +98,7 @@ async function loadSlaves() {
         const data = await api('/api/config/slaves');
         slaveData = (data.slaves || []).map(s => ({
             ip: typeof s === 'string' ? s : s.ip,
+            nickname: (typeof s === 'object' && s.nickname) ? s.nickname : '',
             enabled: typeof s === 'string' ? true : s.enabled !== false,
             overrides: (typeof s === 'object' && s.overrides) ? s.overrides : {},
             status: null,
@@ -247,19 +186,23 @@ function renderList() {
         const sel = selected.has(s.ip);
         const expanded = expandedConfigs.has(s.ip);
         const hasOverrides = s.overrides && (s.overrides.user || s.overrides.password || s.overrides.dest_path);
-        const ipClick = isAdmin ? `onclick="editSlaveIp('${escHtml(s.ip)}', this)" title="Click to edit"` : '';
+        const aIp = escAttr(s.ip);
+        const ipClick = isAdmin ? `onclick="editSlaveIp('${aIp}', this)" title="Click to edit"` : '';
         html += `<div class="slave-entry${enabled ? '' : ' disabled'}${sel ? ' selected' : ''}">
             <div class="slave-row">
-                ${isAdmin ? `<label class="check"><input type="checkbox" class="select-cb" ${sel ? 'checked' : ''} onchange="toggleSelect('${escHtml(s.ip)}', this.checked)"><span class="check-box"></span></label>` : ''}
+                ${isAdmin ? `<label class="check"><input type="checkbox" class="select-cb" ${sel ? 'checked' : ''} onchange="toggleSelect('${aIp}', this.checked)"><span class="check-box"></span></label>` : ''}
                 ${statusDot(s)}
                 <span class="slave-ip" ${ipClick}>${escHtml(s.ip)}</span>
+                ${s.nickname ? `<span class="text-sm text-light">(${escHtml(s.nickname)})</span>` : ''}
                 <span class="slave-meta">VM #${i + 1}${hasOverrides ? ' <span class="badge" style="font-size:10px;background:var(--color-border);color:var(--color-text-light);">custom</span>' : ''}${s.error ? ' &mdash; <span style="color:var(--color-danger);">' + escHtml(s.error) + '</span>' : ''}</span>
                 <div class="slave-actions">
                     ${statusBadge(s)}
-                    ${isAdmin ? `<button class="gear-btn${expanded ? ' active' : ''}" onclick="toggleConfig('${escHtml(s.ip)}')" title="SSH overrides">&#9881;</button>` : ''}
-                    ${isAdmin ? `<button class="del-btn" onclick="removeSlave('${escHtml(s.ip)}')" title="Remove">&times;</button>` : ''}
+                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="startSingle('${aIp}')" title="Start JMeter server">&#9654;</button>` : ''}
+                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;color:var(--color-danger);border-color:var(--color-danger);" onclick="stopSingle('${aIp}')" title="Stop JMeter server">&#9632;</button>` : ''}
+                    ${isAdmin ? `<button class="gear-btn${expanded ? ' active' : ''}" onclick="toggleConfig('${aIp}')" title="SSH overrides">&#9881;</button>` : ''}
+                    ${isAdmin ? `<button class="del-btn" onclick="removeSlave('${aIp}')" title="Remove">&times;</button>` : ''}
                     ${isAdmin ? `<label class="toggle" title="${enabled ? 'Disable' : 'Enable'}">
-                        <input type="checkbox" ${enabled ? 'checked' : ''} onchange="toggleSlave('${escHtml(s.ip)}', this.checked)">
+                        <input type="checkbox" ${enabled ? 'checked' : ''} onchange="toggleSlave('${aIp}', this.checked)">
                         <span class="toggle-track"></span>
                     </label>` : ''}
                 </div>
@@ -283,25 +226,28 @@ function renderGrid() {
         const sel = selected.has(s.ip);
         const expanded = expandedConfigs.has(s.ip);
         const hasOverrides = s.overrides && (s.overrides.user || s.overrides.password || s.overrides.dest_path);
-        const ipClick = isAdmin ? `onclick="editSlaveIp('${escHtml(s.ip)}', this)" title="Click to edit"` : '';
+        const aIp = escAttr(s.ip);
+        const ipClick = isAdmin ? `onclick="editSlaveIp('${aIp}', this)" title="Click to edit"` : '';
         html += `<div class="vm-card${enabled ? '' : ' disabled'}${sel ? ' selected' : ''}">
             <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
                 <div class="flex gap-8" style="align-items:center;">
-                    ${isAdmin ? `<label class="check"><input type="checkbox" class="select-cb" ${sel ? 'checked' : ''} onchange="toggleSelect('${escHtml(s.ip)}', this.checked)"><span class="check-box"></span></label>` : ''}
+                    ${isAdmin ? `<label class="check"><input type="checkbox" class="select-cb" ${sel ? 'checked' : ''} onchange="toggleSelect('${aIp}', this.checked)"><span class="check-box"></span></label>` : ''}
                     <span class="vm-ip" ${ipClick}>${escHtml(s.ip)}</span>
                     ${hasOverrides ? '<span class="badge" style="font-size:10px;background:var(--color-border);color:var(--color-text-light);">custom</span>' : ''}
                 </div>
                 <div class="flex gap-8" style="align-items:center;">
                     ${statusBadge(s)}
-                    ${isAdmin ? `<button class="gear-btn${expanded ? ' active' : ''}" onclick="toggleConfig('${escHtml(s.ip)}')" title="SSH overrides">&#9881;</button>` : ''}
-                    ${isAdmin ? `<button class="del-btn" onclick="removeSlave('${escHtml(s.ip)}')" title="Remove">&times;</button>` : ''}
+                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="startSingle('${aIp}')" title="Start">&#9654;</button>` : ''}
+                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;color:var(--color-danger);border-color:var(--color-danger);" onclick="stopSingle('${aIp}')" title="Stop">&#9632;</button>` : ''}
+                    ${isAdmin ? `<button class="gear-btn${expanded ? ' active' : ''}" onclick="toggleConfig('${aIp}')" title="SSH overrides">&#9881;</button>` : ''}
+                    ${isAdmin ? `<button class="del-btn" onclick="removeSlave('${aIp}')" title="Remove">&times;</button>` : ''}
                     ${isAdmin ? `<label class="toggle" title="${enabled ? 'Disable' : 'Enable'}">
-                        <input type="checkbox" ${enabled ? 'checked' : ''} onchange="toggleSlave('${escHtml(s.ip)}', this.checked)">
+                        <input type="checkbox" ${enabled ? 'checked' : ''} onchange="toggleSlave('${aIp}', this.checked)">
                         <span class="toggle-track"></span>
                     </label>` : ''}
                 </div>
             </div>
-            <div class="vm-meta">VM #${i + 1}</div>
+            <div class="vm-meta">${s.nickname ? escHtml(s.nickname) + ' &mdash; ' : ''}VM #${i + 1}</div>
             ${s.error ? '<div class="vm-error">' + escHtml(s.error) + '</div>' : ''}
             ${expanded ? renderConfigPanel(s) : ''}
         </div>`;
@@ -433,11 +379,18 @@ async function addSlave() {
     const ip = prompt('Enter slave IP address:');
     if (!ip || !ip.trim()) return;
     const trimmed = ip.trim();
+    // Basic IP/hostname validation
+    const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
+    const hostnameRegex = /^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$/;
+    if (!ipRegex.test(trimmed) && !hostnameRegex.test(trimmed)) {
+        showToast('Invalid IP address or hostname', 'warning');
+        return;
+    }
     if (slaveData.find(s => s.ip === trimmed)) {
         showToast('Slave already exists', 'warning');
         return;
     }
-    slaveData.push({ ip: trimmed, enabled: true, overrides: {}, status: null });
+    slaveData.push({ ip: trimmed, nickname: '', enabled: true, overrides: {}, status: null });
     await saveSlaves();
     showToast(`Added ${trimmed}`, 'success');
     render();
@@ -459,9 +412,10 @@ async function removeSlave(ip) {
 async function saveSlaves() {
     const slaves = slaveData.map(s => {
         const obj = { ip: s.ip, enabled: s.enabled !== false };
+        if (s.nickname) obj.nickname = s.nickname;
         const ov = s.overrides || {};
         // Only include overrides if at least one field is set
-        if (ov.user || ov.password || ov.dest_path) obj.overrides = ov;
+        if (ov.user || ov.password || ov.dest_path || ov.jmeter_path || ov.key_file) obj.overrides = ov;
         return obj;
     });
     await api('/api/config/slaves', { method: 'PUT', body: { slaves } });
@@ -481,12 +435,6 @@ function updateSummary() {
     document.getElementById('slaveSummary').innerHTML = html;
 }
 
-function escHtml(str) {
-    const div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
-}
-
 // ===== Per-slave config overrides =====
 function toggleConfig(ip) {
     if (expandedConfigs.has(ip)) expandedConfigs.delete(ip);
@@ -497,25 +445,48 @@ function toggleConfig(ip) {
 function renderConfigPanel(s) {
     const ov = s.overrides || {};
     const ssh = currentVmConfig.ssh_config || {};
-    const ip = escHtml(s.ip);
+    const ip = escAttr(s.ip);
     return `<div class="slave-config-panel">
         <div class="form-group">
+            <label class="form-label">Nickname</label>
+            <input class="form-input" value="${escAttr(s.nickname || '')}" placeholder="Optional display name"
+                onchange="updateNickname('${ip}',this.value)">
+        </div>
+        <div class="form-group">
             <label class="form-label">SSH User</label>
-            <input class="form-input" value="${escHtml(ov.user || '')}" placeholder="${escHtml(ssh.user || 'root')}"
+            <input class="form-input" value="${escAttr(ov.user || '')}" placeholder="${escAttr(ssh.user || 'root')}"
                 onchange="updateOverride('${ip}','user',this.value)">
         </div>
         <div class="form-group">
             <label class="form-label">SSH Password</label>
-            <input class="form-input" type="password" value="${escHtml(ov.password || '')}" placeholder="(global default)"
+            <input class="form-input" type="password" value="${escAttr(ov.password || '')}" placeholder="(global default)"
                 onchange="updateOverride('${ip}','password',this.value)">
+        </div>
+        <div class="form-group">
+            <label class="form-label">SSH Key File</label>
+            <input class="form-input form-input-mono" value="${escAttr(ov.key_file || '')}" placeholder="${escAttr(ssh.key_file || '(password auth)')}"
+                onchange="updateOverride('${ip}','key_file',this.value)">
         </div>
         <div class="form-group" style="flex:2;">
             <label class="form-label">Dest Path</label>
-            <input class="form-input form-input-mono" value="${escHtml(ov.dest_path || '')}" placeholder="${escHtml(ssh.dest_path || '/tmp/')}"
+            <input class="form-input form-input-mono" value="${escAttr(ov.dest_path || '')}" placeholder="${escAttr(ssh.dest_path || '/tmp/')}"
                 onchange="updateOverride('${ip}','dest_path',this.value)">
+        </div>
+        <div class="form-group">
+            <label class="form-label">JMeter Path</label>
+            <input class="form-input form-input-mono" value="${escAttr(ov.jmeter_path || '')}" placeholder="${escAttr(ssh.jmeter_path || '(global default)')}"
+                onchange="updateOverride('${ip}','jmeter_path',this.value)">
         </div>
         <div class="override-hint">Leave blank to use global defaults from VM Configuration.</div>
     </div>`;
+}
+
+async function updateNickname(ip, value) {
+    const slave = slaveData.find(s => s.ip === ip);
+    if (!slave) return;
+    slave.nickname = value.trim();
+    await saveSlaves();
+    render();
 }
 
 async function updateOverride(ip, field, value) {
@@ -579,31 +550,51 @@ function renderVmConfig() {
     const ssh = currentVmConfig.ssh_config || {};
     const scripts = currentVmConfig.jmeter_scripts || {};
     const ro = isAdmin ? '' : ' readonly';
+    const dis = isAdmin ? '' : ' disabled';
     container.innerHTML = `
-        <h3 class="text-sm mb-16" style="font-weight:600;">SSH Defaults</h3>
-        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
-            <div class="form-group" style="flex:1;min-width:150px;">
+        <h3 class="text-sm mb-16 section-title">SSH Defaults</h3>
+        <div class="form-row mb-16">
+            <div class="form-group form-col" style="min-width:150px;">
                 <label class="form-label">User</label>
                 <input class="form-input" id="vm_ssh_user" value="${escHtml(ssh.user || '')}"${ro}>
             </div>
-            <div class="form-group" style="flex:1;min-width:150px;">
+            <div class="form-group form-col" style="min-width:150px;">
                 <label class="form-label">Password</label>
                 <input class="form-input" id="vm_ssh_password" type="password" value="${escHtml(ssh.password || '')}"${ro}>
             </div>
-            <div class="form-group" style="flex:2;min-width:200px;">
+            <div class="form-group form-col" style="min-width:200px;">
+                <label class="form-label">SSH Key File</label>
+                <input class="form-input form-input-mono" id="vm_ssh_keyfile" value="${escHtml(ssh.key_file || '')}" placeholder="/path/to/key.pem"${ro}>
+            </div>
+            <div class="form-group form-col" style="flex:2;min-width:200px;">
                 <label class="form-label">Dest Path</label>
                 <input class="form-input form-input-mono" id="vm_ssh_dest" value="${escHtml(ssh.dest_path || '')}"${ro}>
             </div>
         </div>
-        <h3 class="text-sm mb-16" style="font-weight:600;">JMeter Scripts (on slaves)</h3>
-        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
-            <div class="form-group" style="flex:1;min-width:200px;">
-                <label class="form-label">Start Script</label>
-                <input class="form-input form-input-mono" id="vm_script_start" value="${escHtml(scripts.start || '')}"${ro}>
+        <h3 class="text-sm mb-16 section-title">JMeter on Slaves</h3>
+        <div class="form-row mb-16">
+            <div class="form-group form-col" style="flex:2;min-width:250px;">
+                <label class="form-label">JMeter Path (on slaves)</label>
+                <input class="form-input form-input-mono" id="vm_jmeter_path" value="${escHtml(ssh.jmeter_path || '')}" placeholder="/opt/jmeter"${ro}>
+                <span class="text-sm text-light">If set, auto-generates start/stop commands when scripts are empty.</span>
             </div>
-            <div class="form-group" style="flex:1;min-width:200px;">
+            <div class="form-group form-col" style="min-width:120px;">
+                <label class="form-label">Default OS</label>
+                <select class="form-select" id="vm_os"${dis}>
+                    <option value="linux"${(currentVmConfig.os || 'linux') === 'linux' ? ' selected' : ''}>Linux</option>
+                    <option value="windows"${currentVmConfig.os === 'windows' ? ' selected' : ''}>Windows</option>
+                </select>
+            </div>
+        </div>
+        <h3 class="text-sm mb-16 section-title">JMeter Scripts (on slaves)</h3>
+        <div class="form-row mb-16">
+            <div class="form-group form-col">
+                <label class="form-label">Start Script</label>
+                <input class="form-input form-input-mono" id="vm_script_start" value="${escHtml(scripts.start || '')}" placeholder="(auto from JMeter path)"${ro}>
+            </div>
+            <div class="form-group form-col">
                 <label class="form-label">Stop Script</label>
-                <input class="form-input form-input-mono" id="vm_script_stop" value="${escHtml(scripts.stop || '')}"${ro}>
+                <input class="form-input form-input-mono" id="vm_script_stop" value="${escHtml(scripts.stop || '')}" placeholder="(auto from JMeter path)"${ro}>
             </div>
         </div>
         <div class="text-sm text-light" style="margin-top:-8px;">Per-slave overrides can be set via the &#9881; button on each slave.</div>`;
@@ -614,16 +605,44 @@ async function saveVmConfig() {
         ssh_config: {
             user: document.getElementById('vm_ssh_user').value,
             password: document.getElementById('vm_ssh_password').value,
+            key_file: document.getElementById('vm_ssh_keyfile').value,
             dest_path: document.getElementById('vm_ssh_dest').value,
+            jmeter_path: document.getElementById('vm_jmeter_path').value,
         },
         jmeter_scripts: {
             start: document.getElementById('vm_script_start').value,
             stop: document.getElementById('vm_script_stop').value,
         },
+        os: document.getElementById('vm_os').value,
     };
     await api('/api/config/vm', { method: 'PUT', body: { config } });
     currentVmConfig = config;
     showToast('VM config saved', 'success');
+}
+
+// ===== Individual Start/Stop (F8) =====
+async function startSingle(ip) {
+    showToast(`Starting JMeter on ${ip}...`, 'info');
+    try {
+        const data = await api(`/api/slaves/${encodeURIComponent(ip)}/start`, { method: 'POST' });
+        const r = data.result;
+        showToast(r.ok ? `Started on ${ip}` : `Failed on ${ip}: ${r.error || 'Unknown error'}`, r.ok ? 'success' : 'error');
+    } catch (e) {
+        showToast(`Failed to start on ${ip}`, 'error');
+    }
+    setTimeout(() => refreshStatus(), 3000);
+}
+
+async function stopSingle(ip) {
+    showToast(`Stopping JMeter on ${ip}...`, 'info');
+    try {
+        const data = await api(`/api/slaves/${encodeURIComponent(ip)}/stop`, { method: 'POST' });
+        const r = data.result;
+        showToast(r.ok ? `Stopped on ${ip}` : `Failed on ${ip}: ${r.error || 'Unknown error'}`, r.ok ? 'success' : 'error');
+    } catch (e) {
+        showToast(`Failed to stop on ${ip}`, 'error');
+    }
+    setTimeout(() => refreshStatus(), 2000);
 }
 
 // ===== Collapse =====
@@ -635,8 +654,93 @@ function toggleSlaveList() {
     icon.innerHTML = hidden ? '&#9660;' : '&#9654;';
 }
 
+// ===== JMeter Properties (F2/F3/F4) =====
+let jmeterProps = [];
+
+async function loadProperties() {
+    try {
+        const data = await api('/api/config/jmeter-properties');
+        jmeterProps = data.properties || [];
+    } catch(e) { jmeterProps = []; }
+    renderProperties();
+}
+
+function renderProperties() {
+    const container = document.getElementById('propsForm');
+    if (!jmeterProps.length) {
+        container.innerHTML = '<p class="text-light text-sm" style="text-align:center;padding:16px;">No properties defined. Click "+ Add Property" or use a preset.</p>';
+        return;
+    }
+    let html = '<div style="display:flex;flex-direction:column;gap:4px;">';
+    jmeterProps.forEach((p, i) => {
+        const en = p.enabled !== false;
+        html += `<div class="form-row" style="gap:8px;align-items:center;opacity:${en ? 1 : 0.5};">
+            <label class="toggle" style="flex-shrink:0;"><input type="checkbox" ${en ? 'checked' : ''} onchange="jmeterProps[${i}].enabled=this.checked;renderProperties()"><span class="toggle-track"></span></label>
+            <input class="form-input form-input-mono" value="${escAttr(p.key || '')}" placeholder="property.key" style="flex:1;min-width:150px;" onchange="jmeterProps[${i}].key=this.value">
+            <input class="form-input form-input-mono" value="${escAttr(p.value || '')}" placeholder="value" style="flex:2;min-width:200px;" onchange="jmeterProps[${i}].value=this.value">
+            <button class="del-btn" onclick="jmeterProps.splice(${i},1);renderProperties()" title="Remove">&times;</button>
+        </div>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function addProperty(key, value) {
+    jmeterProps.push({ key: key || '', value: value || '', enabled: true });
+    renderProperties();
+    // Focus the last key input
+    setTimeout(() => {
+        const inputs = document.querySelectorAll('#propsForm input[placeholder="property.key"]');
+        if (inputs.length) inputs[inputs.length-1].focus();
+    }, 50);
+}
+
+function addInfluxPreset() {
+    const preset = [
+        { key: 'backend_influxdb.send_interval', value: '5', enabled: true },
+        { key: 'backend_influxdb.influxdbUrl', value: 'http://localhost:8086/write?db=jmeter', enabled: true },
+        { key: 'backend_influxdb.application', value: 'test', enabled: true },
+        { key: 'backend_influxdb.measurement', value: 'jmeter', enabled: true },
+        { key: 'backend_influxdb.summaryOnly', value: 'false', enabled: true },
+        { key: 'backend_influxdb.percentiles', value: '90;95;99', enabled: true },
+    ];
+    // Only add keys that don't already exist
+    const existingKeys = new Set(jmeterProps.map(p => p.key));
+    preset.forEach(p => { if (!existingKeys.has(p.key)) jmeterProps.push(p); });
+    renderProperties();
+    showToast('InfluxDB backend listener properties added', 'info');
+}
+
+async function saveProperties() {
+    await api('/api/config/jmeter-properties', { method: 'PUT', body: { properties: jmeterProps } });
+    showToast('JMeter properties saved', 'success');
+}
+
+async function pushProperties() {
+    if (!jmeterProps.filter(p => p.enabled !== false && p.key).length) {
+        showToast('No enabled properties to push', 'warning');
+        return;
+    }
+    if (!confirmAction('Push properties file to all enabled slave VMs?')) return;
+    showToast('Pushing properties...', 'info');
+    try {
+        // Save first
+        await api('/api/config/jmeter-properties', { method: 'PUT', body: { properties: jmeterProps } });
+        const data = await api('/api/config/push-properties', { method: 'POST' });
+        const results = data.results || [];
+        const ok = results.filter(r => r.ok).length;
+        showToast(`Pushed to ${ok}/${results.length} slave(s)`, ok === results.length ? 'success' : 'warning');
+    } catch(e) {
+        showToast('Push failed: ' + (e.message || 'Unknown error'), 'error');
+    }
+}
+
 // ===== Init =====
-loadSlaves();
+loadSlaves().then(() => {
+    // Auto-check status on page load if there are slaves
+    if (slaveData.length > 0) refreshStatus();
+});
 loadVmConfig();
+loadProperties();
 </script>
 {% endblock %}

@@ -67,10 +67,12 @@ document.querySelectorAll('.sidebar .nav-item').forEach(link => {
 })();
 
 /* ===== Toast Notifications ===== */
-function showToast(message, type = 'info', duration = 4000) {
+function showToast(message, type = 'info', duration = 4000, id = '') {
     const container = document.getElementById('toastContainer');
+    if (id) dismissToast(id);
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
+    if (id) toast.dataset.toastId = id;
     toast.textContent = message;
     container.appendChild(toast);
     setTimeout(() => {
@@ -79,6 +81,10 @@ function showToast(message, type = 'info', duration = 4000) {
         toast.style.transition = 'opacity 0.3s, transform 0.3s';
         setTimeout(() => toast.remove(), 300);
     }, duration);
+}
+function dismissToast(id) {
+    const el = document.querySelector(`[data-toast-id="${id}"]`);
+    if (el) el.remove();
 }
 
 /* ===== Base Path (from <meta name="base-path">) ===== */
@@ -120,10 +126,11 @@ function initTabs(container) {
         btn.addEventListener('click', () => {
             const target = btn.dataset.tab;
             // Deactivate all
-            el.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            el.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
             scope.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
             // Activate target
             btn.classList.add('active');
+            btn.setAttribute('aria-selected', 'true');
             const panel = scope.querySelector(`#${target}`);
             if (panel) panel.classList.add('active');
         });
@@ -188,6 +195,15 @@ class WSManager {
         if (this.ws) this.ws.close();
     }
 }
+
+/* ===== Shared Utilities ===== */
+function formatSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+    return (bytes/(1024*1024)).toFixed(1) + ' MB';
+}
+function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function escAttr(s) { return escHtml(s).replace(/'/g, '&#39;'); }
 
 /* ===== Auto-scroll Log Output ===== */
 function appendLog(containerId, text, className = '') {

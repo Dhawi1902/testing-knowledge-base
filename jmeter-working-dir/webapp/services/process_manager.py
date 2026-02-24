@@ -82,7 +82,7 @@ class ProcessManager:
             self._output_buffer.append(line.rstrip("\n"))
         proc.wait()
 
-        # Run post-commands sequentially
+        # Run post-commands sequentially (with timeout matching regeneration: 600s)
         for post_cmd in self._post_commands:
             self._output_buffer.append(f"\n--- Running: {' '.join(post_cmd)} ---")
             try:
@@ -99,10 +99,36 @@ class ProcessManager:
                     if not line:
                         break
                     self._output_buffer.append(line.rstrip("\n"))
-                post_proc.wait()
+                try:
+                    post_proc.wait(timeout=600)
+                except subprocess.TimeoutExpired:
+                    post_proc.kill()
+                    post_proc.wait()
+                    self._output_buffer.append("--- Timed out (10 min limit) ---")
+                    continue
                 self._output_buffer.append(f"--- Finished (exit code {post_proc.returncode}) ---")
             except Exception as e:
                 self._output_buffer.append(f"--- Error: {e} ---")
+
+        # Post-process: remove disabled graph panels from report HTML
+        result_dir = self._run_info.get("result_dir")
+        if result_dir:
+            result_path = Path(result_dir)
+            try:
+                from services.report_properties import cleanup_report_html
+                report_path = result_path / "report"
+                if report_path.is_dir():
+                    cleanup_report_html(report_path)
+                    self._output_buffer.append("--- Cleaned up disabled graph panels from report HTML ---")
+            except Exception as e:
+                self._output_buffer.append(f"--- Report HTML cleanup error: {e} ---")
+            # Clean up filtered.jtl (same as regeneration does)
+            filtered_jtl = result_path / "filtered.jtl"
+            if filtered_jtl.exists():
+                try:
+                    filtered_jtl.unlink()
+                except OSError:
+                    pass
 
     async def subscribe_output(self, start_index: int = 0):
         """Async generator: yields buffered lines from start_index, then tails new ones until drain completes."""

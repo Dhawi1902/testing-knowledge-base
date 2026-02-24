@@ -65,5 +65,7 @@ screenshot/
 # Web App (tracked)
 # webapp/  — now tracked in git
 webapp/settings.json
+webapp/logs/
+webapp/htmlcov/
 webapp/__pycache__/
 webapp/**/__pycache__/

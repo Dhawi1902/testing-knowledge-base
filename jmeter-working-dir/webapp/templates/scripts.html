@@ -27,7 +27,6 @@
 {% block scripts %}
 <script>
 let ws = null;
-function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
 async function loadScripts() {
     const data = await api('/api/scripts/list');
@@ -55,7 +54,7 @@ async function loadScripts() {
             html += `<tr>
                 <td class="text-mono text-sm">${escHtml(s.name)}</td>
                 <td><span class="badge ${typeClass}">${escHtml(s.type)}</span></td>
-                <td><button class="btn btn-primary btn-sm" onclick="runScript('${escHtml(s.path)}')">Run</button></td>
+                <td><button class="btn btn-primary btn-sm" onclick="runScript('${escAttr(s.path)}')">Run</button></td>
             </tr>`;
         });
         html += '</tbody></table></div>';
@@ -70,7 +69,7 @@ async function runScript(path) {
         showToast('Script started: ' + data.label, 'info');
         setScriptState(true, data.label);
         connectOutputStream();
-    } catch(e) {}
+    } catch(e) { console.error(e); }
 }
 
 async function stopScript() {
