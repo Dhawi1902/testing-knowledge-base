@@ -1,5 +1,33 @@
 {
-  "Baseline": {"student": "10", "rampUp": "10", "loop": "1", "thinkTime": "3000"},
-  "Stress": {"student": "100", "rampUp": "60", "loop": "1", "thinkTime": "500"},
-  "Spike": {"student": "500", "rampUp": "30", "loop": "1", "thinkTime": "100", "syncTimer": "true"}
+  "Baseline": {
+    "student": "10",
+    "rampUp": "10",
+    "loop": "1",
+    "thinkTime": "3000"
+  },
+  "Stress": {
+    "student": "100",
+    "rampUp": "60",
+    "loop": "1",
+    "thinkTime": "500"
+  },
+  "Spike": {
+    "student": "500",
+    "rampUp": "30",
+    "loop": "1",
+    "thinkTime": "100",
+    "syncTimer": "true"
+  },
+  "test 1": {
+    "student": "10",
+    "rampUp": "10",
+    "loop": "1",
+    "dynatrace.tsn": "MAYA-Student",
+    "dynatrace.lsn": "CE-01-Enrolment",
+    "logout": "true",
+    "runId": "STE003",
+    "smoke": "true",
+    "thinkTime": "3000",
+    "student_data": "test_data/student_data.csv"
+  }
 }

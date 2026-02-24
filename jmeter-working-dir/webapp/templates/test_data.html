@@ -3,44 +3,55 @@
 {% block title %}Test Data{% endblock %}
 {% block page_title %}Test Data{% endblock %}
 
+{% block head %}
+<style>
+/* Sidebar preset list */
+.csv-builder-layout { display:flex; gap:0; min-height:300px; }
+.preset-sidebar { width:180px; flex-shrink:0; border-right:1px solid var(--color-border); padding:10px 0; display:flex; flex-direction:column; }
+.preset-sidebar .sidebar-label { font-size:10px; text-transform:uppercase; letter-spacing:0.05em; color:var(--color-text-light); padding:0 12px; margin-bottom:4px; }
+.preset-sidebar .sidebar-sep { font-size:10px; color:var(--color-text-light); padding:6px 12px 2px; margin-top:4px; }
+.preset-item { display:flex; align-items:center; padding:5px 12px; cursor:pointer; font-size:13px; border:none; background:none; width:100%; text-align:left; color:var(--color-text); transition:background 0.1s; }
+.preset-item:hover { background:var(--color-bg-secondary); }
+.preset-item.active { background:var(--color-primary); color:#fff; border-radius:0; }
+.preset-item .preset-del { margin-left:auto; opacity:0; font-size:14px; padding:0 2px; background:none; border:none; color:inherit; cursor:pointer; }
+.preset-item:hover .preset-del { opacity:0.5; }
+.preset-item .preset-del:hover { opacity:1; }
+.builder-main { flex:1; padding:12px 16px; min-width:0; display:flex; flex-direction:column; }
+.builder-main .builder-actions { margin-top:16px; display:flex; gap:8px; flex-wrap:wrap; }
+/* Column cards */
+.builder-col { border:1px solid var(--color-border); border-radius:6px; padding:10px 12px; margin-bottom:6px; max-width:520px; }
+.builder-col .form-input { padding:6px 8px; font-size:13px; min-width:0; }
+.builder-col-header { display:flex; gap:6px; align-items:center; }
+.builder-col-header .col-name { flex:1; min-width:0; }
+.builder-col-header .col-type { width:140px; flex-shrink:0; }
+.builder-col-body { margin-top:8px; }
+.seq-range { display:flex; gap:6px; align-items:center; margin-bottom:4px; }
+.seq-range-header { font-size:11px; color:var(--color-text-light); margin-bottom:2px; }
+.seq-range-header span { display:inline-block; }
+.type-help { color:var(--color-text-light); font-size:12px; margin-top:4px; }
+.col-remove { background:none; border:none; color:var(--color-text-light); cursor:pointer; font-size:18px; line-height:1; padding:0 2px; opacity:0.5; transition:opacity 0.15s, color 0.15s; flex-shrink:0; }
+.col-remove:hover { opacity:1; color:#ef4444; }
+/* Flex-fill input classes */
+.fx-prefix { width:70px; flex-shrink:0; }
+.fx-grow { flex:1; }
+.fx-pad { width:55px; flex-shrink:0; }
+.fx-count { width:90px; flex-shrink:0; }
+/* Distribute items */
+.dist-item { display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid var(--color-border); flex-wrap:wrap; }
+.dist-item:last-child { border-bottom:none; }
+.dist-item .dist-split-opts { display:inline-flex; gap:6px; align-items:center; }
+.dist-item .dist-split-opts .form-input { padding:4px 6px; font-size:12px; width:70px; }
+.dist-item .dist-remove { background:none; border:none; color:var(--color-text-light); cursor:pointer; font-size:15px; padding:0 2px; opacity:0.3; transition:opacity 0.15s, color 0.15s; }
+.dist-item .dist-remove:hover { opacity:1; color:#ef4444; }
+/* Rename trigger */
+.rename-trigger { cursor:pointer; border-bottom:1px dashed var(--color-text-light); padding-bottom:1px; }
+.rename-trigger:hover { color:var(--color-primary); border-color:var(--color-primary); }
+</style>
+{% endblock %}
+
 {% block content %}
+<!-- CSV Files -->
 <div class="card mb-16">
-    <div class="card-header">
-        <span class="card-title">Master Data</span>
-        <div class="flex gap-8">
-            <button class="btn btn-primary btn-sm" onclick="generateData()" id="generateBtn">Generate</button>
-        </div>
-    </div>
-    <div id="masterDataInfo">
-        <p class="text-light">Loading...</p>
-    </div>
-</div>
-
-<div class="card mb-16">
-    <div class="card-header">
-        <span class="card-title">Split & Distribute</span>
-    </div>
-    <div class="flex gap-16 mb-16" style="flex-wrap: wrap;">
-        <div class="form-group" style="min-width: 120px;">
-            <label class="form-label">Offset</label>
-            <input type="number" class="form-input" id="splitOffset" value="0" min="0">
-        </div>
-        <div class="form-group" style="min-width: 120px;">
-            <label class="form-label">Size</label>
-            <input type="number" class="form-input" id="splitSize" value="15000" min="1">
-        </div>
-        <div style="display: flex; align-items: flex-end; gap: 8px;">
-            <button class="btn btn-outline btn-sm" id="splitBtn" onclick="splitData()">Split</button>
-            <button class="btn btn-primary btn-sm" id="distributeBtn" onclick="distributeData()">Distribute</button>
-        </div>
-    </div>
-    <div id="splitOutput" class="hidden">
-        <label class="form-label">Output</label>
-        <pre class="log-output" id="splitLog" style="height:200px;"></pre>
-    </div>
-</div>
-
-<div class="card">
     <div class="card-header">
         <span class="card-title">CSV Files</span>
         <button class="btn btn-outline btn-sm" onclick="loadFiles()">Refresh</button>
@@ -50,15 +61,95 @@
             <thead>
                 <tr>
                     <th>File</th>
+                    <th>Columns</th>
                     <th>Rows</th>
                     <th>Size</th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody id="csvFilesList">
-                <tr><td colspan="4" class="text-light">Loading...</td></tr>
+                <tr><td colspan="5" class="text-light">Loading...</td></tr>
             </tbody>
         </table>
+    </div>
+</div>
+
+<!-- CSV Builder -->
+<div class="card mb-16" style="padding:0; overflow:hidden;">
+    <div class="card-header" style="padding:12px 16px;">
+        <span class="card-title">CSV Builder</span>
+    </div>
+    <div class="csv-builder-layout">
+        <!-- Preset sidebar -->
+        <div class="preset-sidebar">
+            <div class="sidebar-label">Templates</div>
+            <button class="preset-item" onclick="createNew()" style="color:var(--color-primary);">+ Create new</button>
+            <div id="presetList"></div>
+        </div>
+
+        <!-- Builder main -->
+        <div class="builder-main">
+            <div id="builderEmpty" class="hidden" style="display:flex; align-items:center; justify-content:center; flex:1; color:var(--color-text-light); font-size:14px;">
+                Select a template or click "+ Create new" to start
+            </div>
+            <div id="builderForm">
+            <div style="display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap;">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label">Filename</label>
+                    <input type="text" class="form-input" id="buildFilename" value="master_data.csv" style="width:200px;">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label">Rows</label>
+                    <input type="number" class="form-input" id="buildRowCount" placeholder="auto" min="1" max="1000000" style="width:100px;" title="Leave empty when using sequential columns">
+                </div>
+            </div>
+
+            <label class="form-label">Columns</label>
+            <div id="columnDefs"></div>
+            <div style="margin-top:8px;">
+                <button class="btn btn-outline btn-sm" onclick="addColumn()">+ Add Column</button>
+            </div>
+
+            <div class="builder-actions">
+                <button class="btn btn-outline btn-sm" onclick="previewBuild()">Preview</button>
+                {% if access_level != 'viewer' %}
+                <button class="btn btn-primary btn-sm" id="buildBtn" onclick="buildCsv()">Generate</button>
+                <label class="btn btn-outline btn-sm" style="cursor:pointer;">
+                    Upload CSV
+                    <input type="file" id="uploadFile" accept=".csv" onchange="uploadCsv()" style="display:none;">
+                </label>
+                {% endif %}
+                <button class="btn btn-outline btn-sm" onclick="saveCustomPreset()">Save template</button>
+            </div>
+
+            <div id="buildPreview" class="hidden" style="margin-top:16px;">
+                <label class="form-label">Preview</label>
+                <div class="table-wrapper" id="buildPreviewTable"></div>
+            </div>
+            </div><!-- /builderForm -->
+        </div>
+    </div>
+</div>
+
+<!-- Distribute to Slaves -->
+<div class="card mb-16">
+    <div class="card-header">
+        <span class="card-title">Distribute to Slaves</span>
+    </div>
+
+    <div id="distItems"></div>
+    <div style="display:flex; gap:8px; margin-bottom:12px;">
+        <button class="btn btn-outline btn-sm" onclick="addDistFile()">+ Add file</button>
+        <button class="btn btn-outline btn-sm" onclick="previewDist()">Preview</button>
+        {% if access_level != 'viewer' %}
+        <button class="btn btn-primary btn-sm" id="distributeBtn" onclick="distributeData()">Distribute</button>
+        {% endif %}
+    </div>
+
+    <div id="distPreview" class="hidden" style="margin-bottom:12px;"></div>
+
+    <div id="distOutput" class="hidden" style="margin-top:12px;">
+        <pre class="log-output" id="distLog" style="height:200px;"></pre>
     </div>
 </div>
 
@@ -83,116 +174,854 @@ function formatSize(bytes) {
 }
 function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
-async function loadFiles() {
-    const data = await api('/api/data/files');
-    const files = data.files || [];
-    const tbody = document.getElementById('csvFilesList');
+const ACCESS_LEVEL = '{{ access_level | default("viewer") }}';
 
-    // Show master data info
-    const master = files.find(f => f.filename.includes('master'));
-    const info = document.getElementById('masterDataInfo');
-    if (master) {
-        info.innerHTML = `<table>
-            <tr><td class="text-light" style="width:80px;">File</td><td class="text-mono">${escHtml(master.filename)}</td></tr>
-            <tr><td class="text-light">Rows</td><td>${master.rows.toLocaleString()}</td></tr>
-            <tr><td class="text-light">Size</td><td>${formatSize(master.size)}</td></tr>
-        </table>`;
-    } else {
-        info.innerHTML = '<p class="text-light">No master data file found. Click Generate to create one.</p>';
-    }
+const COL_TYPES = [
+    { value: 'sequential',  label: 'Sequential ID' },
+    { value: 'static',      label: 'Static' },
+    { value: 'random_pick', label: 'Random Pick' },
+    { value: 'expression',  label: 'Expression' },
+    { value: 'sequence',    label: 'Sequence' },
+];
 
-    if (!files.length) {
-        tbody.innerHTML = '<tr><td colspan="4" class="text-light">No CSV files found.</td></tr>';
-        return;
-    }
-    tbody.innerHTML = files.map(f => `<tr>
-        <td class="text-mono text-sm">${escHtml(f.filename)}</td>
-        <td>${f.rows >= 0 ? f.rows.toLocaleString() : '-'}</td>
-        <td>${formatSize(f.size)}</td>
-        <td><button class="btn btn-outline btn-sm" onclick="previewFile('${escHtml(f.filename)}')">Preview</button></td>
-    </tr>`).join('');
+
+/* ===== Column Builder ===== */
+
+function addColumn(def = {}) {
+    const name = def.name || '';
+    const type = def.type || 'static';
+
+    const col = document.createElement('div');
+    col.className = 'builder-col';
+
+    // Header: name + type + remove
+    const opts = COL_TYPES.map(t =>
+        `<option value="${t.value}"${t.value===type?' selected':''}>${t.label}</option>`
+    ).join('');
+
+    col.innerHTML = `
+        <div class="builder-col-header">
+            <input type="text" class="form-input col-name" placeholder="Column name" value="${escHtml(name)}">
+            <select class="form-input col-type" onchange="onTypeChange(this)">${opts}</select>
+            <button class="col-remove" onclick="this.closest('.builder-col').remove()" title="Remove column">&times;</button>
+        </div>
+        <div class="builder-col-body"></div>
+    `;
+
+    document.getElementById('columnDefs').appendChild(col);
+    renderTypeBody(col.querySelector('.builder-col-body'), type, def);
 }
 
-async function previewFile(filename) {
-    document.getElementById('previewTitle').textContent = 'Preview: ' + filename;
-    document.getElementById('previewContent').innerHTML = '<p class="text-light">Loading...</p>';
-    openModal('previewModal');
+function onTypeChange(select) {
+    const col = select.closest('.builder-col');
+    renderTypeBody(col.querySelector('.builder-col-body'), select.value);
+}
 
-    const data = await api(`/api/data/preview/${encodeURIComponent(filename)}`);
-    if (data.error) {
-        document.getElementById('previewContent').innerHTML = `<p class="text-light">${escHtml(data.error)}</p>`;
-        return;
+function renderTypeBody(body, type, def = {}) {
+    if (type === 'sequential') {
+        body.innerHTML = `
+            <div class="seq-ranges"></div>
+            <button class="btn btn-outline btn-sm" onclick="addRange(this.closest('.builder-col'))">+ Range</button>
+        `;
+        const ranges = def.ranges || [{ prefix: def.prefix || '', start: def.start ?? 1, end: def.end ?? 50000, width: def.width ?? 6 }];
+        ranges.forEach(r => addRange(body.closest('.builder-col'), r));
+
+    } else if (type === 'static') {
+        body.innerHTML = `<input type="text" class="form-input static-value" placeholder="Value for all rows" value="${escHtml(def.value || '')}">`;
+
+    } else if (type === 'random_pick') {
+        body.innerHTML = `
+            <div class="pick-entries"></div>
+            <button class="btn btn-outline btn-sm" onclick="addPickValue(this.closest('.builder-col'))">+ Value</button>
+            <div class="type-help">Counts that don't add up to total rows: remainder filled with last value, excess trimmed. All shuffled.</div>
+        `;
+        const entries = def.values || [{ value: '', count: '' }];
+        const parsed = entries.map(e => typeof e === 'string' ? { value: e, count: '' } : e);
+        parsed.forEach(e => addPickValue(body.closest('.builder-col'), e));
+
+    } else if (type === 'expression') {
+        body.innerHTML = `
+            <input type="text" class="form-input expr-template" placeholder="{username}@test.com" value="${escHtml(def.template || '')}">
+            <div class="type-help">Use <code>{column_name}</code> to reference another column, <code>&#123;#&#125;</code> for row number</div>
+        `;
+
+    } else if (type === 'sequence') {
+        body.innerHTML = `
+            <span style="display:inline-flex;gap:6px;align-items:center;">
+                <span class="text-light text-sm">Start</span>
+                <input type="number" class="form-input seq-num-start" value="${def.start ?? 1}" style="width:70px;">
+                <span class="text-light text-sm">Step</span>
+                <input type="number" class="form-input seq-num-step" value="${def.step ?? 1}" style="width:70px;">
+            </span>
+        `;
     }
-    let html = '<table><thead><tr>';
-    data.columns.forEach(c => { html += `<th>${escHtml(c)}</th>`; });
-    html += '</tr></thead><tbody>';
-    data.rows.forEach(row => {
-        html += '<tr>';
-        row.forEach(cell => { html += `<td class="text-sm">${escHtml(cell || '')}</td>`; });
-        html += '</tr>';
+}
+
+function addRange(colEl, def = {}) {
+    const container = colEl.querySelector('.seq-ranges');
+    // Add header row if this is the first range
+    if (!container.children.length) {
+        const hdr = document.createElement('div');
+        hdr.className = 'seq-range seq-range-header';
+        hdr.innerHTML = `
+            <span class="fx-prefix">Prefix</span>
+            <span class="fx-grow">Start</span>
+            <span class="fx-grow">End</span>
+            <span class="fx-pad">Pad</span>
+            <span style="width:18px;"></span>
+        `;
+        container.appendChild(hdr);
+    }
+    const row = document.createElement('div');
+    row.className = 'seq-range';
+    row.innerHTML = `
+        <input type="text" class="form-input range-prefix fx-prefix" placeholder="e.g. LG" value="${escHtml(def.prefix || '')}">
+        <input type="number" class="form-input range-start fx-grow" value="${def.start ?? 1}" min="0">
+        <input type="number" class="form-input range-end fx-grow" value="${def.end ?? 50000}" min="1">
+        <input type="number" class="form-input range-width fx-pad" value="${def.width ?? 6}" min="1" max="20">
+        <button class="col-remove" onclick="this.closest('.seq-range').remove()" title="Remove range">&times;</button>
+    `;
+    container.appendChild(row);
+}
+
+function addPickValue(colEl, def = {}) {
+    const container = colEl.querySelector('.pick-entries');
+    // Add header if first entry
+    if (!container.children.length) {
+        const hdr = document.createElement('div');
+        hdr.className = 'seq-range seq-range-header';
+        hdr.innerHTML = `
+            <span class="fx-grow">Value</span>
+            <span class="fx-count">Count</span>
+            <span style="width:18px;"></span>
+        `;
+        container.appendChild(hdr);
+    }
+    const row = document.createElement('div');
+    row.className = 'seq-range';
+    row.innerHTML = `
+        <input type="text" class="form-input pick-val fx-grow" placeholder="e.g. active" value="${escHtml(def.value || '')}">
+        <input type="number" class="form-input pick-count fx-count" placeholder="auto" value="${def.count || ''}" min="1">
+        <button class="col-remove" onclick="this.closest('.seq-range').remove()" title="Remove value">&times;</button>
+    `;
+    container.appendChild(row);
+}
+
+
+/* ===== Collect column definitions ===== */
+
+function getColumnDefs() {
+    const defs = [];
+    document.querySelectorAll('.builder-col').forEach(col => {
+        const name = col.querySelector('.col-name').value.trim();
+        const type = col.querySelector('.col-type').value;
+        if (!name) return;
+
+        const def = { name, type };
+
+        if (type === 'sequential') {
+            def.ranges = [];
+            col.querySelectorAll('.seq-range:not(.seq-range-header)').forEach(r => {
+                def.ranges.push({
+                    prefix: r.querySelector('.range-prefix').value,
+                    start:  parseInt(r.querySelector('.range-start').value) || 1,
+                    end:    parseInt(r.querySelector('.range-end').value) || 100,
+                    width:  parseInt(r.querySelector('.range-width').value) || 6,
+                });
+            });
+        } else if (type === 'static') {
+            def.value = col.querySelector('.static-value').value;
+        } else if (type === 'random_pick') {
+            def.values = [];
+            col.querySelectorAll('.pick-entries .seq-range:not(.seq-range-header)').forEach(r => {
+                const val = r.querySelector('.pick-val').value.trim();
+                const cnt = parseInt(r.querySelector('.pick-count').value) || 0;
+                if (val) def.values.push({ value: val, count: cnt });
+            });
+        } else if (type === 'expression') {
+            def.template = col.querySelector('.expr-template').value;
+        } else if (type === 'sequence') {
+            def.start = parseInt(col.querySelector('.seq-num-start').value) || 1;
+            def.step  = parseInt(col.querySelector('.seq-num-step').value) || 1;
+        }
+
+        defs.push(def);
     });
-    html += '</tbody></table>';
-    if (data.total_preview >= 50) html += '<p class="text-light text-sm" style="margin-top:8px;">Showing first 50 rows.</p>';
-    document.getElementById('previewContent').innerHTML = html;
+    return defs;
 }
 
-async function generateData() {
-    const btn = document.getElementById('generateBtn');
+
+/* ===== Client-side Preview ===== */
+
+function previewBuild() {
+    const columns = getColumnDefs();
+    if (!columns.length) { showToast('Add at least one column', 'error'); return; }
+
+    // Calculate total rows from sequential columns or row count input
+    let totalRows = null;
+    for (const c of columns) {
+        if (c.type === 'sequential') {
+            const t = (c.ranges || []).reduce((s, r) => s + Math.max(r.end - r.start + 1, 0), 0);
+            if (totalRows === null) totalRows = t;
+        }
+    }
+    if (totalRows === null) {
+        const rc = parseInt(document.getElementById('buildRowCount').value);
+        if (rc > 0) totalRows = rc;
+    }
+    if (totalRows === null || totalRows === 0) { showToast('Specify row count or add a sequential column', 'error'); return; }
+
+    const n = Math.min(5, totalRows);
+
+    // Generate sample values for each column
+    const samples = {};
+    for (const c of columns) {
+        if (c.type === 'sequential') {
+            const vals = [];
+            for (const r of c.ranges) {
+                for (let i = r.start; vals.length < n && i <= r.end; i++) {
+                    vals.push(r.prefix + String(i).padStart(r.width, '0'));
+                }
+            }
+            samples[c.name] = vals;
+        } else if (c.type === 'static') {
+            samples[c.name] = Array(n).fill(c.value || '');
+        } else if (c.type === 'random_pick') {
+            const pool = [];
+            for (const e of (c.values || [])) {
+                const v = typeof e === 'string' ? e : e.value;
+                const cnt = typeof e === 'object' && e.count ? e.count : 1;
+                for (let j = 0; j < cnt && pool.length < n; j++) pool.push(v);
+            }
+            // Shuffle for preview
+            for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [pool[i], pool[j]] = [pool[j], pool[i]]; }
+            samples[c.name] = Array.from({length: n}, (_, i) => pool[i] || '');
+        } else if (c.type === 'sequence') {
+            samples[c.name] = Array.from({length: n}, (_, i) => String(c.start + i * c.step));
+        } else if (c.type === 'expression') {
+            samples[c.name] = Array(n).fill(''); // placeholder
+        }
+    }
+    // Resolve expressions
+    for (const c of columns) {
+        if (c.type === 'expression') {
+            samples[c.name] = Array.from({length: n}, (_, i) => {
+                let val = c.template || '';
+                for (const [k, v] of Object.entries(samples)) {
+                    if (k !== c.name) val = val.replaceAll(`{${k}}`, String(v[i]));
+                }
+                return val.replaceAll('{' + '#}', String(i + 1));
+            });
+        }
+    }
+
+    // Render table
+    let html = '<table><thead><tr>';
+    columns.forEach(c => { html += `<th>${escHtml(c.name)}</th>`; });
+    html += '</tr></thead><tbody>';
+    for (let i = 0; i < n; i++) {
+        html += '<tr>';
+        columns.forEach(c => { html += `<td class="text-sm text-mono">${escHtml(String(samples[c.name][i]))}</td>`; });
+        html += '</tr>';
+    }
+    if (totalRows > n) {
+        html += '<tr>';
+        columns.forEach(() => { html += '<td class="text-light">...</td>'; });
+        html += '</tr>';
+    }
+    html += '</tbody></table>';
+    html += `<p class="text-light text-sm" style="margin-top:6px;">${totalRows.toLocaleString()} rows will be generated.</p>`;
+
+    document.getElementById('buildPreviewTable').innerHTML = html;
+    document.getElementById('buildPreview').classList.remove('hidden');
+}
+
+async function buildCsv() {
+    const columns = getColumnDefs();
+    if (!columns.length) { showToast('Add at least one column', 'error'); return; }
+    const filename = document.getElementById('buildFilename').value.trim();
+    if (!filename) { showToast('Filename required', 'error'); return; }
+
+    const btn = document.getElementById('buildBtn');
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span> Generating...';
     try {
-        const data = await api('/api/data/generate', { method: 'POST' });
-        if (data.ok) {
-            showToast('Master data generated', 'success');
-        } else {
-            showToast('Generation failed', 'error');
-        }
-        if (data.output) {
-            document.getElementById('splitOutput').classList.remove('hidden');
-            document.getElementById('splitLog').textContent = data.output;
-        }
+        const rc = parseInt(document.getElementById('buildRowCount').value);
+        const body = { filename, columns };
+        if (rc > 0) body.row_count = rc;
+        const data = await api('/api/data/build', { method: 'POST', body });
+        showToast(`Generated ${data.rows.toLocaleString()} rows \u2192 ${data.filename}`, 'success');
         loadFiles();
-    } finally {
+    } catch(e) {} finally {
         btn.disabled = false;
         btn.textContent = 'Generate';
     }
 }
 
-async function splitData() {
-    const btn = document.getElementById('splitBtn');
-    btn.disabled = true;
-    const offset = parseInt(document.getElementById('splitOffset').value) || 0;
-    const size = parseInt(document.getElementById('splitSize').value) || 15000;
+
+/* ===== Upload ===== */
+
+async function uploadCsv() {
+    const input = document.getElementById('uploadFile');
+    if (!input.files.length) return;
+    const formData = new FormData();
+    formData.append('file', input.files[0]);
     try {
-        const data = await api('/api/data/split', { method: 'POST', body: { offset, size } });
-        document.getElementById('splitOutput').classList.remove('hidden');
-        document.getElementById('splitLog').textContent = data.output || '';
-        if (data.ok) showToast('Data split complete', 'success');
-        else showToast('Split failed', 'error');
+        const data = await api('/api/data/upload', { method: 'POST', body: formData });
+        showToast(`Uploaded ${data.filename}`, 'success');
+        input.value = '';
         loadFiles();
-    } finally {
-        btn.disabled = false;
+    } catch(e) { input.value = ''; }
+}
+
+
+/* ===== Presets ===== */
+
+const PRESETS = {
+    username_only: {
+        label: 'Username Only',
+        filename: 'master_data.csv',
+        columns: [
+            { name: 'username', type: 'sequential', ranges: [
+                { prefix: 'LG', start: 1, end: 10000, width: 6 },
+                { prefix: 'MK', start: 1, end: 5000, width: 6 },
+            ]},
+        ],
+    },
+    username_password: {
+        label: 'Username + Password',
+        filename: 'master_data.csv',
+        columns: [
+            { name: 'username', type: 'sequential', ranges: [
+                { prefix: 'LG', start: 1, end: 10000, width: 6 },
+            ]},
+            { name: 'password', type: 'static', value: 'P@ssw0rd' },
+        ],
+    },
+    user_status_email: {
+        label: 'User + Status + Email',
+        filename: 'master_data.csv',
+        columns: [
+            { name: 'username', type: 'sequential', ranges: [
+                { prefix: 'USR', start: 1, end: 5000, width: 6 },
+            ]},
+            { name: 'status', type: 'random_pick', values: [
+                { value: 'active', count: 3000 },
+                { value: 'inactive', count: 1500 },
+                { value: 'suspended', count: 500 },
+            ]},
+            { name: 'email', type: 'expression', template: '{username}@test.com' },
+        ],
+    },
+    student_data: {
+        label: 'Student Data (5 prefixes)',
+        filename: 'master_student_data.csv',
+        columns: [
+            { name: 'USERNAME', type: 'sequential', ranges: [
+                { prefix: 'AAR', start: 1, end: 9000, width: 6 },
+                { prefix: 'ABR', start: 1, end: 9000, width: 6 },
+                { prefix: 'ACR', start: 1, end: 9000, width: 6 },
+                { prefix: 'ADR', start: 1, end: 9000, width: 6 },
+                { prefix: 'AER', start: 1, end: 9000, width: 6 },
+            ]},
+        ],
+    },
+};
+
+const CUSTOM_PRESETS_KEY = 'jmeter_csv_presets';
+let activePresetKey = 'blank';
+
+function getCustomPresets() {
+    try { return JSON.parse(localStorage.getItem(CUSTOM_PRESETS_KEY) || '{}'); }
+    catch { return {}; }
+}
+
+function saveCustomPresets(presets) {
+    localStorage.setItem(CUSTOM_PRESETS_KEY, JSON.stringify(presets));
+}
+
+function renderPresetList() {
+    const list = document.getElementById('presetList');
+    let html = '';
+    // Built-in presets
+    for (const [key, p] of Object.entries(PRESETS)) {
+        const cls = key === activePresetKey ? ' active' : '';
+        html += `<button class="preset-item${cls}" onclick="selectPreset('${key}')">${escHtml(p.label)}</button>`;
+    }
+    // Custom presets
+    const custom = getCustomPresets();
+    const keys = Object.keys(custom);
+    if (keys.length) {
+        html += '<div class="sidebar-sep">\u2500\u2500 Saved \u2500\u2500</div>';
+        for (const [key, p] of Object.entries(custom)) {
+            const fullKey = 'custom:' + key;
+            const cls = fullKey === activePresetKey ? ' active' : '';
+            html += `<button class="preset-item${cls}" onclick="selectPreset('custom:${escHtml(key)}')">
+                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(p.label)}</span>
+                <span class="preset-del" onclick="event.stopPropagation();deleteCustomPreset('${escHtml(key)}')" title="Delete">&times;</span>
+            </button>`;
+        }
+    }
+    list.innerHTML = html;
+}
+
+function showBuilder(show) {
+    document.getElementById('builderForm').classList.toggle('hidden', !show);
+    document.getElementById('builderEmpty').classList.toggle('hidden', show);
+}
+
+function createNew() {
+    activePresetKey = null;
+    localStorage.setItem('jmeter_csv_last_preset', '');
+    document.getElementById('buildFilename').value = 'data.csv';
+    document.getElementById('buildRowCount').value = '';
+    document.getElementById('columnDefs').innerHTML = '';
+    document.getElementById('buildPreview').classList.add('hidden');
+    addColumn();
+    showBuilder(true);
+    renderPresetList();
+}
+
+function selectPreset(key) {
+    activePresetKey = key;
+    localStorage.setItem('jmeter_csv_last_preset', key);
+    let preset;
+    if (key.startsWith('custom:')) {
+        const custom = getCustomPresets();
+        preset = custom[key.slice(7)];
+    } else {
+        preset = PRESETS[key];
+    }
+    if (!preset) return;
+    document.getElementById('buildFilename').value = preset.filename || 'data.csv';
+    document.getElementById('buildRowCount').value = preset.row_count || '';
+    document.getElementById('columnDefs').innerHTML = '';
+    document.getElementById('buildPreview').classList.add('hidden');
+    preset.columns.forEach(c => addColumn(c));
+    showBuilder(true);
+    renderPresetList();
+}
+
+function saveCustomPreset() {
+    const columns = getColumnDefs();
+    const filename = document.getElementById('buildFilename').value.trim();
+    const rc = parseInt(document.getElementById('buildRowCount').value) || 0;
+    const label = prompt('Preset name:');
+    if (!label || !label.trim()) return;
+    const key = label.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
+    const custom = getCustomPresets();
+    const preset = { label: label.trim(), filename, columns };
+    if (rc > 0) preset.row_count = rc;
+    custom[key] = preset;
+    saveCustomPresets(custom);
+    activePresetKey = 'custom:' + key;
+    renderPresetList();
+    showToast('Preset saved: ' + label.trim(), 'success');
+}
+
+function deleteCustomPreset(name) {
+    const custom = getCustomPresets();
+    if (!custom[name]) return;
+    if (!confirm('Delete "' + custom[name].label + '"?')) return;
+    delete custom[name];
+    saveCustomPresets(custom);
+    if (activePresetKey === 'custom:' + name) {
+        createNew();
+    } else {
+        renderPresetList();
+    }
+    showToast('Preset deleted', 'success');
+}
+
+
+/* ===== Distribute ===== */
+
+let distAvailableFiles = [];
+
+function updateDistPicker(files) {
+    distAvailableFiles = files;
+}
+
+function buildFileOptions() {
+    const files = distAvailableFiles.filter(f => !f.filename.includes('/'));
+    if (!files.length) return '<option value="">No CSV files</option>';
+    return '<option value="">Select file...</option>' +
+        files.map(f => `<option value="${escHtml(f.filename)}">${escHtml(f.filename)} (${f.rows >= 0 ? f.rows.toLocaleString() + ' rows' : '?'})</option>`).join('');
+}
+
+function addDistFile() {
+    const container = document.getElementById('distItems');
+    const el = document.createElement('div');
+    el.className = 'dist-item';
+    el.innerHTML = `
+        <select class="form-input dist-file" style="padding:4px 6px; font-size:12px; max-width:250px;">${buildFileOptions()}</select>
+        <select class="form-input dist-mode" onchange="onDistModeChange(this)" style="padding:4px 6px; font-size:12px; width:130px;">
+            <option value="copy">Copy to all</option>
+            <option value="split">Split</option>
+        </select>
+        <span class="dist-split-opts hidden">
+            <span class="text-light text-sm">Offset</span>
+            <input type="number" class="form-input dist-offset" value="0" min="0">
+            <span class="text-light text-sm">Size</span>
+            <input type="number" class="form-input dist-size" placeholder="all" min="1">
+        </span>
+        <button class="dist-remove" onclick="this.closest('.dist-item').remove()" title="Remove">&times;</button>
+    `;
+    container.appendChild(el);
+}
+
+function onDistModeChange(select) {
+    const opts = select.closest('.dist-item').querySelector('.dist-split-opts');
+    opts.classList.toggle('hidden', select.value !== 'split');
+}
+
+function getDistItems() {
+    const items = [];
+    document.querySelectorAll('.dist-item').forEach(el => {
+        const file = el.querySelector('.dist-file').value;
+        if (!file) return;
+        const mode = el.querySelector('.dist-mode').value;
+        const item = { file, mode };
+        if (mode === 'split') {
+            item.offset = parseInt(el.querySelector('.dist-offset').value) || 0;
+            item.size = parseInt(el.querySelector('.dist-size').value) || 0;
+        }
+        items.push(item);
+    });
+    return items;
+}
+
+async function previewDist() {
+    const items = getDistItems();
+    if (!items.length) { showToast('Add at least one file', 'error'); return; }
+
+    const previewEl = document.getElementById('distPreview');
+    previewEl.classList.remove('hidden');
+    previewEl.innerHTML = '<span class="text-light text-sm">Loading...</span>';
+
+    try {
+        // Fetch split previews for all split items in parallel
+        const splitItems = items.filter(i => i.mode === 'split');
+        const splitResults = {};
+        if (splitItems.length) {
+            const fetches = splitItems.map(item =>
+                api('/api/distribute/preview', { method: 'POST', body: {
+                    file: item.file,
+                    offset: item.offset || 0,
+                    size: item.size || 0,
+                }}).then(data => { splitResults[item.file] = data; })
+                  .catch(e => { splitResults[item.file] = { error: e.message || String(e) }; })
+            );
+            await Promise.all(fetches);
+        }
+
+        // We need slave IPs — grab from first split result or fetch
+        let slaveIps = [];
+        for (const key in splitResults) {
+            if (splitResults[key].slaves) {
+                slaveIps = splitResults[key].slaves.map(s => s.ip);
+                break;
+            }
+        }
+        if (!slaveIps.length) {
+            const slavesData = await api('/api/config/slaves');
+            const activeSlaves = (slavesData.slaves || []).filter(s => s.enabled !== false);
+            slaveIps = activeSlaves.map(s => s.ip);
+        }
+        const numSlaves = slaveIps.length;
+
+        if (!numSlaves) {
+            previewEl.innerHTML = '<span class="text-light text-sm" style="color:var(--color-error, #ef4444);">No active slaves configured.</span>';
+            return;
+        }
+
+        // Build file info map
+        const fileMap = {};
+        for (const f of distAvailableFiles) fileMap[f.filename] = f;
+
+        // --- Check for errors first ---
+        let html = '';
+        const errors = [];
+        for (const item of splitItems) {
+            const sr = splitResults[item.file];
+            if (sr && sr.error) errors.push({ file: item.file, error: sr.error });
+        }
+        if (errors.length) {
+            html += errors.map(e =>
+                `<p class="text-sm" style="color:var(--color-error,#ef4444);margin-bottom:4px;">${escHtml(e.file)}: ${escHtml(e.error)}</p>`
+            ).join('');
+        }
+
+        // Only show table if there's at least one item with valid data
+        const hasValidData = items.some(item => {
+            if (item.mode === 'copy') return true;
+            const sr = splitResults[item.file];
+            return sr && sr.slaves;
+        });
+
+        if (hasValidData) {
+            // --- Summary table ---
+            const fileNames = items.map(i => i.file);
+            html += '<table style="font-size:13px;"><thead><tr><th>Slave</th>';
+            for (const fn of fileNames) html += `<th class="text-mono">${escHtml(fn)}</th>`;
+            html += '<th>Total</th></tr></thead><tbody>';
+
+            for (let si = 0; si < numSlaves; si++) {
+                const ip = slaveIps[si];
+                html += `<tr><td class="text-mono">${escHtml(ip)}</td>`;
+                let total = 0;
+                let hasUnknown = false;
+                for (const item of items) {
+                    if (item.mode === 'split') {
+                        const sr = splitResults[item.file];
+                        if (sr && sr.slaves && sr.slaves[si]) {
+                            const rows = sr.slaves[si].total_rows;
+                            html += `<td>${rows.toLocaleString()}</td>`;
+                            total += rows;
+                        } else {
+                            html += `<td class="text-light" style="color:var(--color-error,#ef4444);">err</td>`;
+                        }
+                    } else {
+                        const info = fileMap[item.file];
+                        const rows = info ? info.rows : -1;
+                        if (rows >= 0) {
+                            html += `<td>${rows.toLocaleString()} (copy)</td>`;
+                            total += rows;
+                        } else {
+                            html += '<td>? (copy)</td>';
+                            hasUnknown = true;
+                        }
+                    }
+                }
+                html += `<td>${hasUnknown ? total.toLocaleString() + ' + ?' : total.toLocaleString()}</td>`;
+                html += '</tr>';
+            }
+            html += '</tbody></table>';
+        }
+
+        // --- Per-slave data preview for split files ---
+        for (const item of splitItems) {
+            const sr = splitResults[item.file];
+            if (!sr || sr.error || !sr.slaves) continue;
+
+            html += `<details style="margin-top:10px;"><summary style="cursor:pointer;font-size:13px;color:var(--color-text-light);">` +
+                `Data preview: <span class="text-mono">${escHtml(item.file)}</span> (${sr.source_rows.toLocaleString()} source rows)</summary>`;
+            html += '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;">';
+
+            for (const slave of sr.slaves) {
+                html += `<div style="flex:1;min-width:280px;max-width:100%;">`;
+                html += `<div style="font-size:12px;margin-bottom:4px;"><span class="text-mono">${escHtml(slave.ip)}</span> — ${slave.total_rows.toLocaleString()} rows</div>`;
+                html += '<table style="font-size:12px;"><thead><tr>';
+                for (const col of sr.columns) html += `<th>${escHtml(col)}</th>`;
+                html += '</tr></thead><tbody>';
+
+                const rows = slave.rows;
+                const half = slave.gap ? rows.length / 2 : rows.length;
+                for (let r = 0; r < rows.length; r++) {
+                    if (slave.gap && r === half) {
+                        html += '<tr>';
+                        for (let c = 0; c < sr.columns.length; c++) html += '<td class="text-light">...</td>';
+                        html += '</tr>';
+                    }
+                    html += '<tr>';
+                    for (const cell of rows[r]) html += `<td class="text-mono">${escHtml(String(cell ?? ''))}</td>`;
+                    html += '</tr>';
+                }
+
+                html += '</tbody></table></div>';
+            }
+            html += '</div></details>';
+        }
+
+        previewEl.innerHTML = html;
+    } catch(e) {
+        previewEl.innerHTML = `<span class="text-sm" style="color:var(--color-error, #ef4444);">Preview failed: ${escHtml(e.message || String(e))}</span>`;
     }
 }
 
 async function distributeData() {
+    const items = getDistItems();
+    if (!items.length) { showToast('Add at least one file', 'error'); return; }
+
     const btn = document.getElementById('distributeBtn');
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner"></span> Distributing...';
-    const offset = parseInt(document.getElementById('splitOffset').value) || 0;
-    const size = parseInt(document.getElementById('splitSize').value) || 15000;
+    document.getElementById('distOutput').classList.remove('hidden');
+    document.getElementById('distLog').textContent = `Distributing ${items.length} file(s) ...\n`;
+
     try {
-        const data = await api('/api/data/distribute', { method: 'POST', body: { offset, size } });
-        document.getElementById('splitOutput').classList.remove('hidden');
-        document.getElementById('splitLog').textContent = data.output || '';
-        if (data.ok) showToast('Data distributed to slaves', 'success');
-        else showToast('Distribution failed', 'error');
+        const data = await api('/api/data/distribute', { method: 'POST', body: { items } });
+
+        let log = '';
+        for (const r of (data.results || [])) {
+            const icon = r.ok ? '[OK]' : '[FAIL]';
+            const rows = r.rows != null ? ` (${r.rows} rows)` : '';
+            log += `${icon} ${r.ip} \u2190 ${r.file}${rows}\n    ${r.detail}\n`;
+        }
+        log += `\n${data.summary}\n`;
+        document.getElementById('distLog').textContent = log;
+
+        if (data.ok) showToast('Distribution complete', 'success');
+        else showToast('Some transfers failed', 'error');
+    } catch(e) {
+        document.getElementById('distLog').textContent += 'Error: ' + (e.message || e) + '\n';
     } finally {
         btn.disabled = false;
         btn.textContent = 'Distribute';
     }
 }
 
-loadFiles();
+
+/* ===== File List ===== */
+
+async function loadFiles() {
+    try {
+        const data = await api('/api/data/files');
+        const files = data.files || [];
+        updateDistPicker(files);
+        const tbody = document.getElementById('csvFilesList');
+        const mainFiles = files.filter(f => !f.filename.includes('/'));
+        if (!mainFiles.length) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-light">No CSV files found.</td></tr>';
+            return;
+        }
+        const colColors = ['#3b82f6','#8b5cf6','#06b6d4','#f59e0b','#ef4444','#10b981','#ec4899','#6366f1'];
+        const canEdit = ACCESS_LEVEL !== 'viewer';
+        tbody.innerHTML = mainFiles.map(f => {
+            const eFn = escHtml(f.filename);
+            const nameCell = canEdit
+                ? `<td class="text-mono text-sm"><span class="rename-trigger" onclick="startRename(this, '${eFn}')" title="Click to rename">${eFn}</span></td>`
+                : `<td class="text-mono text-sm">${eFn}</td>`;
+            const delBtn = canEdit
+                ? `<button class="btn btn-outline btn-sm" style="color:var(--color-error,#ef4444);border-color:var(--color-error,#ef4444);" onclick="deleteFile('${eFn}')">Delete</button>`
+                : '';
+            return `<tr>
+            ${nameCell}
+            <td class="text-sm">${(f.columns || []).map((c, i) => '<code style="padding:1px 6px;border-radius:3px;background:' + colColors[i % colColors.length] + '22;color:' + colColors[i % colColors.length] + ';border:1px solid ' + colColors[i % colColors.length] + '33;white-space:nowrap;display:inline-block;margin:1px 2px;">' + escHtml(c) + '</code>').join('')}</td>
+            <td>${f.rows >= 0 ? f.rows.toLocaleString() : '-'}</td>
+            <td>${formatSize(f.size)}</td>
+            <td><span style="display:inline-flex;gap:4px;"><button class="btn btn-outline btn-sm" onclick="previewFile('${eFn}')">Preview</button><a class="btn btn-outline btn-sm" href="${BASE_PATH}/api/data/download/${encodeURIComponent(f.filename)}" download style="text-decoration:none;">Download</a>${delBtn}</span></td>
+        </tr>`;
+        }).join('');
+    } catch(e) {}
+}
+
+
+/* ===== Rename File ===== */
+
+function startRename(el, oldName) {
+    const td = el.parentElement;
+    const base = oldName.replace(/\.csv$/i, '');
+    td.innerHTML = `<form onsubmit="return doRename(this, '${escHtml(oldName)}')" style="display:inline-flex;gap:4px;align-items:center;">
+        <input type="text" class="form-input text-mono" value="${escHtml(base)}" style="padding:2px 6px;font-size:13px;width:180px;" autofocus>
+        <span class="text-mono text-sm" style="color:var(--color-text-light);">.csv</span>
+        <button type="submit" class="btn btn-outline btn-sm">OK</button>
+    </form>`;
+    const input = td.querySelector('input');
+    const form = td.querySelector('form');
+    input.select();
+    // Cancel on click outside or Escape
+    function cancel(e) {
+        if (e.type === 'keydown' && e.key !== 'Escape') return;
+        if (e.type === 'mousedown' && form.contains(e.target)) return;
+        cleanup();
+        loadFiles();
+    }
+    function cleanup() {
+        document.removeEventListener('mousedown', cancel);
+        document.removeEventListener('keydown', cancel);
+    }
+    // Defer so the current click doesn't immediately trigger cancel
+    setTimeout(() => {
+        document.addEventListener('mousedown', cancel);
+        document.addEventListener('keydown', cancel);
+    }, 0);
+    form._cleanup = cleanup;
+}
+
+async function doRename(form, oldName) {
+    if (form._cleanup) form._cleanup();
+    form.querySelector('button[type=submit]').disabled = true;
+    const newBase = form.querySelector('input').value.trim();
+    if (!newBase) { showToast('Name cannot be empty', 'error'); loadFiles(); return false; }
+    const newName = newBase + '.csv';
+    if (newName === oldName) { loadFiles(); return false; }
+    try {
+        await api('/api/data/rename', { method: 'POST', body: { old: oldName, new: newName } });
+        showToast(`Renamed to ${newName}`, 'success');
+        loadFiles();
+    } catch(e) { loadFiles(); }
+    return false;
+}
+
+
+/* ===== Delete File ===== */
+
+async function deleteFile(filename) {
+    if (!confirm(`Delete "${filename}"? This cannot be undone.`)) return;
+    try {
+        await api(`/api/data/delete/${encodeURIComponent(filename)}`, { method: 'DELETE' });
+        showToast(`Deleted ${filename}`, 'success');
+        loadFiles();
+    } catch(e) {}
+}
+
+
+/* ===== Preview Modal ===== */
+
+let _previewFilename = '';
+
+async function previewFile(filename, rows = 50) {
+    _previewFilename = filename;
+    const contentEl = document.getElementById('previewContent');
+    document.getElementById('previewTitle').textContent = 'Preview: ' + filename;
+    contentEl.innerHTML = '<p class="text-light">Loading...</p>';
+    openModal('previewModal');
+    try {
+        const data = await api(`/api/data/preview/${encodeURIComponent(filename)}?rows=${rows}`);
+        if (data.error) {
+            contentEl.innerHTML = `<p class="text-light">${escHtml(data.error)}</p>`;
+            return;
+        }
+        let html = '<table><thead><tr>';
+        data.columns.forEach(c => { html += `<th>${escHtml(c)}</th>`; });
+        html += '</tr></thead><tbody>';
+        data.rows.forEach(row => {
+            html += '<tr>';
+            row.forEach(cell => { html += `<td class="text-sm">${escHtml(cell || '')}</td>`; });
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
+
+        const remaining = data.total_rows - data.total_preview;
+        if (remaining > 0) {
+            const nextBatch = Math.min(remaining, 500);
+            html += `<div style="margin-top:8px;display:flex;align-items:center;gap:12px;">`;
+            html += `<span class="text-light text-sm">Showing ${data.total_preview.toLocaleString()} of ${data.total_rows.toLocaleString()} rows</span>`;
+            html += `<button class="btn btn-outline btn-sm" onclick="previewFile('${escHtml(filename)}', ${data.total_preview + nextBatch})">Load ${nextBatch.toLocaleString()} more</button>`;
+            if (data.total_rows <= 10000) {
+                html += `<button class="btn btn-outline btn-sm" onclick="previewFile('${escHtml(filename)}', ${data.total_rows})">Load all</button>`;
+            }
+            html += `</div>`;
+        }
+        contentEl.innerHTML = html;
+    } catch(e) {
+        contentEl.innerHTML = '<p class="text-light">Failed to load preview.</p>';
+    }
+}
+
+
+/* ===== Init ===== */
+
+try {
+    renderPresetList();
+    const lastPreset = localStorage.getItem('jmeter_csv_last_preset');
+    if (lastPreset) selectPreset(lastPreset);
+    else showBuilder(false);
+    loadFiles();
+} catch(e) {
+    console.error('Init error:', e);
+    showToast('Page init error: ' + e.message, 'error', 10000);
+}
 </script>
 {% endblock %}

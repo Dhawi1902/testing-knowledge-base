@@ -250,6 +250,20 @@ def main():
     config = load_config(config_path)
     print(f"Config: {config_path}")
 
+    # --- Read config.properties (single source of truth) ---
+    props_path = repo_root / "config.properties"
+    props = {}
+    if props_path.exists():
+        with open(props_path, 'r') as pf:
+            for line in pf:
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                if "=" in line:
+                    k, _, v = line.partition("=")
+                    props[k.strip()] = v.strip()
+    props_results_dir = props.get("results_dir", "results")
+
     # --- Resolve JTL path ---
     jtl_path = None
 
@@ -265,7 +279,7 @@ def main():
         jtl_path = folder / 'results.jtl'
     else:
         # Auto-find latest result folder
-        results_dir = repo_root / config['input'].get('results_dir', 'results')
+        results_dir = repo_root / props_results_dir
         print(f"Searching for latest results in: {results_dir}")
 
         latest_folder = find_latest_result_folder(results_dir)
@@ -299,6 +313,9 @@ def main():
     # --- Apply filters ---
     print("\nFiltering...")
     filter_config = config.get('filter', {})
+    # Use filter_label_pattern from config.properties as primary source
+    if props.get("filter_label_pattern"):
+        filter_config['label_pattern'] = props["filter_label_pattern"]
     if args.no_label_filter:
         filter_config = {k: v for k, v in filter_config.items() if k != 'label_pattern'}
         print("  Label filter disabled (--no-label-filter)")

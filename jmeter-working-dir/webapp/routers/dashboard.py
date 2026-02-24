@@ -3,9 +3,10 @@ from pathlib import Path
 from fastapi import APIRouter, Request
 from fastapi.templating import Jinja2Templates
 
-from services.config_parser import resolve_path, get_project_root, read_slaves_file
+from services.config_parser import resolve_path, get_project_root, read_slaves, get_active_slaves
 from services.jmeter import list_jmx_files
 from services.jtl_parser import count_result_folders, get_latest_result_folder
+from services.process_manager import jmeter_process_manager
 
 TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
@@ -32,12 +33,24 @@ async def api_dashboard_stats(request: Request):
     results_dir = resolve_path(project, "results_dir")
     results_count = count_result_folders(results_dir)
     slaves_path = project_root / project["paths"].get("slaves_file", "slaves.txt")
-    slaves = read_slaves_file(slaves_path)
+    all_slaves = read_slaves(slaves_path)
+    active_slaves = [s for s in all_slaves if s.get("enabled", True)]
+
+    # Monitoring URLs from settings
+    from routers.settings import load_settings
+    settings = load_settings()
+    monitoring = settings.get("monitoring", {})
 
     return {
         "jmx_count": len(jmx_files),
         "results_count": results_count,
-        "slaves_count": len(slaves),
+        "slaves_count": len(all_slaves),
+        "active_slaves_count": len(active_slaves),
+        "mode": "distributed" if active_slaves else "local",
+        "runner_active": jmeter_process_manager.is_running,
+        "runner_label": jmeter_process_manager.active_label,
+        "grafana_url": monitoring.get("grafana_url", ""),
+        "influxdb_url": monitoring.get("influxdb_url", ""),
     }
 
 

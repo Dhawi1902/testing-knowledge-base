@@ -93,7 +93,7 @@ Logic controllers determine the **order and conditions** for executing samplers.
 ### Transaction Controller
 Groups multiple requests that belong to the **same page or action**. This is critical for meaningful reporting - you see "Login Page" as a single transaction rather than 5 separate API calls.
 
-- Check **"Generate parent sample"** to aggregate the child requests into one result
+- Leave **"Generate parent sample"** unchecked so individual requests are visible in the report for detailed analysis
 
 <!-- TODO: Screenshot - Transaction Controller -->
 

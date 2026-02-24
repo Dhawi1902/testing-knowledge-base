@@ -557,3 +557,38 @@ To filter by LTN in Dynatrace:
 1. **urouter/userver pool**: 420 × 16 = 6,720 max concurrent connections
 2. **LDAP authentication**: Can be bottleneck during login spike
 3. **Database lock contention**: Multiple students registering for same module
+
+## Web Dashboard (`webapp/`)
+
+A FastAPI web app for managing this project. See `webapp/CLAUDE.md` for full details.
+
+```bash
+# Run the dashboard
+cd webapp && python -m webapp
+# Or with reload for development
+cd webapp && uvicorn main:app --reload --host 127.0.0.1 --port 8080
+```
+
+### Pages
+
+| Page | Route | Description |
+|------|-------|-------------|
+| Dashboard | `/` | Stats overview, runner status, last run, monitoring links |
+| Test Plans & Runner | `/plans` | JMX selector, params, presets, live execution with WebSocket |
+| Results | `/results` | Browse results, reports (filesystem open on localhost), regenerate, compare, download |
+| Test Data | `/data` | CSV builder (5 column types), templates, distribute to slaves |
+| Slave VMs | `/slaves` | List/grid view, enable/disable, SSH overrides, status check, Start/Stop All |
+| Scripts | `/scripts` | Run .py/.bat files (localhost only) |
+| Settings | `/settings` | Server, project paths, integrations (Grafana/InfluxDB/Ollama), system info |
+
+### Key Features
+
+- **Access control**: Localhost = admin, remote = needs auth token, viewer mode is read-only
+- **JTL filtering**: `jtl_filter.py` removes sub-results (~80-85% reduction) and unresolved variables before report generation
+- **Report optimization**: Disables heavy over-time graphs to reduce `graph.js` from 500+ MB
+- **Safe regeneration**: Filter → generate to temp dir → swap on success (old report preserved on failure)
+- **Report viewing**: `os.startfile()` on localhost bypasses proxy for large reports
+- **Slaves JSON format**: Enable/disable per slave, auto-migrates from plain text
+- **CSV builder**: Sequential, Static, Random Pick, Expression, Sequence column types
+- **Live execution**: WebSocket streaming with parsed summary stats (throughput, avg RT, error rate, samples) and per-slave progress badges
+- **Mobile responsive**: Bottom nav bar, hamburger menu, touch-friendly

@@ -790,3 +790,339 @@ def patch_jmx(jmx_path, patches: dict) -> str:
 
 - [ ] Side-by-side comparison of two test runs
 - [ ] Summary-only view to spot regressions quickly
+
+---
+
+## Phase 13: Webapp Amendments (Pre-Generalization)
+
+**Goal**: Stabilize and improve the webapp before generalizing it into the toolkit. These changes address usability gaps, access control, and missing features identified during review.
+
+**Status**: Pending — do this before toolkit Phase 3 (Webapp Generalization).
+
+---
+
+### 13.1 Access Control — Token-Based Auth (Cookie)
+
+**Scope**: Medium | **Files**: `main.py`, `services/auth.py` (new), `templates/token.html` (new), `settings.json`
+
+**Problem**: Webapp will be accessed remotely. Need read-only for viewers, full access for admins.
+
+**Design**:
+- Add `auth_token` field to `settings.json` (empty = no auth required)
+- New `services/auth.py`:
+  - `verify_token(token)` — check against `settings.json`
+  - `is_localhost(request)` — check if `request.client.host` is `127.0.0.1` or `::1`
+  - `get_access_level(request)` → `"admin"` | `"viewer"` | `"unauthorized"`
+    - Localhost → always admin
+    - Valid token cookie → admin
+    - No token, remote → viewer (read-only)
+- FastAPI middleware on every request:
+  - If `auth_token` is set and request is remote and no valid cookie → show token entry page
+  - Set `request.state.access_level` for use in routers/templates
+- Token entry page (`templates/token.html`):
+  - Simple form: "Enter access token"
+  - On submit → set `jmeter_token` cookie, redirect to original URL
+- Templates receive `access_level` via Jinja2 context:
+  - `viewer`: hide Run, Stop, Edit Config, Start/Stop Slaves buttons
+  - `admin`: full access
+
+---
+
+### 13.2 Conditional Edit Button — Localhost Only
+
+**Scope**: Small | **Files**: `routers/test_plans.py`, `templates/test_plans.html`
+
+**Problem**: "Edit in JMeter GUI" spawns a local process. From a remote browser, this opens JMeter on the server with no display, creating zombie processes.
+
+**Changes**:
+- Pass `is_localhost` flag to template context in `GET /plans`
+- In `test_plans.html`: wrap Edit button in `{% if is_localhost %}` block
+- In `POST /api/plans/{filename}/open`: reject with 403 if not localhost
+
+---
+
+### 13.3 Scripts Page — Hidden, Localhost Only
+
+**Scope**: Small | **Files**: `main.py`, `templates/base.html`, `routers/scripts.py`
+
+**Changes**:
+- In `base.html`: wrap Scripts nav item in `{% if is_localhost %}` block
+- In `routers/scripts.py`: all endpoints check `is_localhost`, return 403 for remote
+- Scripts page still exists at `/scripts` but is invisible and inaccessible to remote users
+
+---
+
+### 13.4 Remove Endpoints from Settings
+
+**Scope**: Small | **Files**: `routers/settings.py`, `templates/settings.html`
+
+**Problem**: Target endpoints section is MAYA-specific and not needed in the generalized version.
+
+**Changes**:
+- Remove `endpoints` from `DEFAULT_SETTINGS` in `settings.py`
+- Remove endpoints section from `settings.html` template
+- Remove related API handlers (`/api/settings/endpoints` if separate)
+- Leave `settings.json` backward-compatible (ignore `endpoints` key if present)
+
+---
+
+### 13.5 Settings: System Info Section
+
+**Scope**: Small | **Files**: `routers/settings.py`, `templates/settings.html`
+
+**Changes**:
+- Add `GET /api/settings/system-info` endpoint:
+  - JMeter version: run `jmeter --version` and parse output
+  - Java version: run `java -version` and parse
+  - Python version: `sys.version`
+  - Disk space: `shutil.disk_usage()` on results directory
+  - OS: `platform.platform()`
+- Add "System Information" section to `settings.html`:
+  - Read-only cards showing each value
+  - Load on page open via API call
+
+---
+
+### 13.6 Local Mode — Support Running Without Slaves
+
+**Scope**: Small | **Files**: `services/jmeter.py`, `templates/test_plans.html`
+
+**Problem**: Runner always builds `-R <slaves>` command. Should work without slaves for local testing.
+
+**Changes**:
+- In `jmeter.py` `build_jmeter_command()`:
+  - If slave list is empty → omit `-R` flag entirely
+  - Command becomes: `jmeter -n -t <plan> -G<params> -l <jtl> -e -o <report>`
+- In `test_plans.html`:
+  - Show "Local mode (no slaves)" indicator when slaves list is empty
+  - Runner UI still works — just no slave selection section
+
+---
+
+### 13.7 Slaves Enable/Disable Toggle
+
+**Scope**: Medium | **Files**: `services/config_parser.py`, `routers/config.py`, `templates/slaves.html`, `services/jmeter.py`
+
+**Problem**: Currently slaves are add/remove only. Removing loses the IP; re-adding is tedious.
+
+**Design**:
+- Change slaves storage from plain text list to JSON:
+  ```json
+  [
+    {"ip": "10.0.0.1", "enabled": true},
+    {"ip": "10.0.0.2", "enabled": false},
+    {"ip": "10.0.0.3", "enabled": true}
+  ]
+  ```
+- Backward compatibility: if `slaves.txt` exists (plain text), migrate to JSON format on first read
+- In `config_parser.py`:
+  - `read_slaves()` → returns full list with enabled flags
+  - `get_active_slaves()` → returns only enabled IPs
+  - `write_slaves()` → saves JSON format
+- In `slaves.html`:
+  - Toggle switch per slave row (enabled/disabled)
+  - Disabled slaves shown greyed out
+  - Start/Stop only applies to enabled slaves
+- In `jmeter.py`:
+  - `build_jmeter_command()` uses `get_active_slaves()` for `-R` flag
+
+---
+
+### 13.8 Filter Username Toggle on Runner
+
+**Scope**: Small | **Files**: `routers/test_plans.py`, `templates/test_plans.html`, `services/jmeter.py`
+
+**Problem**: Username filtering in JTL is hardcoded. Should be optional at run time.
+
+**Changes**:
+- Add checkbox to runner UI: "Filter usernames from results" (default: checked)
+- Pass `filter_usernames` flag in `POST /api/runner/start` body
+- In run chain (Python, not batch):
+  1. Run JMeter → raw `.jtl`
+  2. If `filter_usernames` → run `filter_jtl.py` → filtered `.jtl`
+  3. Generate HTML report from final `.jtl`
+- All three steps chained in Python via `subprocess.run()` — no batch nesting issues
+
+---
+
+### 13.9 Save Config Snapshot Per Run
+
+**Scope**: Small | **Files**: `services/jmeter.py`
+
+**Problem**: No record of what config was used for each test run. Can't compare settings between runs.
+
+**Changes**:
+- After creating the timestamped results folder, before launching JMeter:
+  - Copy `config.properties` → `results/YYYYMMDD_N/config.properties`
+  - Write `results/YYYYMMDD_N/run_info.json`:
+    ```json
+    {
+      "timestamp": "2026-02-22T14:30:00",
+      "test_plan": "test_plan/MAYA-Student-v9.jmx",
+      "slaves": ["10.0.0.1", "10.0.0.3"],
+      "mode": "distributed",
+      "params": {"student": 15000, "rampUp": 300, "loop": 1},
+      "filter_usernames": true,
+      "triggered_by": "webapp"
+    }
+    ```
+- On results page: show config summary badge/tooltip for each run
+
+---
+
+### 13.10 JTL Filter + Report Regeneration on Results Page
+
+**Scope**: Medium | **Files**: `routers/results.py`, `templates/results.html`, `services/jtl_parser.py`
+
+**Problem**: Can't re-filter or regenerate reports for old results.
+
+**Changes**:
+- Add "Regenerate Report" button per result row
+- On click → modal with filter options:
+  - Checkbox: exclude `${USERNAME}` entries
+  - Checkbox: exclude embedded resources
+  - Text input: label regex pattern (optional)
+- `POST /api/results/{folder}/regenerate`:
+  - Run `filter_jtl.py` with selected filters → produce filtered `.jtl`
+  - Run `jmeter -g filtered.jtl -o report/` → regenerate HTML report
+  - Return success with link to new report
+- Show progress/status during regeneration
+
+---
+
+### 13.11 Report Open in New Tab
+
+**Scope**: Small | **Files**: `templates/results.html`
+
+**Changes**:
+- Add "Open in New Tab" button next to the existing overlay/iframe view
+- Button: `<a href="/api/results/{folder}/report/index.html" target="_blank">`
+- Path is already known from the iframe `src` — just expose it as a link
+
+---
+
+### 13.12 Results Comparison — Finish Stubbed View
+
+**Scope**: Medium | **Files**: `templates/results.html`, `routers/results.py`, `services/jtl_parser.py`
+
+**Problem**: `compareSelected()` function exists but diff rendering is incomplete.
+
+**Changes**:
+- Complete `compareSelected()` JavaScript:
+  - Fetch stats for both selected runs via `/api/results/{folder}/stats`
+  - Render side-by-side table with columns: Metric | Run A | Run B | Diff
+  - Color coding: green = improved (lower RT, higher throughput), red = degraded
+- Include per-transaction breakdown comparison
+- Show config diff if `run_info.json` exists for both (from 13.9)
+
+---
+
+### 13.13 Analysis Cache — Finish Incomplete Functions
+
+**Scope**: Small | **Files**: `services/analysis.py`
+
+**Problem**: `load_cached_analysis()` and `save_analysis_cache()` are referenced but not fully implemented. Each Analyze click re-processes the full JTL.
+
+**Changes**:
+- `save_analysis_cache(folder_path, analysis_data)`:
+  - Write to `results/{folder}/analysis.json`
+- `load_cached_analysis(folder_path)`:
+  - Read `results/{folder}/analysis.json` if exists
+  - Return `None` if missing or older than the JTL file
+- In `/api/results/{folder}/analyze`:
+  - Check cache first → return cached if valid
+  - Otherwise run analysis → save cache → return
+
+---
+
+### 13.14 Dashboard Enhancements
+
+**Scope**: Small | **Files**: `routers/dashboard.py`, `templates/dashboard.html`
+
+**Changes**:
+- **Grafana/InfluxDB quick links**:
+  - Read URLs from `settings.json` (or `project.json`)
+  - Show as cards — greyed out with "Not configured" if URLs are empty
+  - Clickable (opens new tab) when configured
+- **Run card improvements**:
+  - Show currently selected test plan name
+  - Show thread count and active slave count
+  - Show mode: "Distributed (3 slaves)" or "Local mode"
+  - Quick-launch button to /plans page
+
+---
+
+### 13.15 Live Logs: Auto-Scroll + Summary Panel
+
+**Scope**: Medium | **Files**: `templates/test_plans.html`, `static/js/app.js`
+
+**Changes**:
+- **Auto-scroll**: scroll log container to bottom on each WebSocket message
+  - Add toggle: "Auto-scroll" checkbox (default on), user can disable to read earlier output
+- **Live summary panel** above the raw logs:
+  - Parse `summary +` lines from JMeter output via regex:
+    ```
+    summary +  500 in 00:00:30 = 16.7/s Avg: 1200 Min: 50 Max: 5000 Err: 2 (0.40%)
+    ```
+  - Update cards in real-time: Throughput | Avg RT | Error Rate | Total Samples
+  - Parse slave start/finished lines for per-slave progress (#13.16)
+
+---
+
+### 13.16 Slave Progress During Test
+
+**Scope**: Medium | **Files**: `templates/test_plans.html`, `static/js/app.js`
+
+**Problem**: During distributed tests, no visibility into which slaves have finished.
+
+**Changes**:
+- Parse WebSocket log stream for slave lifecycle lines:
+  - `Starting the test on 10.0.0.1:1099` → mark slave as "Running"
+  - `Finished the test on 10.0.0.1:1099` → mark slave as "Finished"
+  - Connection errors → mark slave as "Error"
+- Show slave progress panel (part of the live summary in 13.15):
+  - Table or pill badges: IP | Status (Running / Finished / Error)
+  - Counter: "3/5 slaves finished"
+- Only visible during distributed runs (hidden in local mode)
+
+---
+
+### Implementation Order
+
+Build in dependency order, grouping related changes:
+
+| Step | Items | Description | Depends On |
+|------|-------|-------------|------------|
+| 1 | 13.1 | Access control (token/cookie auth) | — |
+| 2 | 13.2, 13.3 | Localhost-only features (edit button, scripts page) | 13.1 |
+| 3 | 13.4, 13.5 | Settings cleanup (remove endpoints, add system info) | — |
+| 4 | 13.7 | Slaves enable/disable toggle | — |
+| 5 | 13.6 | Local mode support | 13.7 (needs active slaves logic) |
+| 6 | 13.8, 13.9 | Runner improvements (filter toggle, config snapshot) | — |
+| 7 | 13.10, 13.11 | Results: regenerate reports, open in new tab | — |
+| 8 | 13.12, 13.13 | Results: comparison view, analysis cache | — |
+| 9 | 13.14 | Dashboard enhancements | — |
+| 10 | 13.15, 13.16 | Live logs: summary panel, auto-scroll, slave progress | — |
+
+---
+
+### Phase 13 Status
+
+| # | Item | Status |
+|---|------|--------|
+| 13.1 | Token-based access control | Pending |
+| 13.2 | Conditional edit button | Pending |
+| 13.3 | Scripts page hidden | Pending |
+| 13.4 | Remove endpoints | Pending |
+| 13.5 | System info in settings | Pending |
+| 13.6 | Local mode | Pending |
+| 13.7 | Slaves enable/disable | Pending |
+| 13.8 | Filter username toggle | Pending |
+| 13.9 | Config snapshot per run | Pending |
+| 13.10 | JTL filter + report regen | Pending |
+| 13.11 | Report open in new tab | Pending |
+| 13.12 | Results comparison | Pending |
+| 13.13 | Analysis cache | Pending |
+| 13.14 | Dashboard enhancements | Pending |
+| 13.15 | Live logs: auto-scroll + summary | Pending |
+| 13.16 | Slave progress during test | Pending |

@@ -1,0 +1,774 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jmeterTestPlan version="1.2" properties="5.0" jmeter="5.6.3">
+  <hashTree>
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="MAYA Portal - Login Performance Test">
+      <stringProp name="TestPlan.comments">Performance test for MAYA Portal login functionality</stringProp>
+      <boolProp name="TestPlan.tearDown_on_shutdown">true</boolProp>
+      <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
+        <collectionProp name="Arguments.arguments">
+          <elementProp name="BASE_URL" elementType="Argument">
+            <stringProp name="Argument.name">BASE_URL</stringProp>
+            <stringProp name="Argument.value">maya-cloud.um.edu.my</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+          <elementProp name="PROTOCOL" elementType="Argument">
+            <stringProp name="Argument.name">PROTOCOL</stringProp>
+            <stringProp name="Argument.value">https</stringProp>
+            <stringProp name="Argument.metadata">=</stringProp>
+          </elementProp>
+        </collectionProp>
+      </elementProp>
+      <boolProp name="TestPlan.functional_mode">false</boolProp>
+      <boolProp name="TestPlan.serialize_threadgroups">false</boolProp>
+    </TestPlan>
+    <hashTree>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Login Users">
+        <stringProp name="ThreadGroup.num_threads">${__P(student, 2500)}</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">${_P(rampUp,1)}</stringProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller">
+          <stringProp name="LoopController.loops">1</stringProp>
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+        </elementProp>
+      </ThreadGroup>
+      <hashTree>
+        <CookieManager guiclass="CookiePanel" testclass="CookieManager" testname="HTTP Cookie Manager" enabled="true">
+          <collectionProp name="CookieManager.cookies"/>
+          <boolProp name="CookieManager.clearEachIteration">true</boolProp>
+          <boolProp name="CookieManager.controlledByThreadGroup">false</boolProp>
+        </CookieManager>
+        <hashTree/>
+        <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP Header Manager" enabled="true">
+          <collectionProp name="HeaderManager.headers">
+            <elementProp name="" elementType="Header">
+              <stringProp name="Header.name">User-Agent</stringProp>
+              <stringProp name="Header.value">Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36</stringProp>
+            </elementProp>
+            <elementProp name="" elementType="Header">
+              <stringProp name="Header.name">Accept</stringProp>
+              <stringProp name="Header.value">text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8</stringProp>
+            </elementProp>
+            <elementProp name="" elementType="Header">
+              <stringProp name="Header.name">Accept-Language</stringProp>
+              <stringProp name="Header.value">en-US,en;q=0.5</stringProp>
+            </elementProp>
+            <elementProp name="" elementType="Header">
+              <stringProp name="Header.name">Accept-Encoding</stringProp>
+              <stringProp name="Header.value">gzip, deflate, br</stringProp>
+            </elementProp>
+          </collectionProp>
+        </HeaderManager>
+        <hashTree/>
+        <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="HTTP Request Defaults" enabled="true">
+          <intProp name="HTTPSampler.connect_timeout">30000</intProp>
+          <intProp name="HTTPSampler.response_timeout">60000</intProp>
+          <stringProp name="HTTPSampler.domain">${BASE_URL}</stringProp>
+          <stringProp name="HTTPSampler.protocol">${PROTOCOL}</stringProp>
+          <stringProp name="HTTPSampler.contentEncoding">UTF-8</stringProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
+            <collectionProp name="Arguments.arguments"/>
+          </elementProp>
+          <stringProp name="HTTPSampler.implementation"></stringProp>
+        </ConfigTestElement>
+        <hashTree/>
+        <CacheManager guiclass="CacheManagerGui" testclass="CacheManager" testname="HTTP Cache Manager" enabled="true">
+          <boolProp name="clearEachIteration">false</boolProp>
+          <boolProp name="useExpires">true</boolProp>
+          <boolProp name="CacheManager.controlledByThread">false</boolProp>
+        </CacheManager>
+        <hashTree/>
+        <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="CSV Data Set Config" enabled="true">
+          <stringProp name="delimiter">,</stringProp>
+          <stringProp name="fileEncoding"></stringProp>
+          <stringProp name="filename">${__P(student_data, C:\Users\MuhammadAriffBinAzmi\Downloads\student_data.csv)}</stringProp>
+          <boolProp name="ignoreFirstLine">true</boolProp>
+          <boolProp name="quotedData">false</boolProp>
+          <boolProp name="recycle">true</boolProp>
+          <stringProp name="shareMode">shareMode.group</stringProp>
+          <boolProp name="stopThread">false</boolProp>
+          <stringProp name="variableNames">USERNAME</stringProp>
+        </CSVDataSet>
+        <hashTree/>
+        <Arguments guiclass="ArgumentsPanel" testclass="Arguments" testname="User Credentials" enabled="true">
+          <collectionProp name="Arguments.arguments">
+            <elementProp name="PASSWORD" elementType="Argument">
+              <stringProp name="Argument.name">PASSWORD</stringProp>
+              <stringProp name="Argument.value">um1234</stringProp>
+              <stringProp name="Argument.metadata">=</stringProp>
+            </elementProp>
+            <elementProp name="NEW_PASSWORD" elementType="Argument">
+              <stringProp name="Argument.name">NEW_PASSWORD</stringProp>
+              <stringProp name="Argument.value">Um@123456</stringProp>
+              <stringProp name="Argument.metadata">=</stringProp>
+            </elementProp>
+          </collectionProp>
+        </Arguments>
+        <hashTree/>
+        <TransactionController guiclass="TransactionControllerGui" testclass="TransactionController" testname="TC_01_Login">
+          <boolProp name="TransactionController.includeTimers">false</boolProp>
+        </TransactionController>
+        <hashTree>
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="01_GET_Login_Page" enabled="true">
+            <boolProp name="HTTPSampler.image_parser">true</boolProp>
+            <stringProp name="HTTPSampler.path">/sitsvision/wrd/siw_lgn</stringProp>
+            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+            <stringProp name="HTTPSampler.method">GET</stringProp>
+            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+            <boolProp name="HTTPSampler.BROWSER_COMPATIBLE_MULTIPART">true</boolProp>
+            <boolProp name="HTTPSampler.postBodyRaw">false</boolProp>
+            <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
+              <collectionProp name="Arguments.arguments"/>
+            </elementProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <RegexExtractor guiclass="RegexExtractorGui" testclass="RegexExtractor" testname="Extract_FORM_VERIFICATION_TOKEN" enabled="false">
+              <stringProp name="RegexExtractor.useHeaders">false</stringProp>
+              <stringProp name="RegexExtractor.refname">FORM_VERIFICATION_TOKEN</stringProp>
+              <stringProp name="RegexExtractor.regex">name=&quot;FORM_VERIFICATION_TOKEN\.DUMMY\.MENSYS\.1&quot; value=&quot;([^&quot;]+)&quot;</stringProp>
+              <stringProp name="RegexExtractor.template">$1$</stringProp>
+              <stringProp name="RegexExtractor.default">TOKEN_NOT_FOUND</stringProp>
+              <stringProp name="RegexExtractor.match_number">1</stringProp>
+              <boolProp name="RegexExtractor.default_empty_value">false</boolProp>
+            </RegexExtractor>
+            <hashTree/>
+            <RegexExtractor guiclass="RegexExtractorGui" testclass="RegexExtractor" testname="Extract_DUMMY_TOKEN" enabled="false">
+              <stringProp name="RegexExtractor.useHeaders">false</stringProp>
+              <stringProp name="RegexExtractor.refname">DUMMY_TOKEN</stringProp>
+              <stringProp name="RegexExtractor.regex">name=&quot;%\.DUMMY\.MENSYS\.1&quot; value=&quot;([^&quot;]+)&quot;</stringProp>
+              <stringProp name="RegexExtractor.template">$1$</stringProp>
+              <stringProp name="RegexExtractor.default">DUMMY_NOT_FOUND</stringProp>
+              <stringProp name="RegexExtractor.match_number">1</stringProp>
+              <boolProp name="RegexExtractor.default_empty_value">false</boolProp>
+            </RegexExtractor>
+            <hashTree/>
+            <RegexExtractor guiclass="RegexExtractorGui" testclass="RegexExtractor" testname="Extract_WEB_HEAD_TOKEN" enabled="false">
+              <stringProp name="RegexExtractor.useHeaders">false</stringProp>
+              <stringProp name="RegexExtractor.refname">WEB_HEAD_TOKEN</stringProp>
+              <stringProp name="RegexExtractor.regex">name=&quot;%\.WEB_HEAD\.MENSYS\.1&quot; value=&quot;([^&quot;]+)&quot;</stringProp>
+              <stringProp name="RegexExtractor.template">$1$</stringProp>
+              <stringProp name="RegexExtractor.default">WEBHEAD_NOT_FOUND</stringProp>
+              <stringProp name="RegexExtractor.match_number">1</stringProp>
+              <boolProp name="RegexExtractor.default_empty_value">false</boolProp>
+            </RegexExtractor>
+            <hashTree/>
+            <RegexExtractor guiclass="RegexExtractorGui" testclass="RegexExtractor" testname="Extract_DUMMY_B_TOKEN" enabled="false">
+              <stringProp name="RegexExtractor.useHeaders">false</stringProp>
+              <stringProp name="RegexExtractor.refname">DUMMY_B_TOKEN</stringProp>
+              <stringProp name="RegexExtractor.regex">name=&quot;%\.DUMMY_B\.MENSYS&quot; value=&quot;([^&quot;]+)&quot;</stringProp>
+              <stringProp name="RegexExtractor.template">$1$</stringProp>
+              <stringProp name="RegexExtractor.default">DUMMYB_NOT_FOUND</stringProp>
+              <stringProp name="RegexExtractor.match_number">1</stringProp>
+              <boolProp name="RegexExtractor.default_empty_value">false</boolProp>
+            </RegexExtractor>
+            <hashTree/>
+            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Assert_Login_Page_Loaded" enabled="false">
+              <collectionProp name="Asserion.test_strings">
+                <stringProp name="49586">200</stringProp>
+              </collectionProp>
+              <stringProp name="Assertion.custom_message">Login page did not load correctly</stringProp>
+              <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
+              <boolProp name="Assertion.assume_success">false</boolProp>
+              <intProp name="Assertion.test_type">8</intProp>
+            </ResponseAssertion>
+            <hashTree/>
+          </hashTree>
+          <nz.co.breakpoint.jmeter.modifiers.HTTPFormManager guiclass="TestBeanGUI" testclass="nz.co.breakpoint.jmeter.modifiers.HTTPFormManager" testname="HTTP Form Manager" enabled="true">
+            <boolProp name="clearEachIteration">true</boolProp>
+            <boolProp name="matchSamplerUrl">false</boolProp>
+            <boolProp name="matchSamplerParameters">false</boolProp>
+            <boolProp name="matchSubmit">false</boolProp>
+            <stringProp name="matchCssSelector"></stringProp>
+            <boolProp name="copyParameters">true</boolProp>
+            <boolProp name="copyUrl">false</boolProp>
+          </nz.co.breakpoint.jmeter.modifiers.HTTPFormManager>
+          <hashTree/>
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="02_POST_Login" enabled="true">
+            <stringProp name="HTTPSampler.path">/sitsvision/wrd/SIW_LGN</stringProp>
+            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+            <stringProp name="HTTPSampler.method">POST</stringProp>
+            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+            <boolProp name="HTTPSampler.BROWSER_COMPATIBLE_MULTIPART">true</boolProp>
+            <boolProp name="HTTPSampler.postBodyRaw">false</boolProp>
+            <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
+              <collectionProp name="Arguments.arguments">
+                <elementProp name="SCREEN_WIDTH.DUMMY.MENSYS.1" elementType="HTTPArgument">
+                  <boolProp name="HTTPArgument.always_encode">true</boolProp>
+                  <stringProp name="Argument.value">1920</stringProp>
+                  <stringProp name="Argument.metadata">=</stringProp>
+                  <boolProp name="HTTPArgument.use_equals">true</boolProp>
+                  <stringProp name="Argument.name">SCREEN_WIDTH.DUMMY.MENSYS.1</stringProp>
+                </elementProp>
+                <elementProp name="SCREEN_HEIGHT.DUMMY.MENSYS.1" elementType="HTTPArgument">
+                  <boolProp name="HTTPArgument.always_encode">true</boolProp>
+                  <stringProp name="Argument.value">1080</stringProp>
+                  <stringProp name="Argument.metadata">=</stringProp>
+                  <boolProp name="HTTPArgument.use_equals">true</boolProp>
+                  <stringProp name="Argument.name">SCREEN_HEIGHT.DUMMY.MENSYS.1</stringProp>
+                </elementProp>
+                <elementProp name="MUA_CODE.DUMMY.MENSYS.1" elementType="HTTPArgument">
+                  <boolProp name="HTTPArgument.always_encode">true</boolProp>
+                  <stringProp name="Argument.value">${USERNAME}</stringProp>
+                  <stringProp name="Argument.metadata">=</stringProp>
+                  <boolProp name="HTTPArgument.use_equals">true</boolProp>
+                  <stringProp name="Argument.name">MUA_CODE.DUMMY.MENSYS.1</stringProp>
+                </elementProp>
+                <elementProp name="PASSWORD.DUMMY.MENSYS.1" elementType="HTTPArgument">
+                  <boolProp name="HTTPArgument.always_encode">true</boolProp>
+                  <stringProp name="Argument.value">${PASSWORD}</stringProp>
+                  <stringProp name="Argument.metadata">=</stringProp>
+                  <boolProp name="HTTPArgument.use_equals">true</boolProp>
+                  <stringProp name="Argument.name">PASSWORD.DUMMY.MENSYS.1</stringProp>
+                </elementProp>
+                <elementProp name="BP101.DUMMY_B.MENSYS" elementType="HTTPArgument">
+                  <boolProp name="HTTPArgument.always_encode">true</boolProp>
+                  <stringProp name="Argument.value">Log in</stringProp>
+                  <stringProp name="Argument.metadata">=</stringProp>
+                  <boolProp name="HTTPArgument.use_equals">true</boolProp>
+                  <stringProp name="Argument.name">BP101.DUMMY_B.MENSYS</stringProp>
+                </elementProp>
+              </collectionProp>
+            </elementProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="POST Headers" enabled="true">
+              <collectionProp name="HeaderManager.headers">
+                <elementProp name="" elementType="Header">
+                  <stringProp name="Header.name">Content-Type</stringProp>
+                  <stringProp name="Header.value">application/x-www-form-urlencoded</stringProp>
+                </elementProp>
+                <elementProp name="" elementType="Header">
+                  <stringProp name="Header.name">Origin</stringProp>
+                  <stringProp name="Header.value">https://maya-cloud.um.edu.my</stringProp>
+                </elementProp>
+                <elementProp name="" elementType="Header">
+                  <stringProp name="Header.name">Referer</stringProp>
+                  <stringProp name="Header.value">https://maya-cloud.um.edu.my/sitsvision/wrd/siw_lgn</stringProp>
+                </elementProp>
+              </collectionProp>
+            </HeaderManager>
+            <hashTree/>
+            <JSR223PostProcessor guiclass="TestBeanGUI" testclass="JSR223PostProcessor" testname="Detect Login Response" enabled="false">
+              <stringProp name="cacheKey">true</stringProp>
+              <stringProp name="filename"></stringProp>
+              <stringProp name="parameters"></stringProp>
+              <stringProp name="script">// Check login response type: success, password_reset, or login_failed
+def response = prev.getResponseDataAsString()
+
+// Initialize flags
+vars.put(&quot;NEEDS_PASSWORD_RESET&quot;, &quot;false&quot;)
+vars.put(&quot;LOGIN_FAILED&quot;, &quot;false&quot;)
+
+if (response.contains(&quot;successfully logged in&quot;)) {
+    log.info(&quot;Login successful with current password&quot;)
+
+} else if (response.contains(&quot;Password Maintenance&quot;) || response.contains(&quot;Password Change&quot;) || response.contains(&apos;action=&quot;SIW_PQS&quot;&apos;)) {
+    log.info(&quot;Password reset required - extracting tokens&quot;)
+    vars.put(&quot;NEEDS_PASSWORD_RESET&quot;, &quot;true&quot;)
+
+    // Extract SCREEN_MODE token
+    def screenModeMatch = response =~ /name=&quot;SCREEN_MODE\.DUMMY_BUTT\.MENSYS\.1&quot; value=&quot;([^&quot;]+)&quot;/
+    if (screenModeMatch.find()) {
+        vars.put(&quot;PWD_SCREEN_MODE&quot;, screenModeMatch.group(1))
+        log.info(&quot;Extracted SCREEN_MODE: &quot; + screenModeMatch.group(1))
+    }
+
+    // Extract DUMMY_BUTT token
+    def dummyButtMatch = response =~ /name=&quot;%\.DUMMY_BUTT\.MENSYS\.1&quot; value=&quot;([^&quot;]+)&quot;/
+    if (dummyButtMatch.find()) {
+        vars.put(&quot;PWD_DUMMY_BUTT&quot;, dummyButtMatch.group(1))
+        log.info(&quot;Extracted DUMMY_BUTT: &quot; + dummyButtMatch.group(1))
+    }
+
+    // Extract DUMMY token (may be updated)
+    def dummyMatch = response =~ /name=&quot;%\.DUMMY\.MENSYS\.1&quot; value=&quot;([^&quot;]+)&quot;/
+    if (dummyMatch.find()) {
+        vars.put(&quot;PWD_DUMMY&quot;, dummyMatch.group(1))
+        log.info(&quot;Extracted PWD_DUMMY: &quot; + dummyMatch.group(1))
+    }
+
+} else if (response.contains(&quot;Login Error&quot;) || response.contains(&quot;Invalid&quot;) || response.contains(&quot;incorrect&quot;) || response.contains(&quot;Log in&quot;)) {
+    // Login failed - need to retry with NEW_PASSWORD
+    log.info(&quot;Login failed with current password - will retry with NEW_PASSWORD&quot;)
+    vars.put(&quot;LOGIN_FAILED&quot;, &quot;true&quot;)
+
+    // Re-extract tokens for retry (they may have changed)
+    def dummyMatch = response =~ /name=&quot;%\.DUMMY\.MENSYS\.1&quot; value=&quot;([^&quot;]+)&quot;/
+    if (dummyMatch.find()) {
+        vars.put(&quot;DUMMY_TOKEN&quot;, dummyMatch.group(1))
+    }
+    def formTokenMatch = response =~ /name=&quot;FORM_VERIFICATION_TOKEN\.DUMMY\.MENSYS\.1&quot; value=&quot;([^&quot;]+)&quot;/
+    if (formTokenMatch.find()) {
+        vars.put(&quot;FORM_VERIFICATION_TOKEN&quot;, formTokenMatch.group(1))
+    }
+    def webHeadMatch = response =~ /name=&quot;%\.WEB_HEAD\.MENSYS\.1&quot; value=&quot;([^&quot;]+)&quot;/
+    if (webHeadMatch.find()) {
+        vars.put(&quot;WEB_HEAD_TOKEN&quot;, webHeadMatch.group(1))
+    }
+    def dummyBMatch = response =~ /name=&quot;%\.DUMMY_B\.MENSYS&quot; value=&quot;([^&quot;]+)&quot;/
+    if (dummyBMatch.find()) {
+        vars.put(&quot;DUMMY_B_TOKEN&quot;, dummyBMatch.group(1))
+    }
+} else {
+    log.warn(&quot;Unexpected login response - check response data&quot;)
+}
+</stringProp>
+              <stringProp name="scriptLanguage">groovy</stringProp>
+            </JSR223PostProcessor>
+            <hashTree/>
+            <RegexExtractor guiclass="RegexExtractorGui" testclass="RegexExtractor" testname="Extract_Portal_URL" enabled="true">
+              <stringProp name="RegexExtractor.useHeaders">false</stringProp>
+              <stringProp name="RegexExtractor.refname">PORTAL_URL</stringProp>
+              <stringProp name="RegexExtractor.regex">name=&quot;HREF\.DUMMY\.MENSYS\.1&quot; value=&quot;([^&quot;]+)&quot;</stringProp>
+              <stringProp name="RegexExtractor.template">$1$</stringProp>
+              <stringProp name="RegexExtractor.default">PORTAL_URL_NOT_FOUND</stringProp>
+              <stringProp name="RegexExtractor.match_number">1</stringProp>
+              <boolProp name="RegexExtractor.default_empty_value">false</boolProp>
+            </RegexExtractor>
+            <hashTree/>
+          </hashTree>
+          <IfController guiclass="IfControllerPanel" testclass="IfController" testname="If Login Failed - Retry with New Password" enabled="false">
+            <stringProp name="IfController.condition">${__groovy(vars.get(&quot;LOGIN_FAILED&quot;) == &quot;true&quot;)}</stringProp>
+            <boolProp name="IfController.evaluateAll">false</boolProp>
+            <boolProp name="IfController.useExpression">true</boolProp>
+          </IfController>
+          <hashTree>
+            <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="02b_POST_Login_Retry" enabled="true">
+              <stringProp name="HTTPSampler.path">/sitsvision/wrd/SIW_LGN</stringProp>
+              <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+              <stringProp name="HTTPSampler.method">POST</stringProp>
+              <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+              <boolProp name="HTTPSampler.postBodyRaw">false</boolProp>
+              <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
+                <collectionProp name="Arguments.arguments">
+                  <elementProp name="SCREEN_WIDTH.DUMMY.MENSYS.1" elementType="HTTPArgument">
+                    <boolProp name="HTTPArgument.always_encode">true</boolProp>
+                    <stringProp name="Argument.value">1920</stringProp>
+                    <stringProp name="Argument.metadata">=</stringProp>
+                    <boolProp name="HTTPArgument.use_equals">true</boolProp>
+                    <stringProp name="Argument.name">SCREEN_WIDTH.DUMMY.MENSYS.1</stringProp>
+                  </elementProp>
+                  <elementProp name="SCREEN_HEIGHT.DUMMY.MENSYS.1" elementType="HTTPArgument">
+                    <boolProp name="HTTPArgument.always_encode">true</boolProp>
+                    <stringProp name="Argument.value">1080</stringProp>
+                    <stringProp name="Argument.metadata">=</stringProp>
+                    <boolProp name="HTTPArgument.use_equals">true</boolProp>
+                    <stringProp name="Argument.name">SCREEN_HEIGHT.DUMMY.MENSYS.1</stringProp>
+                  </elementProp>
+                  <elementProp name="MUA_CODE.DUMMY.MENSYS.1" elementType="HTTPArgument">
+                    <boolProp name="HTTPArgument.always_encode">true</boolProp>
+                    <stringProp name="Argument.value">${USERNAME}</stringProp>
+                    <stringProp name="Argument.metadata">=</stringProp>
+                    <boolProp name="HTTPArgument.use_equals">true</boolProp>
+                    <stringProp name="Argument.name">MUA_CODE.DUMMY.MENSYS.1</stringProp>
+                  </elementProp>
+                  <elementProp name="PASSWORD.DUMMY.MENSYS.1" elementType="HTTPArgument">
+                    <boolProp name="HTTPArgument.always_encode">true</boolProp>
+                    <stringProp name="Argument.value">${NEW_PASSWORD}</stringProp>
+                    <stringProp name="Argument.metadata">=</stringProp>
+                    <boolProp name="HTTPArgument.use_equals">true</boolProp>
+                    <stringProp name="Argument.name">PASSWORD.DUMMY.MENSYS.1</stringProp>
+                  </elementProp>
+                  <elementProp name="BP101.DUMMY_B.MENSYS" elementType="HTTPArgument">
+                    <boolProp name="HTTPArgument.always_encode">true</boolProp>
+                    <stringProp name="Argument.value">Log in</stringProp>
+                    <stringProp name="Argument.metadata">=</stringProp>
+                    <boolProp name="HTTPArgument.use_equals">true</boolProp>
+                    <stringProp name="Argument.name">BP101.DUMMY_B.MENSYS</stringProp>
+                  </elementProp>
+                </collectionProp>
+              </elementProp>
+            </HTTPSamplerProxy>
+            <hashTree>
+              <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="POST Headers" enabled="true">
+                <collectionProp name="HeaderManager.headers">
+                  <elementProp name="" elementType="Header">
+                    <stringProp name="Header.name">Content-Type</stringProp>
+                    <stringProp name="Header.value">application/x-www-form-urlencoded</stringProp>
+                  </elementProp>
+                  <elementProp name="" elementType="Header">
+                    <stringProp name="Header.name">Origin</stringProp>
+                    <stringProp name="Header.value">https://maya-cloud.um.edu.my</stringProp>
+                  </elementProp>
+                  <elementProp name="" elementType="Header">
+                    <stringProp name="Header.name">Referer</stringProp>
+                    <stringProp name="Header.value">https://maya-cloud.um.edu.my/sitsvision/wrd/siw_lgn</stringProp>
+                  </elementProp>
+                </collectionProp>
+              </HeaderManager>
+              <hashTree/>
+              <RegexExtractor guiclass="RegexExtractorGui" testclass="RegexExtractor" testname="Extract_Portal_URL" enabled="true">
+                <stringProp name="RegexExtractor.useHeaders">false</stringProp>
+                <stringProp name="RegexExtractor.refname">PORTAL_URL</stringProp>
+                <stringProp name="RegexExtractor.regex">name=&quot;HREF\.DUMMY\.MENSYS\.1&quot; value=&quot;([^&quot;]+)&quot; </stringProp>
+                <stringProp name="RegexExtractor.template">$1$</stringProp>
+                <stringProp name="RegexExtractor.default">PORTAL_URL_NOT_FOUND</stringProp>
+                <stringProp name="RegexExtractor.match_number">1</stringProp>
+                <boolProp name="RegexExtractor.default_empty_value">false</boolProp>
+              </RegexExtractor>
+              <hashTree/>
+              <JSR223PostProcessor guiclass="TestBeanGUI" testclass="JSR223PostProcessor" testname="Detect Retry Login Response" enabled="true">
+                <stringProp name="cacheKey">true</stringProp>
+                <stringProp name="filename"></stringProp>
+                <stringProp name="parameters"></stringProp>
+                <stringProp name="script">// Check retry login response - update flags
+def response = prev.getResponseDataAsString()
+
+// Reset flags
+vars.put(&quot;LOGIN_FAILED&quot;, &quot;false&quot;)
+
+if (response.contains(&quot;successfully logged in&quot;)) {
+    log.info(&quot;Retry login successful with NEW_PASSWORD&quot;)
+    vars.put(&quot;NEEDS_PASSWORD_RESET&quot;, &quot;false&quot;)
+
+    // Extract PORTAL_URL
+    def portalMatch = response =~ /name=&quot;HREF\.DUMMY\.MENSYS\.1&quot; value=&quot;([^&quot;]+)&quot;/
+    if (portalMatch.find()) {
+        vars.put(&quot;PORTAL_URL&quot;, portalMatch.group(1))
+        log.info(&quot;Extracted PORTAL_URL: &quot; + portalMatch.group(1))
+    }
+
+    // Update PASSWORD to NEW_PASSWORD for consistency
+    vars.put(&quot;PASSWORD&quot;, vars.get(&quot;NEW_PASSWORD&quot;))
+
+} else if (response.contains(&quot;Password Maintenance&quot;) || response.contains(&quot;Password Change&quot;) || response.contains(&apos;action=&quot;SIW_PQS&quot;&apos;)) {
+    log.info(&quot;Retry login requires password reset - extracting tokens&quot;)
+    vars.put(&quot;NEEDS_PASSWORD_RESET&quot;, &quot;true&quot;)
+
+    // Extract SCREEN_MODE token
+    def screenModeMatch = response =~ /name=&quot;SCREEN_MODE\.DUMMY_BUTT\.MENSYS\.1&quot; value=&quot;([^&quot;]+)&quot;/
+    if (screenModeMatch.find()) {
+        vars.put(&quot;PWD_SCREEN_MODE&quot;, screenModeMatch.group(1))
+    }
+
+    // Extract DUMMY_BUTT token
+    def dummyButtMatch = response =~ /name=&quot;%\.DUMMY_BUTT\.MENSYS\.1&quot; value=&quot;([^&quot;]+)&quot;/
+    if (dummyButtMatch.find()) {
+        vars.put(&quot;PWD_DUMMY_BUTT&quot;, dummyButtMatch.group(1))
+    }
+
+    // Extract DUMMY token
+    def dummyMatch = response =~ /name=&quot;%\.DUMMY\.MENSYS\.1&quot; value=&quot;([^&quot;]+)&quot;/
+    if (dummyMatch.find()) {
+        vars.put(&quot;PWD_DUMMY&quot;, dummyMatch.group(1))
+    }
+
+} else {
+    log.error(&quot;Retry login also failed - both passwords incorrect&quot;)
+}
+</stringProp>
+                <stringProp name="scriptLanguage">groovy</stringProp>
+              </JSR223PostProcessor>
+              <hashTree/>
+            </hashTree>
+          </hashTree>
+          <IfController guiclass="IfControllerPanel" testclass="IfController" testname="If Password Reset Required" enabled="false">
+            <stringProp name="IfController.condition">${__groovy(vars.get(&quot;NEEDS_PASSWORD_RESET&quot;) == &quot;true&quot;)}</stringProp>
+            <boolProp name="IfController.evaluateAll">false</boolProp>
+            <boolProp name="IfController.useExpression">true</boolProp>
+          </IfController>
+          <hashTree>
+            <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="02a_POST_Password_Reset" enabled="true">
+              <stringProp name="HTTPSampler.path">/sitsvision/wrd/SIW_PQS</stringProp>
+              <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+              <stringProp name="HTTPSampler.method">POST</stringProp>
+              <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+              <boolProp name="HTTPSampler.postBodyRaw">false</boolProp>
+              <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
+                <collectionProp name="Arguments.arguments">
+                  <elementProp name="%.DUMMY.MENSYS.1" elementType="HTTPArgument">
+                    <boolProp name="HTTPArgument.always_encode">true</boolProp>
+                    <stringProp name="Argument.value">${PWD_DUMMY}</stringProp>
+                    <stringProp name="Argument.metadata">=</stringProp>
+                    <boolProp name="HTTPArgument.use_equals">true</boolProp>
+                    <stringProp name="Argument.name">%.DUMMY.MENSYS.1</stringProp>
+                  </elementProp>
+                  <elementProp name="NKEY.DUMMY.MENSYS.1" elementType="HTTPArgument">
+                    <boolProp name="HTTPArgument.always_encode">true</boolProp>
+                    <stringProp name="Argument.value"></stringProp>
+                    <stringProp name="Argument.metadata">=</stringProp>
+                    <boolProp name="HTTPArgument.use_equals">true</boolProp>
+                    <stringProp name="Argument.name">NKEY.DUMMY.MENSYS.1</stringProp>
+                  </elementProp>
+                  <elementProp name="RUN_MODE.DUMMY.MENSYS.1" elementType="HTTPArgument">
+                    <boolProp name="HTTPArgument.always_encode">true</boolProp>
+                    <stringProp name="Argument.value"></stringProp>
+                    <stringProp name="Argument.metadata">=</stringProp>
+                    <boolProp name="HTTPArgument.use_equals">true</boolProp>
+                    <stringProp name="Argument.name">RUN_MODE.DUMMY.MENSYS.1</stringProp>
+                  </elementProp>
+                  <elementProp name="SCREEN_MODE.DUMMY_BUTT.MENSYS.1" elementType="HTTPArgument">
+                    <boolProp name="HTTPArgument.always_encode">true</boolProp>
+                    <stringProp name="Argument.value">${PWD_SCREEN_MODE}</stringProp>
+                    <stringProp name="Argument.metadata">=</stringProp>
+                    <boolProp name="HTTPArgument.use_equals">true</boolProp>
+                    <stringProp name="Argument.name">SCREEN_MODE.DUMMY_BUTT.MENSYS.1</stringProp>
+                  </elementProp>
+                  <elementProp name="NEW_PWD.DUMMY_PASS.MENSYS.1" elementType="HTTPArgument">
+                    <boolProp name="HTTPArgument.always_encode">true</boolProp>
+                    <stringProp name="Argument.value">${NEW_PASSWORD}</stringProp>
+                    <stringProp name="Argument.metadata">=</stringProp>
+                    <boolProp name="HTTPArgument.use_equals">true</boolProp>
+                    <stringProp name="Argument.name">NEW_PWD.DUMMY_PASS.MENSYS.1</stringProp>
+                  </elementProp>
+                  <elementProp name="CON_PWD.DUMMY_PASS.MENSYS.1" elementType="HTTPArgument">
+                    <boolProp name="HTTPArgument.always_encode">true</boolProp>
+                    <stringProp name="Argument.value">${NEW_PASSWORD}</stringProp>
+                    <stringProp name="Argument.metadata">=</stringProp>
+                    <boolProp name="HTTPArgument.use_equals">true</boolProp>
+                    <stringProp name="Argument.name">CON_PWD.DUMMY_PASS.MENSYS.1</stringProp>
+                  </elementProp>
+                  <elementProp name="STORE.DUMMY_BUTT.MENSYS.1" elementType="HTTPArgument">
+                    <boolProp name="HTTPArgument.always_encode">true</boolProp>
+                    <stringProp name="Argument.value">Go</stringProp>
+                    <stringProp name="Argument.metadata">=</stringProp>
+                    <boolProp name="HTTPArgument.use_equals">true</boolProp>
+                    <stringProp name="Argument.name">STORE.DUMMY_BUTT.MENSYS.1</stringProp>
+                  </elementProp>
+                  <elementProp name="%.DUMMY_BUTT.MENSYS.1" elementType="HTTPArgument">
+                    <boolProp name="HTTPArgument.always_encode">true</boolProp>
+                    <stringProp name="Argument.value">${PWD_DUMMY_BUTT}</stringProp>
+                    <stringProp name="Argument.metadata">=</stringProp>
+                    <boolProp name="HTTPArgument.use_equals">true</boolProp>
+                    <stringProp name="Argument.name">%.DUMMY_BUTT.MENSYS.1</stringProp>
+                  </elementProp>
+                </collectionProp>
+              </elementProp>
+            </HTTPSamplerProxy>
+            <hashTree>
+              <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="POST Headers" enabled="true">
+                <collectionProp name="HeaderManager.headers">
+                  <elementProp name="" elementType="Header">
+                    <stringProp name="Header.name">Content-Type</stringProp>
+                    <stringProp name="Header.value">application/x-www-form-urlencoded</stringProp>
+                  </elementProp>
+                  <elementProp name="" elementType="Header">
+                    <stringProp name="Header.name">Origin</stringProp>
+                    <stringProp name="Header.value">https://maya-cloud.um.edu.my</stringProp>
+                  </elementProp>
+                  <elementProp name="" elementType="Header">
+                    <stringProp name="Header.name">Referer</stringProp>
+                    <stringProp name="Header.value">https://maya-cloud.um.edu.my/</stringProp>
+                  </elementProp>
+                </collectionProp>
+              </HeaderManager>
+              <hashTree/>
+              <JSR223PostProcessor guiclass="TestBeanGUI" testclass="JSR223PostProcessor" testname="Handle Password Reset Response" enabled="true">
+                <stringProp name="cacheKey">true</stringProp>
+                <stringProp name="filename"></stringProp>
+                <stringProp name="parameters"></stringProp>
+                <stringProp name="script">// Check if password reset was successful or needs retry
+def response = prev.getResponseDataAsString()
+
+if (response.contains(&quot;successfully logged in&quot;) || response.contains(&quot;HREF.DUMMY.MENSYS.1&quot;)) {
+    log.info(&quot;Password reset successful - extracting portal URL&quot;)
+
+    // Extract PORTAL_URL
+    def portalMatch = response =~ /name=&quot;HREF\.DUMMY\.MENSYS\.1&quot; value=&quot;([^&quot;]+)&quot;/
+    if (portalMatch.find()) {
+        vars.put(&quot;PORTAL_URL&quot;, portalMatch.group(1))
+        log.info(&quot;Extracted PORTAL_URL: &quot; + portalMatch.group(1))
+    }
+
+    // Update PASSWORD variable for future use
+    vars.put(&quot;PASSWORD&quot;, vars.get(&quot;NEW_PASSWORD&quot;))
+    log.info(&quot;Password updated to NEW_PASSWORD for future logins&quot;)
+
+} else if (response.contains(&quot;Password Error&quot;) || response.contains(&quot;Password Change&quot;)) {
+    log.error(&quot;Password reset failed - check password requirements&quot;)
+    log.error(&quot;Password must be 8+ chars with uppercase, lowercase, numbers, and special chars&quot;)
+} else {
+    log.warn(&quot;Unexpected password reset response&quot;)
+}
+</stringProp>
+                <stringProp name="scriptLanguage">groovy</stringProp>
+              </JSR223PostProcessor>
+              <hashTree/>
+              <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Assert_Password_Reset_Success" enabled="true">
+                <collectionProp name="Asserion.test_strings">
+                  <stringProp name="-809205430">successfully logged in</stringProp>
+                </collectionProp>
+                <stringProp name="Assertion.custom_message">Password reset failed - check NEW_PASSWORD meets requirements (8+ chars, uppercase, lowercase, number, special char)</stringProp>
+                <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>
+                <boolProp name="Assertion.assume_success">false</boolProp>
+                <intProp name="Assertion.test_type">2</intProp>
+              </ResponseAssertion>
+              <hashTree/>
+            </hashTree>
+          </hashTree>
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="03_GET_Portal" enabled="true">
+            <stringProp name="HTTPSampler.path">/sitsvision/wrd/${PORTAL_URL}</stringProp>
+            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+            <stringProp name="HTTPSampler.method">GET</stringProp>
+            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+            <boolProp name="HTTPSampler.postBodyRaw">false</boolProp>
+            <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
+              <collectionProp name="Arguments.arguments"/>
+            </elementProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="Assert_Portal_Page_Loaded" enabled="false">
+              <collectionProp name="Asserion.test_strings">
+                <stringProp name="2255103">Home</stringProp>
+              </collectionProp>
+              <stringProp name="Assertion.custom_message">Portal page did not load correctly</stringProp>
+              <stringProp name="Assertion.test_field">Assertion.response_data</stringProp>
+              <boolProp name="Assertion.assume_success">false</boolProp>
+              <intProp name="Assertion.test_type">2</intProp>
+            </ResponseAssertion>
+            <hashTree/>
+            <RegexExtractor guiclass="RegexExtractorGui" testclass="RegexExtractor" testname="Regular Expression Extractor" enabled="true">
+              <stringProp name="RegexExtractor.useHeaders">false</stringProp>
+              <stringProp name="RegexExtractor.refname">logout_url</stringProp>
+              <stringProp name="RegexExtractor.regex">&lt;a[^&gt;]*href=&quot;../wrd/([^&quot;]+)&quot;[^&gt;]*&gt;Logout&lt;/a&gt;</stringProp>
+              <stringProp name="RegexExtractor.template">$1$</stringProp>
+              <stringProp name="RegexExtractor.default">NOT_FOUND</stringProp>
+              <boolProp name="RegexExtractor.default_empty_value">false</boolProp>
+              <stringProp name="RegexExtractor.match_number">1</stringProp>
+            </RegexExtractor>
+            <hashTree/>
+          </hashTree>
+          <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="04_GET_Logout" enabled="true">
+            <stringProp name="TestPlan.comments">https://maya-cloud.um.edu.my/sitsvision/wrd/SIW_LGN_LOGOUT.start_url?7465850FA6754C62MWMNNhwkmv8flpMf0hBuRuVi1rvAErwGEhx1umQFU1YZmujNJgO_hnm_ed6Gic6KEz1XZCcbLOhgespy9ZL3g4XDJR_-sCBVBtimxUedL04S4p4ZpMubPCv9EAq_f92B6vjumPjCbQecv37ydPYbYQkN_Rr5egMC8pZpvX7hlHcuC0ibEBTh8Cvw5PwZNPJk4vGLRkkC4Zu2SY4AnOWMAroubsTCMTDg3VDQ1V6AFFM</stringProp>
+            <boolProp name="HTTPSampler.image_parser">true</boolProp>
+            <stringProp name="HTTPSampler.port">0</stringProp>
+            <stringProp name="HTTPSampler.path">sitsvision/wrd/${logout_url}</stringProp>
+            <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+            <stringProp name="HTTPSampler.method">GET</stringProp>
+            <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+            <boolProp name="HTTPSampler.postBodyRaw">false</boolProp>
+            <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
+              <collectionProp name="Arguments.arguments"/>
+            </elementProp>
+          </HTTPSamplerProxy>
+          <hashTree>
+            <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP Header manager" enabled="true">
+              <collectionProp name="HeaderManager.headers">
+                <elementProp name="Sec-Fetch-User" elementType="Header">
+                  <stringProp name="Header.name">Sec-Fetch-User</stringProp>
+                  <stringProp name="Header.value">?1</stringProp>
+                </elementProp>
+              </collectionProp>
+            </HeaderManager>
+            <hashTree/>
+            <ConstantTimer guiclass="ConstantTimerGui" testclass="ConstantTimer" testname="Constant Timer" enabled="false">
+              <stringProp name="ConstantTimer.delay">6749</stringProp>
+            </ConstantTimer>
+            <hashTree/>
+          </hashTree>
+        </hashTree>
+        <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="View Results Tree" enabled="false">
+          <boolProp name="ResultCollector.error_logging">false</boolProp>
+          <objProp>
+            <name>saveConfig</name>
+            <value class="SampleSaveConfiguration">
+              <time>true</time>
+              <latency>true</latency>
+              <timestamp>true</timestamp>
+              <success>true</success>
+              <label>true</label>
+              <code>true</code>
+              <message>true</message>
+              <threadName>true</threadName>
+              <dataType>true</dataType>
+              <encoding>false</encoding>
+              <assertions>true</assertions>
+              <subresults>true</subresults>
+              <responseData>false</responseData>
+              <samplerData>false</samplerData>
+              <xml>false</xml>
+              <fieldNames>true</fieldNames>
+              <responseHeaders>false</responseHeaders>
+              <requestHeaders>false</requestHeaders>
+              <responseDataOnError>false</responseDataOnError>
+              <saveAssertionResultsFailureMessage>true</saveAssertionResultsFailureMessage>
+              <assertionsResultsToSave>0</assertionsResultsToSave>
+              <bytes>true</bytes>
+              <sentBytes>true</sentBytes>
+              <url>true</url>
+              <threadCounts>true</threadCounts>
+              <idleTime>true</idleTime>
+              <connectTime>true</connectTime>
+            </value>
+          </objProp>
+          <stringProp name="filename"></stringProp>
+        </ResultCollector>
+        <hashTree/>
+        <ResultCollector guiclass="SummaryReport" testclass="ResultCollector" testname="Summary Report" enabled="false">
+          <boolProp name="ResultCollector.error_logging">false</boolProp>
+          <objProp>
+            <name>saveConfig</name>
+            <value class="SampleSaveConfiguration">
+              <time>true</time>
+              <latency>true</latency>
+              <timestamp>true</timestamp>
+              <success>true</success>
+              <label>true</label>
+              <code>true</code>
+              <message>true</message>
+              <threadName>true</threadName>
+              <dataType>true</dataType>
+              <encoding>false</encoding>
+              <assertions>true</assertions>
+              <subresults>true</subresults>
+              <responseData>false</responseData>
+              <samplerData>false</samplerData>
+              <xml>false</xml>
+              <fieldNames>true</fieldNames>
+              <responseHeaders>false</responseHeaders>
+              <requestHeaders>false</requestHeaders>
+              <responseDataOnError>false</responseDataOnError>
+              <saveAssertionResultsFailureMessage>true</saveAssertionResultsFailureMessage>
+              <assertionsResultsToSave>0</assertionsResultsToSave>
+              <bytes>true</bytes>
+              <sentBytes>true</sentBytes>
+              <url>true</url>
+              <threadCounts>true</threadCounts>
+              <idleTime>true</idleTime>
+              <connectTime>true</connectTime>
+            </value>
+          </objProp>
+          <stringProp name="filename"></stringProp>
+        </ResultCollector>
+        <hashTree/>
+        <ResultCollector guiclass="StatVisualizer" testclass="ResultCollector" testname="Aggregate Report" enabled="true">
+          <boolProp name="ResultCollector.error_logging">false</boolProp>
+          <objProp>
+            <name>saveConfig</name>
+            <value class="SampleSaveConfiguration">
+              <time>true</time>
+              <latency>true</latency>
+              <timestamp>true</timestamp>
+              <success>true</success>
+              <label>true</label>
+              <code>true</code>
+              <message>true</message>
+              <threadName>true</threadName>
+              <dataType>true</dataType>
+              <encoding>false</encoding>
+              <assertions>true</assertions>
+              <subresults>true</subresults>
+              <responseData>false</responseData>
+              <samplerData>false</samplerData>
+              <xml>false</xml>
+              <fieldNames>true</fieldNames>
+              <responseHeaders>false</responseHeaders>
+              <requestHeaders>false</requestHeaders>
+              <responseDataOnError>false</responseDataOnError>
+              <saveAssertionResultsFailureMessage>true</saveAssertionResultsFailureMessage>
+              <assertionsResultsToSave>0</assertionsResultsToSave>
+              <bytes>true</bytes>
+              <sentBytes>true</sentBytes>
+              <url>true</url>
+              <threadCounts>true</threadCounts>
+              <idleTime>true</idleTime>
+              <connectTime>true</connectTime>
+            </value>
+          </objProp>
+          <stringProp name="filename"></stringProp>
+        </ResultCollector>
+        <hashTree/>
+      </hashTree>
+    </hashTree>
+  </hashTree>
+</jmeterTestPlan>

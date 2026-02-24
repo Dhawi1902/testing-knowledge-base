@@ -4,30 +4,66 @@
 {% block page_title %}Slave VMs{% endblock %}
 
 {% block content %}
-<!-- Summary bar -->
-<div class="card mb-24">
-    <div class="flex gap-8" style="align-items:center;justify-content:space-between;flex-wrap:wrap;">
+<!-- Slave List -->
+<div class="card">
+    <div class="card-header" style="flex-wrap:wrap;gap:8px;">
         <div class="flex gap-16" style="align-items:center;">
-            <span class="text-sm" id="slaveSummary">Loading...</span>
+            <span class="card-title" style="cursor:pointer;" onclick="toggleSlaveList()"><span class="collapse-icon" id="slaveCollapseIcon">&#9660;</span> Slave List</span>
+            <span class="text-sm" id="slaveSummary" style="display:flex;gap:4px;">Loading...</span>
         </div>
-        <div class="flex gap-8">
-            <button class="btn btn-outline btn-sm" onclick="refreshStatus()" id="refreshBtn">Refresh</button>
+        <!-- Default actions (shown when nothing selected) -->
+        <div class="flex gap-8" style="align-items:center;" id="defaultActions">
+            {% if access_level != 'viewer' %}<button class="btn btn-outline btn-sm" onclick="addSlave()">+ Add</button>{% endif %}
+            <button class="btn btn-outline btn-sm" onclick="refreshStatus()" id="refreshBtn" title="Check online status of all slaves">Check Status</button>
+            {% if access_level != 'viewer' %}
             <button class="btn btn-primary btn-sm" onclick="startAll()" id="startAllBtn">Start All</button>
             <button class="btn btn-outline btn-sm" onclick="stopAll()" id="stopAllBtn" style="color:var(--color-danger);border-color:var(--color-danger);">Stop All</button>
+            {% endif %}
+            <span style="width:1px;height:24px;background:var(--color-border);margin:0 4px;"></span>
+            <button class="btn btn-outline btn-sm view-toggle" id="viewListBtn" onclick="setView('list')" title="List view">&#9776;</button>
+            <button class="btn btn-outline btn-sm view-toggle" id="viewGridBtn" onclick="setView('grid')" title="Grid view">&#9638;</button>
+        </div>
+        {% if access_level != 'viewer' %}
+        <!-- Bulk actions (shown when slaves selected) -->
+        <div class="flex gap-8" style="align-items:center;display:none;" id="bulkActions">
+            <span class="text-sm" id="bulkCount" style="font-weight:600;">0 selected</span>
+            <button class="btn btn-outline btn-sm" onclick="bulkEnable(true)">Enable</button>
+            <button class="btn btn-outline btn-sm" onclick="bulkEnable(false)">Disable</button>
+            <button class="btn btn-sm" onclick="bulkRemove()" style="color:var(--color-danger);border:1px solid var(--color-danger);background:transparent;">Remove</button>
+            <button class="btn btn-outline btn-sm" onclick="clearSelection()">Clear</button>
+        </div>
+        {% endif %}
+    </div>
+    <div id="slaveBody">
+        <div id="slaveContainer">
+            <div class="text-light" style="text-align:center;padding:32px;">Loading...</div>
         </div>
     </div>
 </div>
 
-<!-- VM grid -->
-<div class="card-grid" id="slaveGrid" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr));">
-    <div class="text-light" style="grid-column:1/-1;text-align:center;padding:32px;">
-        Checking slave VMs...
+<!-- VM Configuration -->
+<div class="card" style="margin-top:24px;">
+    <div class="card-header" style="cursor:pointer;" onclick="document.getElementById('vmBody').style.display = document.getElementById('vmBody').style.display === 'none' ? '' : 'none'; this.querySelector('.collapse-icon').textContent = document.getElementById('vmBody').style.display === 'none' ? '\u25B6' : '\u25BC';">
+        <span class="card-title"><span class="collapse-icon">&#9654;</span> VM Configuration</span>
+        <span class="text-light text-sm">SSH defaults &amp; JMeter scripts</span>
+    </div>
+    <div id="vmBody" style="display:none;">
+        {% if access_level != 'viewer' %}
+        <div class="flex gap-8 mb-16" style="justify-content:flex-end;">
+            <button class="btn btn-primary btn-sm" onclick="saveVmConfig()">Save</button>
+        </div>
+        {% endif %}
+        <div id="vmForm"></div>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <style>
+/* Uses global .toggle and .check classes from style.css */
+
+/* Grid view */
+.slave-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:16px; }
 .vm-card {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
@@ -37,42 +73,106 @@
     flex-direction: column;
     gap: 8px;
 }
-.vm-card-header {
+.vm-card.disabled { opacity:0.5; }
+.vm-card.selected { border-color:var(--color-primary); box-shadow:0 0 0 1px var(--color-primary); }
+.vm-ip { font-family:var(--font-mono); font-size:14px; font-weight:600; cursor:pointer; }
+.vm-ip:hover { text-decoration:underline; text-decoration-style:dashed; text-underline-offset:3px; }
+.ip-edit { font-family:var(--font-mono); font-size:14px; font-weight:600; background:transparent; border:1px solid var(--color-primary); border-radius:4px; padding:2px 6px; outline:none; color:inherit; width:160px; }
+.vm-meta { font-size:12px; color:var(--color-text-light); }
+.vm-error { font-size:11px; color:var(--color-danger); word-break:break-all; }
+
+/* List view */
+.slave-list { display:flex; flex-direction:column; gap:0; }
+.slave-entry {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-bottom: none;
+}
+.slave-entry:first-child { border-radius: 8px 8px 0 0; }
+.slave-entry:last-child { border-bottom: 1px solid var(--color-border); border-radius: 0 0 8px 8px; }
+.slave-entry:only-child { border-radius: 8px; border-bottom: 1px solid var(--color-border); }
+.slave-entry.disabled { opacity:0.5; }
+.slave-entry.selected { border-color:var(--color-primary); background:color-mix(in srgb, var(--color-primary) 5%, var(--color-surface)); }
+.slave-list .slave-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+    gap: 12px;
+    padding: 10px 16px;
 }
-.vm-ip {
-    font-family: 'SF Mono', 'Consolas', monospace;
-    font-size: 14px;
-    font-weight: 600;
+.slave-list .slave-row .slave-ip { font-family:var(--font-mono); font-size:13px; font-weight:600; min-width:140px; cursor:pointer; }
+.slave-list .slave-row .slave-ip:hover { text-decoration:underline; text-decoration-style:dashed; text-underline-offset:3px; }
+.slave-list .slave-row .slave-meta { font-size:12px; color:var(--color-text-light); flex:1; }
+.slave-list .slave-row .slave-actions { display:flex; align-items:center; gap:8px; margin-left:auto; }
+
+/* Select checkbox */
+.select-cb { width:16px; height:16px; cursor:pointer; accent-color:var(--color-primary); flex-shrink:0; }
+
+/* Gear / delete buttons */
+.gear-btn, .del-btn { background:none; border:none; cursor:pointer; font-size:15px; padding:2px 4px; opacity:0.4; transition:opacity 0.15s; color:inherit; }
+.gear-btn:hover, .gear-btn.active { opacity:1; }
+.del-btn { font-size:13px; }
+.del-btn:hover { opacity:1; color:var(--color-danger); }
+
+/* Select-all header */
+.slave-list-header {
+    display:flex; align-items:center; gap:12px; padding:6px 16px;
+    font-size:11px; color:var(--color-text-light); border-bottom:1px solid var(--color-border);
 }
-.vm-status-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    display: inline-block;
-    flex-shrink: 0;
+
+/* Slave config override panel */
+.slave-config-panel {
+    padding: 8px 16px 12px;
+    border-top: 1px dashed var(--color-border);
+    background: color-mix(in srgb, var(--color-surface) 95%, var(--color-border));
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: flex-end;
 }
-.vm-status-dot.up { background: #22c55e; }
-.vm-status-dot.down { background: #ef4444; }
-.vm-status-dot.checking { background: #f59e0b; animation: pulse 1s ease-in-out infinite; }
-@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
-.vm-meta {
-    font-size: 12px;
-    color: var(--color-text-light);
-}
-.vm-error {
-    font-size: 11px;
-    color: var(--color-danger);
-    word-break: break-all;
-}
+.slave-config-panel .form-group { margin:0; flex:1; min-width:120px; }
+.slave-config-panel .form-label { font-size:11px; margin-bottom:2px; }
+.slave-config-panel .form-input { font-size:12px; padding:4px 8px; }
+.slave-config-panel .override-hint { font-size:10px; color:var(--color-text-light); margin-top:8px; width:100%; }
+
+/* View toggle active state */
+.view-toggle.active { background:var(--color-primary); color:white; border-color:var(--color-primary); }
+
+/* Status dot */
+.status-dot { width:8px; height:8px; border-radius:50%; display:inline-block; flex-shrink:0; }
+.status-dot.up { background:#22c55e; }
+.status-dot.down { background:#ef4444; }
+.status-dot.checking { background:#f59e0b; animation:pulse 1s ease-in-out infinite; }
+.status-dot.unknown { background:var(--color-border); }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
 </style>
 <script>
+const ACCESS_LEVEL = '{{ access_level | default("viewer") }}';
+const isAdmin = ACCESS_LEVEL !== 'viewer';
 let slaveData = [];
 let checking = false;
+let selected = new Set();
+let expandedConfigs = new Set();
+let currentView = localStorage.getItem('slave_view') || 'list';
 
+// ===== Load slaves (config only, no status check) =====
+async function loadSlaves() {
+    try {
+        const data = await api('/api/config/slaves');
+        slaveData = (data.slaves || []).map(s => ({
+            ip: typeof s === 'string' ? s : s.ip,
+            enabled: typeof s === 'string' ? true : s.enabled !== false,
+            overrides: (typeof s === 'object' && s.overrides) ? s.overrides : {},
+            status: null,
+        }));
+    } catch (e) {
+        slaveData = [];
+    }
+    render();
+    updateSummary();
+    updateViewButtons();
+}
+
+// ===== Status check (manual only) =====
 async function refreshStatus() {
     if (checking) return;
     checking = true;
@@ -80,69 +180,356 @@ async function refreshStatus() {
     btn.disabled = true;
     btn.textContent = 'Checking...';
 
-    // Show loading state
-    if (slaveData.length > 0) {
-        renderSlaves(slaveData.map(s => ({ ...s, status: 'checking' })));
-    } else {
-        document.getElementById('slaveGrid').innerHTML =
-            '<div class="text-light" style="grid-column:1/-1;text-align:center;padding:32px;">Checking slave VMs...</div>';
-    }
-    document.getElementById('slaveSummary').textContent = 'Checking...';
+    // Show checking state
+    slaveData.forEach(s => { if (s.enabled !== false) s.status = 'checking'; });
+    render();
 
     try {
         const data = await api('/api/slaves/status');
-        slaveData = data.slaves || [];
-        renderSlaves(slaveData);
-        updateSummary(slaveData);
+        const statusMap = {};
+        (data.slaves || []).forEach(s => { statusMap[s.ip] = s; });
+        slaveData.forEach(s => {
+            const st = statusMap[s.ip];
+            if (st) {
+                s.status = st.status || 'down';
+                s.error = st.error || null;
+            }
+        });
     } catch (e) {
-        document.getElementById('slaveSummary').textContent = 'Failed to check status';
+        slaveData.forEach(s => { s.status = 'down'; });
+        showToast('Failed to check status', 'error');
     }
+    render();
+    updateSummary();
     btn.disabled = false;
-    btn.textContent = 'Refresh';
+    btn.textContent = 'Check Status';
     checking = false;
 }
 
-function renderSlaves(slaves) {
-    const grid = document.getElementById('slaveGrid');
-    if (!slaves.length) {
-        grid.innerHTML = '<div class="text-light" style="grid-column:1/-1;text-align:center;padding:32px;">No slave VMs configured. Add them in <a href="' + BASE_PATH + '/config">Configuration</a>.</div>';
-        return;
-    }
-    grid.innerHTML = slaves.map((s, i) => `
-        <div class="vm-card">
-            <div class="vm-card-header">
-                <div class="flex gap-8" style="align-items:center;">
-                    <span class="vm-status-dot ${s.status}"></span>
-                    <span class="vm-ip">${s.ip}</span>
-                </div>
-                <span class="badge ${s.status === 'up' ? 'badge-success' : s.status === 'checking' ? 'badge-warning' : 'badge-danger'}">
-                    ${s.status === 'up' ? 'Online' : s.status === 'checking' ? 'Checking' : 'Offline'}
-                </span>
-            </div>
-            <div class="vm-meta">VM #${i + 1}</div>
-            ${s.error ? '<div class="vm-error">' + escapeHtml(s.error) + '</div>' : ''}
-        </div>
-    `).join('');
+// ===== Render =====
+function render() {
+    if (currentView === 'grid') renderGrid();
+    else renderList();
 }
 
-function escapeHtml(str) {
+function statusBadge(s) {
+    if (s.status === null) return '';
+    const label = s.enabled === false ? 'Disabled' : s.status === 'up' ? 'Online' : s.status === 'checking' ? 'Checking' : 'Offline';
+    const cls = s.enabled === false ? 'badge-info' : s.status === 'up' ? 'badge-success' : s.status === 'checking' ? 'badge-warning' : 'badge-danger';
+    return `<span class="badge ${cls}" style="font-size:11px;">${label}</span>`;
+}
+
+function statusDot(s) {
+    if (s.status === null) return '<span class="status-dot unknown"></span>';
+    const cls = s.enabled === false ? 'unknown' : (s.status || 'down');
+    return `<span class="status-dot ${cls}"></span>`;
+}
+
+function renderList() {
+    const container = document.getElementById('slaveContainer');
+    if (!slaveData.length) {
+        container.innerHTML = '<div class="text-light" style="text-align:center;padding:32px;">No slave VMs configured.' + (isAdmin ? ' Click "+ Add" to add one.' : '') + '</div>';
+        return;
+    }
+    const allSelected = slaveData.length > 0 && slaveData.every(s => selected.has(s.ip));
+    let html = '<div class="slave-list">';
+    if (isAdmin) {
+        html += `<div class="slave-list-header">
+            <label class="check">
+                <input type="checkbox" class="select-cb" ${allSelected ? 'checked' : ''} onchange="toggleSelectAll(this.checked)">
+                <span class="check-box"></span>
+            </label>
+            <span>Select all</span>
+        </div>`;
+    }
+    slaveData.forEach((s, i) => {
+        const enabled = s.enabled !== false;
+        const sel = selected.has(s.ip);
+        const expanded = expandedConfigs.has(s.ip);
+        const hasOverrides = s.overrides && (s.overrides.user || s.overrides.password || s.overrides.dest_path);
+        const ipClick = isAdmin ? `onclick="editSlaveIp('${escHtml(s.ip)}', this)" title="Click to edit"` : '';
+        html += `<div class="slave-entry${enabled ? '' : ' disabled'}${sel ? ' selected' : ''}">
+            <div class="slave-row">
+                ${isAdmin ? `<label class="check"><input type="checkbox" class="select-cb" ${sel ? 'checked' : ''} onchange="toggleSelect('${escHtml(s.ip)}', this.checked)"><span class="check-box"></span></label>` : ''}
+                ${statusDot(s)}
+                <span class="slave-ip" ${ipClick}>${escHtml(s.ip)}</span>
+                <span class="slave-meta">VM #${i + 1}${hasOverrides ? ' <span class="badge" style="font-size:10px;background:var(--color-border);color:var(--color-text-light);">custom</span>' : ''}${s.error ? ' &mdash; <span style="color:var(--color-danger);">' + escHtml(s.error) + '</span>' : ''}</span>
+                <div class="slave-actions">
+                    ${statusBadge(s)}
+                    ${isAdmin ? `<button class="gear-btn${expanded ? ' active' : ''}" onclick="toggleConfig('${escHtml(s.ip)}')" title="SSH overrides">&#9881;</button>` : ''}
+                    ${isAdmin ? `<button class="del-btn" onclick="removeSlave('${escHtml(s.ip)}')" title="Remove">&times;</button>` : ''}
+                    ${isAdmin ? `<label class="toggle" title="${enabled ? 'Disable' : 'Enable'}">
+                        <input type="checkbox" ${enabled ? 'checked' : ''} onchange="toggleSlave('${escHtml(s.ip)}', this.checked)">
+                        <span class="toggle-track"></span>
+                    </label>` : ''}
+                </div>
+            </div>
+            ${expanded ? renderConfigPanel(s) : ''}
+        </div>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function renderGrid() {
+    const container = document.getElementById('slaveContainer');
+    if (!slaveData.length) {
+        container.innerHTML = '<div class="text-light" style="text-align:center;padding:32px;">No slave VMs configured.' + (isAdmin ? ' Click "+ Add" to add one.' : '') + '</div>';
+        return;
+    }
+    let html = '<div class="slave-grid">';
+    slaveData.forEach((s, i) => {
+        const enabled = s.enabled !== false;
+        const sel = selected.has(s.ip);
+        const expanded = expandedConfigs.has(s.ip);
+        const hasOverrides = s.overrides && (s.overrides.user || s.overrides.password || s.overrides.dest_path);
+        const ipClick = isAdmin ? `onclick="editSlaveIp('${escHtml(s.ip)}', this)" title="Click to edit"` : '';
+        html += `<div class="vm-card${enabled ? '' : ' disabled'}${sel ? ' selected' : ''}">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                <div class="flex gap-8" style="align-items:center;">
+                    ${isAdmin ? `<label class="check"><input type="checkbox" class="select-cb" ${sel ? 'checked' : ''} onchange="toggleSelect('${escHtml(s.ip)}', this.checked)"><span class="check-box"></span></label>` : ''}
+                    <span class="vm-ip" ${ipClick}>${escHtml(s.ip)}</span>
+                    ${hasOverrides ? '<span class="badge" style="font-size:10px;background:var(--color-border);color:var(--color-text-light);">custom</span>' : ''}
+                </div>
+                <div class="flex gap-8" style="align-items:center;">
+                    ${statusBadge(s)}
+                    ${isAdmin ? `<button class="gear-btn${expanded ? ' active' : ''}" onclick="toggleConfig('${escHtml(s.ip)}')" title="SSH overrides">&#9881;</button>` : ''}
+                    ${isAdmin ? `<button class="del-btn" onclick="removeSlave('${escHtml(s.ip)}')" title="Remove">&times;</button>` : ''}
+                    ${isAdmin ? `<label class="toggle" title="${enabled ? 'Disable' : 'Enable'}">
+                        <input type="checkbox" ${enabled ? 'checked' : ''} onchange="toggleSlave('${escHtml(s.ip)}', this.checked)">
+                        <span class="toggle-track"></span>
+                    </label>` : ''}
+                </div>
+            </div>
+            <div class="vm-meta">VM #${i + 1}</div>
+            ${s.error ? '<div class="vm-error">' + escHtml(s.error) + '</div>' : ''}
+            ${expanded ? renderConfigPanel(s) : ''}
+        </div>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+// ===== View toggle =====
+function setView(view) {
+    currentView = view;
+    localStorage.setItem('slave_view', view);
+    updateViewButtons();
+    render();
+}
+
+function updateViewButtons() {
+    document.getElementById('viewListBtn').classList.toggle('active', currentView === 'list');
+    document.getElementById('viewGridBtn').classList.toggle('active', currentView === 'grid');
+}
+
+// ===== Selection =====
+function toggleSelect(ip, checked) {
+    if (checked) selected.add(ip);
+    else selected.delete(ip);
+    updateBulkBar();
+    render();
+}
+
+function clearSelection() {
+    selected.clear();
+    updateBulkBar();
+    render();
+}
+
+function toggleSelectAll(checked) {
+    if (checked) slaveData.forEach(s => selected.add(s.ip));
+    else selected.clear();
+    updateBulkBar();
+    render();
+}
+
+function updateBulkBar() {
+    const def = document.getElementById('defaultActions');
+    const bulk = document.getElementById('bulkActions');
+    if (!bulk) return;
+    if (selected.size > 0) {
+        def.style.display = 'none';
+        bulk.style.display = 'flex';
+        document.getElementById('bulkCount').textContent = selected.size + ' selected';
+    } else {
+        def.style.display = 'flex';
+        bulk.style.display = 'none';
+    }
+}
+
+async function bulkEnable(enabled) {
+    for (const ip of selected) {
+        const slave = slaveData.find(s => s.ip === ip);
+        if (slave) slave.enabled = enabled;
+    }
+    await saveSlaves();
+    showToast(`${selected.size} slaves ${enabled ? 'enabled' : 'disabled'}`, 'info');
+    selected.clear();
+    updateBulkBar();
+    render();
+    updateSummary();
+}
+
+async function bulkRemove() {
+    if (!confirmAction(`Remove ${selected.size} slave(s)?`)) return;
+    slaveData = slaveData.filter(s => !selected.has(s.ip));
+    await saveSlaves();
+    showToast(`Removed ${selected.size} slave(s)`, 'info');
+    selected.clear();
+    updateBulkBar();
+    render();
+    updateSummary();
+}
+
+// ===== Single actions =====
+async function toggleSlave(ip, enabled) {
+    const slave = slaveData.find(s => s.ip === ip);
+    if (slave) slave.enabled = enabled;
+    await saveSlaves();
+    showToast(`${ip} ${enabled ? 'enabled' : 'disabled'}`, 'info');
+    render();
+    updateSummary();
+}
+
+function editSlaveIp(oldIp, spanEl) {
+    // Replace span with input
+    const input = document.createElement('input');
+    input.className = 'ip-edit';
+    input.value = oldIp;
+    spanEl.replaceWith(input);
+    input.focus();
+    input.select();
+
+    async function commit() {
+        const newIp = input.value.trim();
+        if (!newIp || newIp === oldIp) {
+            render(); // revert
+            return;
+        }
+        if (slaveData.find(s => s.ip === newIp)) {
+            showToast('IP already exists', 'warning');
+            render();
+            return;
+        }
+        const slave = slaveData.find(s => s.ip === oldIp);
+        if (slave) {
+            if (selected.has(oldIp)) { selected.delete(oldIp); selected.add(newIp); }
+            slave.ip = newIp;
+            await saveSlaves();
+            showToast(`Updated ${oldIp} → ${newIp}`, 'info');
+        }
+        render();
+    }
+
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') input.blur();
+        if (e.key === 'Escape') { input.value = oldIp; input.blur(); }
+    });
+}
+
+async function addSlave() {
+    const ip = prompt('Enter slave IP address:');
+    if (!ip || !ip.trim()) return;
+    const trimmed = ip.trim();
+    if (slaveData.find(s => s.ip === trimmed)) {
+        showToast('Slave already exists', 'warning');
+        return;
+    }
+    slaveData.push({ ip: trimmed, enabled: true, overrides: {}, status: null });
+    await saveSlaves();
+    showToast(`Added ${trimmed}`, 'success');
+    render();
+    updateSummary();
+}
+
+async function removeSlave(ip) {
+    if (!confirmAction(`Remove slave ${ip}?`)) return;
+    slaveData = slaveData.filter(s => s.ip !== ip);
+    selected.delete(ip);
+    await saveSlaves();
+    showToast(`Removed ${ip}`, 'info');
+    updateBulkBar();
+    render();
+    updateSummary();
+}
+
+// ===== Save helper =====
+async function saveSlaves() {
+    const slaves = slaveData.map(s => {
+        const obj = { ip: s.ip, enabled: s.enabled !== false };
+        const ov = s.overrides || {};
+        // Only include overrides if at least one field is set
+        if (ov.user || ov.password || ov.dest_path) obj.overrides = ov;
+        return obj;
+    });
+    await api('/api/config/slaves', { method: 'PUT', body: { slaves } });
+}
+
+// ===== Summary =====
+function updateSummary() {
+    const total = slaveData.length;
+    const enabled = slaveData.filter(s => s.enabled !== false).length;
+    const disabled = total - enabled;
+    const checked = slaveData.filter(s => s.status !== null).length;
+    const up = slaveData.filter(s => s.enabled !== false && s.status === 'up').length;
+    let html = `<span class="badge badge-info">${total} VMs</span> `;
+    html += `<span class="badge badge-success">${enabled} Enabled</span> `;
+    if (disabled > 0) html += `<span class="badge" style="background:var(--color-border);color:var(--color-text-light);">${disabled} Disabled</span> `;
+    if (checked > 0) html += `<span class="badge" style="background:var(--color-border);color:var(--color-text-light);">${up}/${enabled} Online</span>`;
+    document.getElementById('slaveSummary').innerHTML = html;
+}
+
+function escHtml(str) {
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
 }
 
-function updateSummary(slaves) {
-    const total = slaves.length;
-    const up = slaves.filter(s => s.status === 'up').length;
-    const down = total - up;
-    let html = `<span class="badge badge-info">${total} VMs</span> `;
-    html += `<span class="badge badge-success">${up} Online</span> `;
-    if (down > 0) html += `<span class="badge badge-danger">${down} Offline</span>`;
-    document.getElementById('slaveSummary').innerHTML = html;
+// ===== Per-slave config overrides =====
+function toggleConfig(ip) {
+    if (expandedConfigs.has(ip)) expandedConfigs.delete(ip);
+    else expandedConfigs.add(ip);
+    render();
 }
 
+function renderConfigPanel(s) {
+    const ov = s.overrides || {};
+    const ssh = currentVmConfig.ssh_config || {};
+    const ip = escHtml(s.ip);
+    return `<div class="slave-config-panel">
+        <div class="form-group">
+            <label class="form-label">SSH User</label>
+            <input class="form-input" value="${escHtml(ov.user || '')}" placeholder="${escHtml(ssh.user || 'root')}"
+                onchange="updateOverride('${ip}','user',this.value)">
+        </div>
+        <div class="form-group">
+            <label class="form-label">SSH Password</label>
+            <input class="form-input" type="password" value="${escHtml(ov.password || '')}" placeholder="(global default)"
+                onchange="updateOverride('${ip}','password',this.value)">
+        </div>
+        <div class="form-group" style="flex:2;">
+            <label class="form-label">Dest Path</label>
+            <input class="form-input form-input-mono" value="${escHtml(ov.dest_path || '')}" placeholder="${escHtml(ssh.dest_path || '/tmp/')}"
+                onchange="updateOverride('${ip}','dest_path',this.value)">
+        </div>
+        <div class="override-hint">Leave blank to use global defaults from VM Configuration.</div>
+    </div>`;
+}
+
+async function updateOverride(ip, field, value) {
+    const slave = slaveData.find(s => s.ip === ip);
+    if (!slave) return;
+    if (!slave.overrides) slave.overrides = {};
+    slave.overrides[field] = value.trim();
+    await saveSlaves();
+    showToast(`${ip} override updated`, 'info');
+}
+
+// ===== Start/Stop All =====
 async function startAll() {
-    if (!confirmAction('Start JMeter servers on all slave VMs?')) return;
+    if (!confirmAction('Start JMeter servers on all enabled slave VMs?')) return;
     const btn = document.getElementById('startAllBtn');
     btn.disabled = true;
     btn.textContent = 'Starting...';
@@ -157,7 +544,6 @@ async function startAll() {
     }
     btn.disabled = false;
     btn.textContent = 'Start All';
-    // Refresh status after a delay to let servers boot
     setTimeout(refreshStatus, 3000);
 }
 
@@ -179,7 +565,78 @@ async function stopAll() {
     setTimeout(refreshStatus, 2000);
 }
 
-// Load on page open
-refreshStatus();
+// ===== VM Configuration =====
+let currentVmConfig = {};
+
+async function loadVmConfig() {
+    const data = await api('/api/config/vm');
+    currentVmConfig = data.config || {};
+    renderVmConfig();
+}
+
+function renderVmConfig() {
+    const container = document.getElementById('vmForm');
+    const ssh = currentVmConfig.ssh_config || {};
+    const scripts = currentVmConfig.jmeter_scripts || {};
+    const ro = isAdmin ? '' : ' readonly';
+    container.innerHTML = `
+        <h3 class="text-sm mb-16" style="font-weight:600;">SSH Defaults</h3>
+        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
+            <div class="form-group" style="flex:1;min-width:150px;">
+                <label class="form-label">User</label>
+                <input class="form-input" id="vm_ssh_user" value="${escHtml(ssh.user || '')}"${ro}>
+            </div>
+            <div class="form-group" style="flex:1;min-width:150px;">
+                <label class="form-label">Password</label>
+                <input class="form-input" id="vm_ssh_password" type="password" value="${escHtml(ssh.password || '')}"${ro}>
+            </div>
+            <div class="form-group" style="flex:2;min-width:200px;">
+                <label class="form-label">Dest Path</label>
+                <input class="form-input form-input-mono" id="vm_ssh_dest" value="${escHtml(ssh.dest_path || '')}"${ro}>
+            </div>
+        </div>
+        <h3 class="text-sm mb-16" style="font-weight:600;">JMeter Scripts (on slaves)</h3>
+        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
+            <div class="form-group" style="flex:1;min-width:200px;">
+                <label class="form-label">Start Script</label>
+                <input class="form-input form-input-mono" id="vm_script_start" value="${escHtml(scripts.start || '')}"${ro}>
+            </div>
+            <div class="form-group" style="flex:1;min-width:200px;">
+                <label class="form-label">Stop Script</label>
+                <input class="form-input form-input-mono" id="vm_script_stop" value="${escHtml(scripts.stop || '')}"${ro}>
+            </div>
+        </div>
+        <div class="text-sm text-light" style="margin-top:-8px;">Per-slave overrides can be set via the &#9881; button on each slave.</div>`;
+}
+
+async function saveVmConfig() {
+    const config = {
+        ssh_config: {
+            user: document.getElementById('vm_ssh_user').value,
+            password: document.getElementById('vm_ssh_password').value,
+            dest_path: document.getElementById('vm_ssh_dest').value,
+        },
+        jmeter_scripts: {
+            start: document.getElementById('vm_script_start').value,
+            stop: document.getElementById('vm_script_stop').value,
+        },
+    };
+    await api('/api/config/vm', { method: 'PUT', body: { config } });
+    currentVmConfig = config;
+    showToast('VM config saved', 'success');
+}
+
+// ===== Collapse =====
+function toggleSlaveList() {
+    const body = document.getElementById('slaveBody');
+    const icon = document.getElementById('slaveCollapseIcon');
+    const hidden = body.style.display === 'none';
+    body.style.display = hidden ? '' : 'none';
+    icon.innerHTML = hidden ? '&#9660;' : '&#9654;';
+}
+
+// ===== Init =====
+loadSlaves();
+loadVmConfig();
 </script>
 {% endblock %}

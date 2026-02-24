@@ -7,7 +7,6 @@
     "max_response_time_ms": null
   },
   "input": {
-    "results_dir": "results",
     "jtl_pattern": "*.jtl",
     "use_latest": true
   },

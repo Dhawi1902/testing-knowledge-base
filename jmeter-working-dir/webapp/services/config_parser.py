@@ -48,11 +48,18 @@ def auto_detect_project(config_path: Path) -> dict:
     if (project_root / "config.properties").is_file():
         config["paths"]["config_properties"] = "config.properties"
 
-    known_results_dirs = ["results", "result"]
-    for d in known_results_dirs:
-        if (project_root / d).is_dir():
-            config["paths"]["results_dir"] = d
-            break
+    # Read results_dir from config.properties if available (single source of truth)
+    props_path = project_root / "config.properties"
+    if props_path.exists():
+        props = read_config_properties(props_path)
+        if props.get("results_dir"):
+            config["paths"]["results_dir"] = props["results_dir"]
+    if not config["paths"]["results_dir"]:
+        known_results_dirs = ["results", "result"]
+        for d in known_results_dirs:
+            if (project_root / d).is_dir():
+                config["paths"]["results_dir"] = d
+                break
 
     known_data_dirs = ["test_data", "data", "testdata"]
     for d in known_data_dirs:
@@ -173,20 +180,52 @@ def write_json_config(path: Path, data: dict) -> None:
 
 
 def read_slaves_file(path: Path) -> list[str]:
-    """Parse slaves.txt to list of IPs (ignoring comments and blanks)."""
-    ips = []
-    if not path.exists():
-        return ips
-    with open(path, "r", encoding="utf-8") as f:
-        for line in f:
-            line = line.strip()
-            if line and not line.startswith("#"):
-                ips.append(line)
-    return ips
+    """Parse slaves file to list of IPs (ignoring comments and blanks).
+    Delegates to read_slaves() for backward compatibility."""
+    return [s["ip"] for s in read_slaves(path)]
 
 
 def write_slaves_file(path: Path, ips: list[str]) -> None:
-    """Write list of IPs to slaves.txt."""
+    """Write list of IPs as JSON slave objects (all enabled)."""
+    slaves = [{"ip": ip, "enabled": True} for ip in ips]
+    write_slaves(path, slaves)
+
+
+def read_slaves(path: Path) -> list[dict]:
+    """Read slaves file. Supports both JSON format and plain text (auto-migrates).
+    Returns list of {"ip": "x.x.x.x", "enabled": True/False}."""
+    if not path.exists():
+        return []
+    content = path.read_text(encoding="utf-8").strip()
+    if not content:
+        return []
+    # Try JSON first
+    try:
+        data = json.loads(content)
+        if isinstance(data, list):
+            return [{"ip": s.get("ip", s) if isinstance(s, dict) else s,
+                      "enabled": s.get("enabled", True) if isinstance(s, dict) else True}
+                    for s in data if (s.get("ip") if isinstance(s, dict) else s)]
+    except (json.JSONDecodeError, ValueError):
+        pass
+    # Fall back to plain text (one IP per line)
+    slaves = []
+    for line in content.splitlines():
+        line = line.strip()
+        if line and not line.startswith("#"):
+            slaves.append({"ip": line, "enabled": True})
+    # Auto-migrate to JSON
+    if slaves:
+        write_slaves(path, slaves)
+    return slaves
+
+
+def get_active_slaves(path: Path) -> list[str]:
+    """Return list of enabled slave IPs only."""
+    return [s["ip"] for s in read_slaves(path) if s.get("enabled", True)]
+
+
+def write_slaves(path: Path, slaves: list[dict]) -> None:
+    """Write slave objects to file as JSON."""
     with open(path, "w", encoding="utf-8") as f:
-        for ip in ips:
-            f.write(f"{ip}\n")
+        json.dump(slaves, f, indent=2, ensure_ascii=False)

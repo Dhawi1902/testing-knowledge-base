@@ -7,126 +7,250 @@
 <div class="card">
     <div class="card-header">
         <span class="card-title">App Settings</span>
+        {% if access_level != 'viewer' %}
         <button class="btn btn-primary btn-sm" onclick="saveAllSettings()">Save</button>
+        {% endif %}
     </div>
 
-    <!-- Server -->
-    <h3 class="text-sm mb-16" style="font-weight:600;">Server</h3>
-    <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
-        <div class="form-group" style="min-width:250px;flex:2;">
-            <label class="form-label">Domain</label>
-            <input class="form-input form-input-mono" id="set_domain" placeholder="e.g. maya-perf.example.com">
-            <span class="text-light text-sm">Leave empty to access via IP. Requires DNS pointed to this server.</span>
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="tab-general">General</button>
+        <button class="tab-btn" data-tab="tab-project">Project</button>
+        <button class="tab-btn" data-tab="tab-integrations">Integrations</button>
+        <button class="tab-btn" data-tab="tab-system">System</button>
+    </div>
+
+    <!-- ==================== General Tab ==================== -->
+    <div id="tab-general" class="tab-panel active">
+
+        <!-- Server -->
+        <h3 class="text-sm mb-16" style="font-weight:600;">Server</h3>
+        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
+            <div class="form-group" style="min-width:250px;flex:2;">
+                <label class="form-label">Domain</label>
+                <input class="form-input form-input-mono" id="set_domain" placeholder="e.g. maya-perf.example.com">
+                <span class="text-light text-sm">Leave empty to access via IP. Requires DNS pointed to this server.</span>
+            </div>
+            <div class="form-group" style="min-width:120px;">
+                <label class="form-label">Port</label>
+                <input class="form-input" id="set_port" type="number" min="1024" max="65535" value="8080">
+            </div>
         </div>
-        <div class="form-group" style="min-width:120px;">
-            <label class="form-label">Port</label>
-            <input class="form-input" id="set_port" type="number" min="1024" max="65535" value="8080">
+        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
+            <div class="form-group" style="min-width:250px;flex:2;">
+                <label class="form-label">Base Path</label>
+                <input class="form-input form-input-mono" id="set_base_path" placeholder="e.g. /perftest" autocomplete="off">
+                <span class="text-light text-sm">Serve the app under a subdirectory (e.g. <code>/perftest</code>). Leave empty for root. Requires restart.</span>
+            </div>
         </div>
-        <div class="form-group" style="min-width:180px;display:flex;align-items:flex-end;gap:8px;">
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <div class="mb-16">
+            <label class="toggle">
                 <input type="checkbox" id="set_allow_external">
+                <span class="toggle-track"></span>
                 <span class="form-label" style="margin:0;">Allow external access (0.0.0.0)</span>
             </label>
         </div>
-    </div>
-    <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
-        <div class="form-group" style="min-width:250px;flex:2;">
-            <label class="form-label">Base Path</label>
-            <input class="form-input form-input-mono" id="set_base_path" placeholder="e.g. /perftest">
-            <span class="text-light text-sm">Serve the app under a subdirectory (e.g. <code>/perftest</code>). Leave empty for root. Requires restart.</span>
+        {% if access_level != 'viewer' %}
+        <div class="flex gap-8 mb-16" style="align-items:center;">
+            <button class="btn btn-outline btn-sm" id="restartBtn" onclick="restartServer()" style="display:none;">Restart Now</button>
+            <span class="text-light text-sm" id="restartHint">Changes to server settings require a restart.</span>
         </div>
-    </div>
-    <div class="flex gap-8 mb-16" style="align-items:center;">
-        <button class="btn btn-outline btn-sm" id="restartBtn" onclick="restartServer()" style="display:none;">Restart Now</button>
-        <span class="text-light text-sm" id="restartHint">Changes to server settings require a restart.</span>
-    </div>
+        {% endif %}
 
-    <!-- Appearance -->
-    <h3 class="text-sm mb-16" style="font-weight:600;margin-top:20px;">Appearance</h3>
-    <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
-        <div class="form-group" style="min-width:180px;">
-            <label class="form-label">Theme</label>
-            <select class="form-select" id="set_theme" onchange="previewTheme(this.value)">
-                <option value="light">Light</option>
-                <option value="dark">Dark</option>
-            </select>
+        <hr style="border:none;border-top:1px solid var(--color-border);margin:20px 0;">
+
+        <!-- Appearance -->
+        <h3 class="text-sm mb-16" style="font-weight:600;">Appearance</h3>
+        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
+            <div class="form-group" style="min-width:180px;">
+                <label class="form-label">Theme</label>
+                <select class="form-select" id="set_theme" onchange="previewTheme(this.value)">
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                </select>
+            </div>
         </div>
-        <div class="form-group" style="min-width:180px;display:flex;align-items:flex-end;gap:8px;">
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <div class="mb-16">
+            <label class="toggle">
                 <input type="checkbox" id="set_sidebar_collapsed">
+                <span class="toggle-track"></span>
                 <span class="form-label" style="margin:0;">Start with sidebar collapsed</span>
             </label>
         </div>
-    </div>
 
-    <!-- Test Runner -->
-    <h3 class="text-sm mb-16" style="font-weight:600;margin-top:20px;">Test Runner</h3>
-    <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
-        <div class="form-group" style="min-width:180px;display:flex;align-items:flex-end;gap:8px;">
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <hr style="border:none;border-top:1px solid var(--color-border);margin:20px 0;">
+
+        <!-- Test Runner -->
+        <h3 class="text-sm mb-16" style="font-weight:600;">Test Runner</h3>
+        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
+            <div class="form-group" style="min-width:150px;">
+                <label class="form-label">Max Log Lines</label>
+                <select class="form-select" id="set_max_log_lines">
+                    <option value="500">500</option>
+                    <option value="1000">1,000</option>
+                    <option value="2000">2,000</option>
+                    <option value="5000">5,000</option>
+                </select>
+            </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+            <label class="toggle">
                 <input type="checkbox" id="set_auto_scroll" checked>
+                <span class="toggle-track"></span>
                 <span class="form-label" style="margin:0;">Auto-scroll log output</span>
             </label>
-        </div>
-        <div class="form-group" style="min-width:150px;">
-            <label class="form-label">Max Log Lines</label>
-            <select class="form-select" id="set_max_log_lines">
-                <option value="500">500</option>
-                <option value="1000">1,000</option>
-                <option value="2000">2,000</option>
-                <option value="5000">5,000</option>
-            </select>
-        </div>
-        <div class="form-group" style="min-width:180px;display:flex;align-items:flex-end;gap:8px;">
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <label class="toggle">
                 <input type="checkbox" id="set_confirm_stop" checked>
+                <span class="toggle-track"></span>
                 <span class="form-label" style="margin:0;">Confirm before stopping test</span>
             </label>
         </div>
+
+        <hr style="border:none;border-top:1px solid var(--color-border);margin:20px 0;">
+
+        <!-- Results -->
+        <h3 class="text-sm mb-16" style="font-weight:600;">Results</h3>
+        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
+            <div class="form-group" style="min-width:180px;">
+                <label class="form-label">Default Sort Order</label>
+                <select class="form-select" id="set_sort_order">
+                    <option value="newest">Newest first</option>
+                    <option value="oldest">Oldest first</option>
+                </select>
+            </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--color-border);margin:20px 0;">
+
+        <!-- Security -->
+        <h3 class="text-sm mb-16" style="font-weight:600;">Security</h3>
+        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
+            <div class="form-group" style="min-width:300px;flex:2;">
+                <label class="form-label">Access Token</label>
+                <div style="position:relative;">
+                    <input class="form-input form-input-mono" id="set_auth_token" type="password" placeholder="Leave empty to disable token auth" style="padding-right:40px;" autocomplete="new-password">
+                    <button type="button" onclick="toggleTokenVisibility()" id="tokenToggleBtn"
+                        style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--color-text-light);font-size:13px;padding:2px 4px;">Show</button>
+                </div>
+                <span class="text-light text-sm">When set, remote users must enter this token to access the dashboard. Localhost always has full access.</span>
+            </div>
+        </div>
     </div>
 
-    <!-- Results -->
-    <h3 class="text-sm mb-16" style="font-weight:600;margin-top:20px;">Results</h3>
-    <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
-        <div class="form-group" style="min-width:180px;">
-            <label class="form-label">Default Sort Order</label>
-            <select class="form-select" id="set_sort_order">
-                <option value="newest">Newest first</option>
-                <option value="oldest">Oldest first</option>
-            </select>
+    <!-- ==================== Project Tab ==================== -->
+    <div id="tab-project" class="tab-panel">
+
+        <h3 class="text-sm mb-16" style="font-weight:600;">Project Info</h3>
+        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
+            <div class="form-group" style="flex:1;min-width:250px;">
+                <label class="form-label">Project Name</label>
+                <input class="form-input" id="set_proj_name">
+            </div>
+            <div class="form-group" style="flex:1;min-width:250px;">
+                <label class="form-label">JMeter Path</label>
+                <div class="flex gap-8">
+                    <input class="form-input form-input-mono" id="set_proj_jmeter" style="flex:1;">
+                    {% if access_level != 'viewer' %}
+                    <button class="btn btn-outline btn-sm" onclick="detectJmeter()">Detect</button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--color-border);margin:20px 0;">
+
+        <h3 class="text-sm mb-16" style="font-weight:600;">Paths <span class="text-light" style="font-weight:400;">(relative to project root)</span></h3>
+        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
+            <div class="form-group" style="flex:1;min-width:200px;">
+                <label class="form-label">JMX Directory</label>
+                <input class="form-input form-input-mono" id="set_proj_jmx_dir">
+            </div>
+            <div class="form-group" style="flex:1;min-width:200px;">
+                <label class="form-label">Config Directory</label>
+                <input class="form-input form-input-mono" id="set_proj_config_dir">
+            </div>
+            <div class="form-group" style="flex:1;min-width:200px;">
+                <label class="form-label">Config Properties File</label>
+                <input class="form-input form-input-mono" id="set_proj_config_props">
+            </div>
+        </div>
+        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
+            <div class="form-group" style="flex:1;min-width:200px;">
+                <label class="form-label">Results Directory</label>
+                <input class="form-input form-input-mono" id="set_proj_results_dir">
+            </div>
+            <div class="form-group" style="flex:1;min-width:200px;">
+                <label class="form-label">Test Data Directory</label>
+                <input class="form-input form-input-mono" id="set_proj_data_dir">
+            </div>
+            <div class="form-group" style="flex:1;min-width:200px;">
+                <label class="form-label">Slaves File</label>
+                <input class="form-input form-input-mono" id="set_proj_slaves_file">
+            </div>
+        </div>
+        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
+            <div class="form-group" style="flex:1;min-width:300px;">
+                <label class="form-label">Script Directories (comma-separated)</label>
+                <input class="form-input form-input-mono" id="set_proj_scripts_dirs">
+            </div>
         </div>
     </div>
 
-    <!-- Endpoints -->
-    <h3 class="text-sm mb-16" style="font-weight:600;margin-top:20px;">Target Endpoints</h3>
-    <div id="endpointsList"></div>
-    <button class="btn btn-outline btn-sm mb-16" onclick="addEndpoint()">+ Add Endpoint</button>
+    <!-- ==================== Integrations Tab ==================== -->
+    <div id="tab-integrations" class="tab-panel">
 
-    <!-- Analysis -->
-    <h3 class="text-sm mb-16" style="font-weight:600;margin-top:20px;">AI Analysis (Ollama)</h3>
-    <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
-        <div class="form-group" style="flex:2;min-width:250px;">
-            <label class="form-label">Ollama Base URL</label>
-            <input class="form-input form-input-mono" id="set_ollama_url" placeholder="http://localhost:11434">
+        <!-- Monitoring -->
+        <h3 class="text-sm mb-16" style="font-weight:600;">Monitoring</h3>
+        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
+            <div class="form-group" style="flex:1;min-width:250px;">
+                <label class="form-label">Grafana URL</label>
+                <input class="form-input form-input-mono" id="set_grafana_url" placeholder="http://grafana:3000">
+            </div>
+            <div class="form-group" style="flex:1;min-width:250px;">
+                <label class="form-label">InfluxDB URL</label>
+                <input class="form-input form-input-mono" id="set_influxdb_url" placeholder="http://influxdb:8086">
+            </div>
         </div>
-        <div class="form-group" style="flex:1;min-width:180px;">
-            <label class="form-label">Model</label>
-            <input class="form-input form-input-mono" id="set_ollama_model" placeholder="llama3.1:8b">
+
+        <hr style="border:none;border-top:1px solid var(--color-border);margin:20px 0;">
+
+        <!-- AI Analysis -->
+        <h3 class="text-sm mb-16" style="font-weight:600;">AI Analysis (Ollama)</h3>
+        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;">
+            <div class="form-group" style="flex:2;min-width:250px;">
+                <label class="form-label">Ollama Base URL</label>
+                <input class="form-input form-input-mono" id="set_ollama_url" placeholder="http://localhost:11434">
+            </div>
+            <div class="form-group" style="flex:1;min-width:180px;">
+                <label class="form-label">Model</label>
+                <input class="form-input form-input-mono" id="set_ollama_model" placeholder="llama3.1:8b">
+            </div>
+            <div class="form-group" style="min-width:120px;">
+                <label class="form-label">Timeout (sec)</label>
+                <input class="form-input" id="set_ollama_timeout" type="number" min="10" max="600">
+            </div>
         </div>
-        <div class="form-group" style="min-width:120px;">
-            <label class="form-label">Timeout (sec)</label>
-            <input class="form-input" id="set_ollama_timeout" type="number" min="10" max="600">
+        <div class="flex gap-8">
+            <button class="btn btn-outline btn-sm" id="testOllamaBtn" onclick="testOllama()">Test Connection</button>
+            <span class="text-light text-sm" id="ollamaStatus"></span>
         </div>
     </div>
-    <div class="flex gap-8">
-        <button class="btn btn-outline btn-sm" id="testOllamaBtn" onclick="testOllama()">Test Connection</button>
-        <span class="text-light text-sm" id="ollamaStatus"></span>
+
+    <!-- ==================== System Tab ==================== -->
+    <div id="tab-system" class="tab-panel">
+
+        <h3 class="text-sm mb-16" style="font-weight:600;">System Information</h3>
+        <div class="flex gap-16 mb-16" style="flex-wrap:wrap;" id="systemInfoCards">
+            <span class="text-light text-sm">Loading...</span>
+        </div>
     </div>
+
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+const ACCESS_LEVEL = '{{ access_level | default("viewer") }}';
+const isAdmin = ACCESS_LEVEL !== 'viewer';
 let currentSettings = {};
 
 async function loadSettings() {
@@ -160,55 +284,37 @@ function renderSettings() {
     document.getElementById('set_ollama_model').value = analysis.ollama_model || 'llama3.1:8b';
     document.getElementById('set_ollama_timeout').value = analysis.ollama_timeout || 120;
 
-    renderEndpoints();
+    const auth = s.auth || {};
+    document.getElementById('set_auth_token').value = auth.token || '';
+
+    const monitoring = s.monitoring || {};
+    document.getElementById('set_grafana_url').value = monitoring.grafana_url || '';
+    document.getElementById('set_influxdb_url').value = monitoring.influxdb_url || '';
+}
+
+function toggleTokenVisibility() {
+    const inp = document.getElementById('set_auth_token');
+    const btn = document.getElementById('tokenToggleBtn');
+    if (inp.type === 'password') {
+        inp.type = 'text';
+        btn.textContent = 'Hide';
+    } else {
+        inp.type = 'password';
+        btn.textContent = 'Show';
+    }
+}
+
+function applyAccessControl() {
+    if (isAdmin) return;
+    document.querySelectorAll('.card input, .card select').forEach(el => {
+        if (el.tagName === 'SELECT') el.disabled = true;
+        else if (el.type === 'checkbox') el.disabled = true;
+        else el.readOnly = true;
+    });
 }
 
 function previewTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
-}
-
-function renderEndpoints() {
-    const endpoints = currentSettings.endpoints || [];
-    const container = document.getElementById('endpointsList');
-    container.innerHTML = endpoints.map((ep, i) => `
-        <div class="flex gap-8 mb-8" style="align-items:flex-end;">
-            <div class="form-group" style="flex:1;">
-                ${i === 0 ? '<label class="form-label">Name</label>' : ''}
-                <input class="form-input" data-ep-name="${i}" value="${ep.name || ''}" placeholder="Environment name">
-            </div>
-            <div class="form-group" style="flex:3;">
-                ${i === 0 ? '<label class="form-label">URL</label>' : ''}
-                <input class="form-input form-input-mono" data-ep-url="${i}" value="${ep.url || ''}" placeholder="https://...">
-            </div>
-            <button class="btn btn-outline btn-sm" onclick="removeEndpoint(${i})" title="Remove" style="color:var(--color-danger);border-color:var(--color-danger);margin-bottom:4px;">&times;</button>
-        </div>
-    `).join('');
-}
-
-function addEndpoint() {
-    if (!currentSettings.endpoints) currentSettings.endpoints = [];
-    currentSettings.endpoints.push({ name: '', url: '' });
-    renderEndpoints();
-    // Focus the new name input
-    const inputs = document.querySelectorAll('[data-ep-name]');
-    if (inputs.length) inputs[inputs.length - 1].focus();
-}
-
-function removeEndpoint(index) {
-    currentSettings.endpoints.splice(index, 1);
-    renderEndpoints();
-}
-
-function collectEndpoints() {
-    const names = document.querySelectorAll('[data-ep-name]');
-    const urls = document.querySelectorAll('[data-ep-url]');
-    const endpoints = [];
-    names.forEach((el, i) => {
-        const name = el.value.trim();
-        const url = urls[i].value.trim();
-        if (name || url) endpoints.push({ name, url });
-    });
-    return endpoints;
 }
 
 async function saveAllSettings() {
@@ -236,7 +342,15 @@ async function saveAllSettings() {
             ollama_model: document.getElementById('set_ollama_model').value,
             ollama_timeout: parseInt(document.getElementById('set_ollama_timeout').value) || 120,
         },
-        endpoints: collectEndpoints(),
+        auth: {
+            token: document.getElementById('set_auth_token').value,
+            cookie_name: (currentSettings.auth || {}).cookie_name || 'jmeter_token',
+            cookie_max_age: (currentSettings.auth || {}).cookie_max_age || 86400,
+        },
+        monitoring: {
+            grafana_url: document.getElementById('set_grafana_url').value.trim(),
+            influxdb_url: document.getElementById('set_influxdb_url').value.trim(),
+        },
     };
     const oldServer = currentSettings.server || {};
     await api('/api/settings', { method: 'PUT', body: { settings } });
@@ -247,14 +361,25 @@ async function saveAllSettings() {
         || ((oldServer.base_path || '') !== (settings.server.base_path || ''));
 
     currentSettings = settings;
+
+    // Save project config too
+    const projConfig = collectProjectConfig();
+    await api('/api/config/project', { method: 'PUT', body: { config: projConfig } });
+    projectConfig = projConfig;
+    // Update sidebar title
+    if (projConfig.name) document.querySelector('.sidebar-title').textContent = projConfig.name;
+
     // Persist theme
     localStorage.setItem('theme', settings.theme);
     document.documentElement.setAttribute('data-theme', settings.theme);
     showToast('Settings saved', 'success');
 
     if (serverChanged) {
-        document.getElementById('restartBtn').style.display = 'inline-flex';
-        document.getElementById('restartHint').textContent = 'Server settings changed — restart required.';
+        const restartBtn = document.getElementById('restartBtn');
+        if (restartBtn) {
+            restartBtn.style.display = 'inline-flex';
+            document.getElementById('restartHint').textContent = 'Server settings changed — restart required.';
+        }
     }
 }
 
@@ -305,6 +430,81 @@ async function testOllama() {
     btn.disabled = false;
 }
 
-loadSettings();
+async function loadSystemInfo() {
+    try {
+        const data = await api('/api/settings/system-info');
+        const container = document.getElementById('systemInfoCards');
+        const disk = data.disk || {};
+        const items = [
+            { label: 'JMeter', value: data.jmeter || 'N/A' },
+            { label: 'Java', value: data.java || 'N/A' },
+            { label: 'Python', value: data.python || 'N/A' },
+            { label: 'OS', value: data.os || 'N/A' },
+            { label: 'Disk', value: `${disk.free_gb || '?'} GB free / ${disk.total_gb || '?'} GB (${disk.percent || '?'}% used)` },
+        ];
+        container.innerHTML = items.map(i =>
+            `<div style="min-width:180px;flex:1;padding:10px 14px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:8px;">
+                <div class="text-light text-sm">${i.label}</div>
+                <div class="text-sm" style="font-family:var(--font-mono);margin-top:4px;word-break:break-word;">${i.value}</div>
+            </div>`
+        ).join('');
+    } catch(e) {
+        document.getElementById('systemInfoCards').innerHTML = '<span class="text-light text-sm">Failed to load system info.</span>';
+    }
+}
+
+// ===== Project settings (project.json) =====
+let projectConfig = {};
+
+async function loadProjectConfig() {
+    const data = await api('/api/config/project');
+    projectConfig = data.config || {};
+    renderProjectConfig();
+}
+
+function renderProjectConfig() {
+    const paths = projectConfig.paths || {};
+    document.getElementById('set_proj_name').value = projectConfig.name || '';
+    document.getElementById('set_proj_jmeter').value = projectConfig.jmeter_path || '';
+    document.getElementById('set_proj_jmx_dir').value = paths.jmx_dir || '';
+    document.getElementById('set_proj_config_dir').value = paths.config_dir || '';
+    document.getElementById('set_proj_config_props').value = paths.config_properties || '';
+    document.getElementById('set_proj_results_dir').value = paths.results_dir || '';
+    document.getElementById('set_proj_data_dir').value = paths.test_data_dir || '';
+    document.getElementById('set_proj_slaves_file').value = paths.slaves_file || '';
+    document.getElementById('set_proj_scripts_dirs').value = (paths.scripts_dirs || []).join(', ');
+}
+
+function collectProjectConfig() {
+    return {
+        ...projectConfig,
+        name: document.getElementById('set_proj_name').value,
+        jmeter_path: document.getElementById('set_proj_jmeter').value,
+        paths: {
+            jmx_dir: document.getElementById('set_proj_jmx_dir').value,
+            config_dir: document.getElementById('set_proj_config_dir').value,
+            config_properties: document.getElementById('set_proj_config_props').value,
+            results_dir: document.getElementById('set_proj_results_dir').value,
+            test_data_dir: document.getElementById('set_proj_data_dir').value,
+            slaves_file: document.getElementById('set_proj_slaves_file').value,
+            scripts_dirs: document.getElementById('set_proj_scripts_dirs').value.split(',').map(s => s.trim()).filter(Boolean),
+        },
+    };
+}
+
+async function detectJmeter() {
+    try {
+        const data = await api('/api/config/detect-jmeter', { method: 'POST' });
+        document.getElementById('set_proj_jmeter').value = data.path;
+        showToast('JMeter found: ' + data.path, 'success');
+    } catch (e) {
+        showToast('JMeter not found in PATH or common locations', 'error');
+    }
+}
+
+// Init
+initTabs('.tabs');
+Promise.all([loadSettings(), loadProjectConfig()]).then(() => applyAccessControl());
+loadSystemInfo();
 </script>
 {% endblock %}

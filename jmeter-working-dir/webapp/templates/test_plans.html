@@ -4,11 +4,15 @@
 {% block page_title %}Test Plans & Runner{% endblock %}
 
 {% block content %}
-<!-- Test Runner -->
+<!-- Configure & Run -->
 <div class="card" id="runnerCard">
     <div class="card-header">
-        <span class="card-title">Test Runner</span>
-        <span class="badge badge-info" id="runnerStatus">Idle</span>
+        <span class="card-title">Configure &amp; Run</span>
+        <div class="flex gap-8" style="align-items:center;">
+            <span class="badge" id="modeIndicator" style="background:var(--color-border);color:var(--text-light);">...</span>
+            <span class="badge badge-info" id="runnerStatus">Idle</span>
+            <span id="elapsedTimer" class="text-sm text-light" style="display:none;font-family:var(--font-mono);"></span>
+        </div>
     </div>
 
     <div class="flex gap-16 mb-16" style="flex-wrap: wrap;">
@@ -18,7 +22,10 @@
                 <select class="form-select" id="selectedPlan" onchange="onPlanSelected()" style="flex:1;">
                     <option value="">Select a test plan...</option>
                 </select>
-                <button class="btn btn-outline btn-sm" id="editPlanBtn" onclick="openInJmeter(document.getElementById('selectedPlan').value)" disabled title="Open in JMeter GUI">Edit</button>
+                {% if is_localhost %}<button class="btn btn-outline btn-sm" id="editPlanBtn" onclick="openInJmeter(document.getElementById('selectedPlan').value)" disabled title="Open in JMeter GUI">Edit</button>{% endif %}
+                <button class="btn btn-outline btn-sm" id="downloadPlanBtn" onclick="downloadPlan()" disabled title="Download JMX file">Download</button>
+                {% if access_level != 'viewer' %}<button class="btn btn-outline btn-sm" onclick="document.getElementById('uploadInput').click()" title="Upload a .jmx file">Upload</button>
+                <input type="file" id="uploadInput" accept=".jmx" style="display:none;" onchange="uploadPlan(this)">{% endif %}
             </div>
             <span class="text-light text-sm" id="planInfo" style="margin-top:4px;display:none;"></span>
         </div>
@@ -28,11 +35,21 @@
                 <select class="form-select" id="presetSelect" onchange="applyPreset()" style="flex:1;">
                     <option value="">No preset</option>
                 </select>
-                <button class="btn btn-outline btn-sm" onclick="savePreset()">Save</button>
+                <button class="btn btn-outline btn-sm btn-icon" onclick="openPresetManager()" title="Manage presets">&#9881;</button>
             </div>
         </div>
     </div>
 
+    <div class="flex gap-8 mb-16" style="align-items:center;justify-content:space-between;">
+        <label class="form-label" style="margin:0;">Test Plan Parameters</label>
+        <div class="flex gap-8" style="align-items:center;">
+            {% if access_level != 'viewer' %}
+            <button class="btn btn-outline btn-sm" id="saveAsPresetBtn" onclick="quickSaveAsPreset()" style="display:none;" title="Save current values as a reusable preset">Save as Preset</button>
+            <button class="btn btn-outline btn-sm" id="saveToDefaultsBtn" onclick="saveToDefaults()" style="display:none;" title="Merge current values into global properties">Save to Defaults</button>
+            <button class="btn btn-outline btn-sm" onclick="toggleGlobalProps()">Edit Global Properties</button>
+            {% endif %}
+        </div>
+    </div>
     <div id="paramForm" class="mb-16">
         <p class="text-light text-sm">Select a test plan to configure parameters.</p>
     </div>
@@ -40,33 +57,149 @@
     <!-- Command Preview -->
     <div class="form-group mb-16">
         <label class="form-label">Command Preview</label>
-        <div class="form-input form-input-mono" id="cmdPreview" style="background: #f8fafc; min-height: 40px; white-space: pre-wrap; word-break: break-all; cursor: default;">
+        <div class="form-input form-input-mono" id="cmdPreview" style="background: var(--color-surface-alt, var(--color-surface)); min-height: 40px; white-space: pre-wrap; word-break: break-all; cursor: default;">
             Select a test plan to see the command.
         </div>
     </div>
 
-    <div class="flex gap-8 mb-16" id="inlineRunnerBtns">
-        <button class="btn btn-primary" id="startTestBtn" onclick="startTest()" disabled>Start Test</button>
-        <button class="btn btn-danger" id="stopTestBtn" onclick="stopTest()" disabled>Stop Test</button>
+    <div class="flex gap-8" style="align-items:center;justify-content:space-between;flex-wrap:wrap;">
+        <div class="flex gap-8" style="align-items:center;flex-wrap:wrap;">
+            {% if access_level != 'viewer' %}
+            <label class="toggle" title="Filter JTL labels using regex from Global Properties (filter_label_pattern)">
+                <input type="checkbox" id="filterUsernames" checked>
+                <span class="toggle-track"></span>
+                <span class="text-sm">Filter labels</span>
+            </label>
+            {% endif %}
+            <a href="#" id="lastRunLink" class="text-sm" style="display:none;">Last run &rarr;</a>
+        </div>
+        {% if access_level != 'viewer' %}
+        <div class="flex gap-8" style="align-items:center;" id="inlineRunnerBtns">
+            <button class="btn btn-primary" id="startTestBtn" onclick="startTest()" disabled>Start Test</button>
+            <button class="btn btn-danger" id="stopTestBtn" onclick="stopTest()" disabled>Stop Test</button>
+        </div>
+        {% endif %}
     </div>
 
+    {% if access_level != 'viewer' %}
     <!-- Mobile bottom action bar (visible only on mobile via CSS) -->
     <div class="mobile-action-bar" id="mobileActionBar">
         <button class="btn btn-primary" onclick="startTest()">Start Test</button>
         <button class="btn btn-danger" onclick="stopTest()">Stop Test</button>
     </div>
+    {% endif %}
+</div>
 
-    <label class="form-label">Live Output</label>
-    <div class="log-output" id="logOutput"></div>
+<!-- Live Output -->
+<div class="card" style="margin-top:24px;" id="outputCard">
+    <div class="card-header">
+        <span class="card-title">Live Output</span>
+    </div>
+
+    <p class="text-light text-sm" id="outputPlaceholder" style="text-align:center;padding:16px 0;">No active test. Stats will appear here during a run.</p>
+
+    <!-- Live Summary -->
+    <div class="card-grid mb-16" id="liveSummary" style="display:none;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));">
+        <div class="stat-card" style="padding:10px;">
+            <div class="stat-value text-sm" id="liveThroughput">-</div>
+            <div class="stat-label" style="font-size:11px;">Throughput</div>
+        </div>
+        <div class="stat-card" style="padding:10px;">
+            <div class="stat-value text-sm" id="liveAvgRT">-</div>
+            <div class="stat-label" style="font-size:11px;">Avg Response</div>
+        </div>
+        <div class="stat-card" style="padding:10px;">
+            <div class="stat-value text-sm" id="liveErrorRate">-</div>
+            <div class="stat-label" style="font-size:11px;">Error Rate</div>
+        </div>
+        <div class="stat-card" style="padding:10px;">
+            <div class="stat-value text-sm" id="liveSamples">-</div>
+            <div class="stat-label" style="font-size:11px;">Total Samples</div>
+        </div>
+        <div class="stat-card" style="padding:10px;">
+            <div class="stat-value text-sm" id="liveVUActive">-</div>
+            <div class="stat-label" style="font-size:11px;">Active VUs</div>
+        </div>
+        <div class="stat-card" style="padding:10px;">
+            <div class="stat-value text-sm" id="liveVUStarted">-</div>
+            <div class="stat-label" style="font-size:11px;">Started VUs</div>
+        </div>
+        <div class="stat-card" style="padding:10px;">
+            <div class="stat-value text-sm" id="liveVUFinished">-</div>
+            <div class="stat-label" style="font-size:11px;">Finished VUs</div>
+        </div>
+    </div>
+
+    <!-- Slave Progress -->
+    <div id="slaveProgress" class="flex gap-8 mb-16" style="flex-wrap:wrap;display:none;"></div>
+
+    <div id="logSection">
+        <div class="flex gap-8 mb-8" style="align-items:center;justify-content:space-between;">
+            <span class="text-sm text-light" style="cursor:pointer;" onclick="toggleLog()" id="logToggle">&#9654; Raw Log</span>
+            <label class="toggle" id="autoScrollLabel" style="display:none;">
+                <input type="checkbox" id="autoScrollToggle" checked>
+                <span class="toggle-track"></span>
+                <span class="text-sm text-light">Auto-scroll</span>
+            </label>
+        </div>
+        <div class="log-output" id="logOutput" style="min-height:120px;display:none;"></div>
+    </div>
+</div>
+
+<!-- Global Properties Modal -->
+<div class="modal-overlay" id="globalPropsModal">
+    <div class="modal">
+        <div class="modal-header">
+            <div>
+                <span class="modal-title">Global Properties</span>
+                <p class="text-light text-sm" style="margin-top:4px;">Shared defaults applied to every test run (<code>-G</code> flags)</p>
+            </div>
+            <button class="modal-close" onclick="closeGlobalProps()">&times;</button>
+        </div>
+        <div class="flex gap-8 mb-16" style="justify-content:flex-end;">
+            <button class="btn btn-outline btn-sm" onclick="addPropertyRow()">+ Add Property</button>
+            <button class="btn btn-primary btn-sm" onclick="saveProperties()">Save</button>
+        </div>
+        <div id="propertiesForm"></div>
+    </div>
+</div>
+
+<!-- Preset Manager Modal -->
+<div class="modal-overlay" id="presetModal">
+    <div class="modal">
+        <div class="modal-header">
+            <div>
+                <span class="modal-title">Manage Presets</span>
+                <p class="text-light text-sm" style="margin-top:4px;">Save current parameter values as a reusable preset. Apply them anytime from the Preset dropdown.</p>
+            </div>
+            <button class="modal-close" onclick="closePresetManager()">&times;</button>
+        </div>
+        <div style="border:1px solid var(--color-border);border-radius:8px;padding:12px;margin-bottom:16px;background:var(--color-surface-alt,var(--color-surface));">
+            <label class="form-label text-sm" style="margin-bottom:6px;">Save current values as preset</label>
+            <div class="flex gap-8">
+                <input class="form-input" id="newPresetName" placeholder="e.g. Light Load, Stress Test..." style="flex:1;">
+                <button class="btn btn-primary btn-sm" onclick="savePresetFromModal()">Save</button>
+            </div>
+        </div>
+        <label class="form-label text-sm" style="margin-bottom:8px;">Saved Presets</label>
+        <div id="presetList"></div>
+        <p class="text-light text-sm" id="presetEmptyMsg" style="text-align:center;padding:16px 0;">No presets saved yet. Configure your test parameters and save them above.</p>
+    </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+const ACCESS_LEVEL = '{{ access_level | default("viewer") }}';
+const isAdmin = ACCESS_LEVEL !== 'viewer';
 let allPlans = [];
 let allParams = [];
 let presets = {};
 let ws = null;
+let isTestRunning = false;
+let timerInterval = null;
+let timerStart = null;
+let jmeterGuiOpened = sessionStorage.getItem('jmeterGuiOpened') === 'true';
 
 // ===== Load plans =====
 async function loadPlans() {
@@ -94,6 +227,8 @@ function populatePlanSelect() {
 async function openInJmeter(filename) {
     showToast('Opening JMeter... (may take a moment)', 'info');
     await api(`/api/plans/${encodeURIComponent(filename)}/open`, { method: 'POST' });
+    jmeterGuiOpened = true;
+    sessionStorage.setItem('jmeterGuiOpened', 'true');
 }
 
 // ===== Parameters =====
@@ -101,16 +236,29 @@ async function onPlanSelected() {
     const filename = document.getElementById('selectedPlan').value;
     const editBtn = document.getElementById('editPlanBtn');
     const planInfo = document.getElementById('planInfo');
+    const dlBtn = document.getElementById('downloadPlanBtn');
     if (!filename) {
         document.getElementById('paramForm').innerHTML = '<p class="text-light text-sm">Select a test plan to configure parameters.</p>';
-        document.getElementById('startTestBtn').disabled = true;
+        const startBtn = document.getElementById('startTestBtn');
+        if (startBtn) startBtn.disabled = true;
         document.getElementById('cmdPreview').textContent = 'Select a test plan to see the command.';
-        editBtn.disabled = true;
+        const saveDefaultsBtn = document.getElementById('saveToDefaultsBtn');
+        if (saveDefaultsBtn) saveDefaultsBtn.style.display = 'none';
+        const savePresetBtn = document.getElementById('saveAsPresetBtn');
+        if (savePresetBtn) savePresetBtn.style.display = 'none';
+        if (editBtn) editBtn.disabled = true;
+        if (dlBtn) dlBtn.disabled = true;
         planInfo.style.display = 'none';
         return;
     }
-    editBtn.disabled = false;
-    document.getElementById('startTestBtn').disabled = false;
+    if (editBtn) editBtn.disabled = isTestRunning;
+    const startBtn = document.getElementById('startTestBtn');
+    if (startBtn) startBtn.disabled = isTestRunning;
+    const saveDefaultsBtn = document.getElementById('saveToDefaultsBtn');
+    if (saveDefaultsBtn) saveDefaultsBtn.style.display = '';
+    const savePresetBtn = document.getElementById('saveAsPresetBtn');
+    if (savePresetBtn) savePresetBtn.style.display = '';
+    if (dlBtn) dlBtn.disabled = false;
 
     // Show plan info
     const plan = allPlans.find(p => p.filename === filename);
@@ -152,6 +300,12 @@ function getOverrides() {
     return overrides;
 }
 
+function getPresetValues() {
+    const values = getOverrides();
+    if (filterLabelPattern) values._filter_label_pattern = filterLabelPattern;
+    return values;
+}
+
 async function updatePreview() {
     const filename = document.getElementById('selectedPlan').value;
     if (!filename) return;
@@ -181,36 +335,150 @@ function renderPresetSelect() {
 
 function applyPreset() {
     const name = document.getElementById('presetSelect').value;
-    if (!name || !presets[name]) return;
+    if (!name) return;
+    if (!presets[name]) {
+        showToast('Preset not loaded yet — try again', 'warning');
+        return;
+    }
     const values = presets[name];
+    let changed = 0;
     document.querySelectorAll('#paramForm [data-param]').forEach(input => {
-        if (values[input.dataset.param] !== undefined) {
-            input.value = values[input.dataset.param];
+        const newVal = values[input.dataset.param];
+        if (newVal !== undefined && input.value !== newVal) {
+            input.value = newVal;
+            changed++;
+            // Flash highlight on changed fields
+            input.style.transition = 'background 0.3s';
+            input.style.background = 'var(--color-primary-bg, rgba(59,130,246,0.15))';
+            setTimeout(() => { input.style.background = ''; }, 1500);
         }
     });
+    // Apply filter pattern if preset includes one
+    if (values._filter_label_pattern) {
+        filterLabelPattern = values._filter_label_pattern;
+        changed++;
+    }
     updatePreview();
-    showToast('Preset "' + name + '" applied', 'info');
+    if (changed > 0) {
+        showToast(`Preset "${name}" applied — ${changed} param${changed > 1 ? 's' : ''} updated`, 'success');
+    } else {
+        showToast(`Preset "${name}" applied — values already match`, 'info');
+    }
 }
 
-async function savePreset() {
-    const name = prompt('Preset name:');
-    if (!name) return;
-    const values = getOverrides();
+// ===== Preset Manager Modal =====
+function openPresetManager() {
+    renderPresetList();
+    document.getElementById('newPresetName').value = '';
+    document.getElementById('presetModal').classList.add('active');
+}
+
+function quickSaveAsPreset() {
+    const overrides = getOverrides();
+    if (!Object.keys(overrides).length) {
+        showToast('No parameters to save — select a test plan first', 'warning');
+        return;
+    }
+    openPresetManager();
+    // Focus the name input so user can type immediately
+    setTimeout(() => document.getElementById('newPresetName').focus(), 100);
+}
+
+function closePresetManager() {
+    document.getElementById('presetModal').classList.remove('active');
+}
+
+function renderPresetList() {
+    const names = Object.keys(presets);
+    const list = document.getElementById('presetList');
+    const emptyMsg = document.getElementById('presetEmptyMsg');
+    if (!names.length) {
+        list.innerHTML = '';
+        emptyMsg.style.display = '';
+        return;
+    }
+    emptyMsg.style.display = 'none';
+    list.innerHTML = names.map(name => {
+        const entries = Object.entries(presets[name]);
+        const valuesHtml = entries.map(([k,v]) => {
+            if (k === '_filter_label_pattern') {
+                return `<span style="display:inline-block;padding:2px 8px;border-radius:4px;background:var(--color-primary-bg,rgba(59,130,246,0.1));font-family:var(--font-mono);font-size:11px;margin:2px;">filter=<strong>${escHtml(v)}</strong></span>`;
+            }
+            return `<span style="display:inline-block;padding:2px 8px;border-radius:4px;background:var(--color-bg);font-family:var(--font-mono);font-size:11px;margin:2px;">${escHtml(k)}=<strong>${escHtml(v)}</strong></span>`;
+        }).join(' ');
+        return `<div style="margin-bottom:10px;padding:12px;border-radius:6px;border:1px solid var(--color-border);">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                <div class="text-sm" style="font-weight:600;">${escHtml(name)}</div>
+                <div style="display:flex;gap:16px;flex-shrink:0;">
+                    <button class="btn btn-primary btn-sm" onclick="applyPresetByName('${escHtml(name)}')">Apply</button>
+                    <button class="btn btn-sm btn-outline" onclick="deletePresetByName('${escHtml(name)}')" style="color:var(--color-danger);border-color:var(--color-danger);">Delete</button>
+                </div>
+            </div>
+            <div style="line-height:1.8;">${valuesHtml}</div>
+        </div>`;
+    }).join('');
+}
+
+function applyPresetByName(name) {
+    document.getElementById('presetSelect').value = name;
+    applyPreset();
+    closePresetManager();
+}
+
+async function deletePresetByName(name) {
+    if (!confirmAction(`Delete preset "${name}"?`)) return;
+    await api(`/api/runner/presets/${encodeURIComponent(name)}`, { method: 'DELETE' });
+    delete presets[name];
+    renderPresetSelect();
+    renderPresetList();
+    showToast('Preset deleted', 'success');
+}
+
+async function savePresetFromModal() {
+    const input = document.getElementById('newPresetName');
+    const name = input.value.trim();
+    if (!name) { input.focus(); return; }
+    const values = getPresetValues();
+    if (!Object.keys(values).length) {
+        showToast('No parameters to save — select a test plan first', 'warning');
+        return;
+    }
     await api('/api/runner/presets', { method: 'POST', body: { name, values } });
     presets[name] = values;
     renderPresetSelect();
-    showToast('Preset saved', 'success');
+    renderPresetList();
+    input.value = '';
+    showToast(`Preset "${name}" saved`, 'success');
+}
+
+// ===== Filter Config =====
+let filterLabelPattern = '';
+
+async function loadFilterConfig() {
+    try {
+        const data = await api('/api/runner/filter-config');
+        const el = document.getElementById('filterUsernames');
+        if (el) el.checked = data.filter_usernames;
+        filterLabelPattern = data.filter_label_pattern || '';
+    } catch(e) {}
 }
 
 // ===== Runner =====
 async function startTest() {
     const filename = document.getElementById('selectedPlan').value;
     if (!filename) return;
-    document.getElementById('logOutput').textContent = '';
+    if (jmeterGuiOpened) {
+        if (!confirmAction('JMeter GUI may still be open. Running a test while the GUI is active will compete for Java resources.\n\nClose JMeter GUI first, or continue anyway?')) return;
+    }
+    document.getElementById('logOutput').innerHTML = '';
+    // Request notification permission for completion alert
+    if (Notification.permission === 'default') Notification.requestPermission();
     try {
+        const filter_usernames = document.getElementById('filterUsernames').checked;
+        const filter_label_pattern = filter_usernames ? filterLabelPattern : '';
         const data = await api('/api/runner/start', {
             method: 'POST',
-            body: { filename, overrides: getOverrides() }
+            body: { filename, overrides: getOverrides(), filter_usernames, filter_label_pattern }
         });
         showToast('Test started', 'success');
         setRunnerState(true);
@@ -226,30 +494,193 @@ async function stopTest() {
 }
 
 function setRunnerState(running) {
+    isTestRunning = running;
     const status = document.getElementById('runnerStatus');
-    document.getElementById('startTestBtn').disabled = running;
-    document.getElementById('stopTestBtn').disabled = !running;
+    const hasPlan = !!document.getElementById('selectedPlan').value;
+    const startBtn = document.getElementById('startTestBtn');
+    const stopBtn = document.getElementById('stopTestBtn');
+    if (startBtn) startBtn.disabled = running || !hasPlan;
+    if (stopBtn) stopBtn.disabled = !running;
     status.textContent = running ? 'Running' : 'Idle';
     status.className = running ? 'badge badge-warning' : 'badge badge-info';
+
+    // Lock/unlock config controls
+    setConfigLocked(running);
+
+    // Elapsed timer
+    const timerEl = document.getElementById('elapsedTimer');
+    if (running) {
+        if (!timerStart) timerStart = Date.now();
+        timerEl.style.display = '';
+        updateTimer();
+        if (!timerInterval) timerInterval = setInterval(updateTimer, 1000);
+    } else {
+        clearInterval(timerInterval);
+        timerInterval = null;
+        timerStart = null;
+        timerEl.style.display = 'none';
+    }
 }
 
-function connectLogStream() {
+function setConfigLocked(locked) {
+    document.getElementById('selectedPlan').disabled = locked;
+    document.getElementById('presetSelect').disabled = locked;
+    const filterEl = document.getElementById('filterUsernames');
+    if (filterEl) filterEl.disabled = locked;
+    const editBtn = document.getElementById('editPlanBtn');
+    if (editBtn) editBtn.disabled = locked;
+    const saveBtn = document.getElementById('saveToDefaultsBtn');
+    if (saveBtn) saveBtn.disabled = locked;
+    const presetBtn = document.getElementById('saveAsPresetBtn');
+    if (presetBtn) presetBtn.disabled = locked;
+    document.querySelectorAll('#paramForm input').forEach(i => i.disabled = locked);
+}
+
+function updateTimer() {
+    if (!timerStart) return;
+    const elapsed = Math.floor((Date.now() - timerStart) / 1000);
+    const h = String(Math.floor(elapsed / 3600)).padStart(2, '0');
+    const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
+    const s = String(elapsed % 60).padStart(2, '0');
+    document.getElementById('elapsedTimer').textContent = `${h}:${m}:${s}`;
+}
+
+function notifyTestComplete() {
+    const plan = document.getElementById('selectedPlan').value || 'Test';
+    const samples = document.getElementById('liveSamples').textContent;
+    const errors = document.getElementById('liveErrorRate').textContent;
+    const body = `${samples} samples · ${errors} errors`;
+    // Browser notification (works even if tab is in background)
+    if (Notification.permission === 'granted') {
+        const n = new Notification(`${plan} — Finished`, { body });
+        n.onclick = () => { window.focus(); n.close(); };
+    }
+    showToast('Test completed', 'success');
+}
+
+let slaveStates = {};
+
+async function connectLogStream() {
     if (ws) ws.close();
-    const wm = new WSManager('/ws/runner/logs');
-    wm.onMessage = (line) => appendLog('logOutput', line);
+    resetLivePanels();
+
+    // Recover buffered output from before this page load
+    let startIndex = 0;
+    try {
+        const data = await api('/api/runner/buffer');
+        const lines = data.lines || [];
+        startIndex = lines.length;
+        lines.forEach(line => {
+            appendLog('logOutput', line);
+            parseLogLine(line);
+        });
+    } catch(e) {}
+
+    // Connect WebSocket from where buffer left off
+    const wm = new WSManager('/ws/runner/logs?from=' + startIndex);
+    wm.onMessage = (line) => {
+        appendLog('logOutput', line);
+        parseLogLine(line);
+    };
     wm.onClose = () => {
         appendLog('logOutput', '\n--- Connection closed ---', 'log-info');
+        const wasRunning = isTestRunning;
         setRunnerState(false);
+        if (wasRunning) notifyTestComplete();
     };
     wm.connect();
     ws = wm;
+}
+
+function resetLivePanels() {
+    document.getElementById('outputPlaceholder').style.display = 'none';
+    document.getElementById('liveSummary').style.display = 'grid';
+    document.getElementById('liveThroughput').textContent = '-';
+    document.getElementById('liveAvgRT').textContent = '-';
+    document.getElementById('liveErrorRate').textContent = '-';
+    document.getElementById('liveSamples').textContent = '-';
+    document.getElementById('liveVUActive').textContent = '-';
+    document.getElementById('liveVUStarted').textContent = '-';
+    document.getElementById('liveVUFinished').textContent = '-';
+    slaveStates = {};
+    document.getElementById('slaveProgress').innerHTML = '';
+    document.getElementById('slaveProgress').style.display = 'none';
+}
+
+function parseLogLine(line) {
+    // Parse JMeter summary lines: summary =  1000 in 00:00:30 = 33.3/s Avg: 200 ... Err: 5 (0.50%) Active: 10 Started: 20 Finished: 10
+    const summaryMatch = line.match(/summary\s*[+=]\s*(\d+)\s+in\s+\S+\s*=\s*([\d.]+)\/s\s+Avg:\s*(\d+).*?Err:\s*\d+\s*\(([\d.]+)%\)/);
+    if (summaryMatch) {
+        const isTotal = line.includes('summary =');
+        if (isTotal) {
+            document.getElementById('liveSamples').textContent = parseInt(summaryMatch[1]).toLocaleString();
+        }
+        document.getElementById('liveThroughput').textContent = summaryMatch[2] + '/s';
+        document.getElementById('liveAvgRT').textContent = summaryMatch[3] + ' ms';
+        document.getElementById('liveErrorRate').textContent = summaryMatch[4] + '%';
+        const errEl = document.getElementById('liveErrorRate');
+        errEl.style.color = parseFloat(summaryMatch[4]) > 0 ? 'var(--color-danger)' : '';
+
+        // Parse VU counts: Active: N Started: N Finished: N
+        const vuMatch = line.match(/Active:\s*(\d+)\s+Started:\s*(\d+)\s+Finished:\s*(\d+)/);
+        if (vuMatch) {
+            document.getElementById('liveVUActive').textContent = vuMatch[1];
+            document.getElementById('liveVUStarted').textContent = vuMatch[2];
+            document.getElementById('liveVUFinished').textContent = vuMatch[3];
+        }
+    }
+
+    // Parse slave start/finish lines
+    const startMatch = line.match(/Starting the test on ([\d.]+)/);
+    if (startMatch) {
+        slaveStates[startMatch[1]] = 'running';
+        renderSlaveProgress();
+    }
+    const finishMatch = line.match(/Finished the test on ([\d.]+)/);
+    if (finishMatch) {
+        slaveStates[finishMatch[1]] = 'finished';
+        renderSlaveProgress();
+    }
+    const errorMatch = line.match(/Error on slave ([\d.]+)/i) || line.match(/Could not .* ([\d.]+)/);
+    if (errorMatch) {
+        slaveStates[errorMatch[1]] = 'error';
+        renderSlaveProgress();
+    }
+}
+
+function renderSlaveProgress() {
+    const container = document.getElementById('slaveProgress');
+    const ips = Object.keys(slaveStates);
+    if (!ips.length) {
+        container.style.display = 'none';
+        return;
+    }
+    container.style.display = 'flex';
+    container.innerHTML = ips.map(ip => {
+        const st = slaveStates[ip];
+        const cls = st === 'running' ? 'badge-warning' : st === 'finished' ? 'badge-success' : 'badge-danger';
+        const label = st === 'running' ? 'Running' : st === 'finished' ? 'Finished' : 'Error';
+        return `<span class="badge ${cls}" style="font-family:var(--font-mono);font-size:11px;">${ip}: ${label}</span>`;
+    }).join('');
 }
 
 // ===== Check initial status =====
 async function checkStatus() {
     const data = await api('/api/runner/status');
     if (data.running) {
+        // Restore timer from backend timestamp
+        const info = data.run_info || {};
+        if (info.started_at) timerStart = info.started_at * 1000;
         setRunnerState(true);
+        // Restore plan selection
+        if (info.filename) {
+            const sel = document.getElementById('selectedPlan');
+            sel.value = info.filename;
+            await onPlanSelected();
+        }
+        if (info.command) {
+            document.getElementById('cmdPreview').textContent = info.command;
+        }
         connectLogStream();
     }
 }
@@ -260,9 +691,199 @@ function escHtml(str) {
     return div.innerHTML;
 }
 
+// ===== Mode indicator =====
+async function checkMode() {
+    try {
+        const data = await api('/api/config/slaves');
+        const slaves = data.slaves || [];
+        const active = slaves.filter(s => s.enabled !== false);
+        const el = document.getElementById('modeIndicator');
+        if (active.length > 0) {
+            el.textContent = `Distributed (${active.length} slaves)`;
+            el.style.background = '';
+            el.className = 'badge badge-info';
+        } else {
+            el.textContent = 'Local mode';
+            el.style.background = '';
+            el.className = 'badge badge-warning';
+        }
+    } catch(e) {
+        document.getElementById('modeIndicator').textContent = 'Unknown';
+    }
+}
+
+// ===== Global Properties (config.properties) =====
+let currentProperties = {};
+
+async function loadProperties() {
+    const data = await api('/api/config/properties');
+    currentProperties = data.properties || {};
+    renderProperties();
+}
+
+function renderProperties() {
+    const container = document.getElementById('propertiesForm');
+    if (!Object.keys(currentProperties).length) {
+        container.innerHTML = '<p class="text-light text-sm">No properties. Click "+ Add" to add one.</p>';
+        return;
+    }
+    let html = '<table><thead><tr><th>Key</th><th>Value</th><th style="width:60px"></th></tr></thead><tbody>';
+    for (const [key, value] of Object.entries(currentProperties)) {
+        html += `<tr>
+            <td><input class="form-input form-input-mono" value="${escHtml(key)}" data-role="key" style="border:none;background:transparent;padding:4px;"></td>
+            <td><input class="form-input form-input-mono" value="${escHtml(value)}" data-role="value" style="border:none;background:transparent;padding:4px;"></td>
+            <td><button class="btn btn-sm btn-danger btn-icon" onclick="this.closest('tr').remove()" title="Remove">&times;</button></td>
+        </tr>`;
+    }
+    html += '</tbody></table>';
+    container.innerHTML = html;
+}
+
+function addPropertyRow() {
+    const container = document.getElementById('propertiesForm');
+    let tbody = container.querySelector('tbody');
+    if (!tbody) {
+        container.innerHTML = '<table><thead><tr><th>Key</th><th>Value</th><th style="width:60px"></th></tr></thead><tbody></tbody></table>';
+        tbody = container.querySelector('tbody');
+    }
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+        <td><input class="form-input form-input-mono" data-role="key" placeholder="key" style="border:none;background:transparent;padding:4px;"></td>
+        <td><input class="form-input form-input-mono" data-role="value" placeholder="value" style="border:none;background:transparent;padding:4px;"></td>
+        <td><button class="btn btn-sm btn-danger btn-icon" onclick="this.closest('tr').remove()" title="Remove">&times;</button></td>`;
+    tbody.appendChild(tr);
+    tr.querySelector('[data-role="key"]').focus();
+}
+
+async function saveProperties() {
+    const rows = document.querySelectorAll('#propertiesForm tbody tr');
+    const props = {};
+    for (const row of rows) {
+        const key = row.querySelector('[data-role="key"]').value.trim();
+        const value = row.querySelector('[data-role="value"]').value.trim();
+        if (key) props[key] = value;
+    }
+    await api('/api/config/properties', { method: 'PUT', body: { properties: props } });
+    currentProperties = props;
+    showToast('Properties saved', 'success');
+}
+
+// ===== Save to Defaults (merge into global properties) =====
+async function saveToDefaults() {
+    const overrides = getOverrides();
+    if (!Object.keys(overrides).length) {
+        showToast('No parameters to save', 'warning');
+        return;
+    }
+    // Merge: existing global props + current param values (additive, no removal)
+    const merged = { ...currentProperties, ...overrides };
+    await api('/api/config/properties', { method: 'PUT', body: { properties: merged } });
+    currentProperties = merged;
+    renderProperties();
+    showToast('Merged into global properties', 'success');
+}
+
+function toggleGlobalProps() {
+    document.getElementById('globalPropsModal').classList.add('active');
+}
+
+function closeGlobalProps() {
+    document.getElementById('globalPropsModal').classList.remove('active');
+}
+
+// ===== Raw Log Toggle =====
+function toggleLog() {
+    const log = document.getElementById('logOutput');
+    const toggle = document.getElementById('logToggle');
+    const autoLabel = document.getElementById('autoScrollLabel');
+    const hidden = log.style.display === 'none';
+    log.style.display = hidden ? '' : 'none';
+    toggle.innerHTML = (hidden ? '&#9660;' : '&#9654;') + ' Raw Log';
+    if (autoLabel) autoLabel.style.display = hidden ? 'flex' : 'none';
+}
+
+// ===== Last Run =====
+async function loadLastRun() {
+    try {
+        const data = await api('/api/results/list');
+        const results = data.results || [];
+        if (results.length > 0) {
+            const latest = results[0]; // assumes sorted by date desc
+            const link = document.getElementById('lastRunLink');
+            const bp = document.querySelector('meta[name="base-path"]').content;
+            link.href = bp + '/results';
+            link.textContent = 'Last: ' + latest.folder;
+            link.style.display = '';
+        }
+    } catch(e) {}
+}
+
+// ===== Upload / Download =====
+async function downloadPlan() {
+    const filename = document.getElementById('selectedPlan').value;
+    if (!filename) return;
+    try {
+        const resp = await fetch(BASE_PATH + '/api/plans/' + encodeURIComponent(filename) + '/download');
+        if (!resp.ok) { showToast('Download failed', 'error'); return; }
+        const blob = await resp.blob();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(a.href);
+    } catch(e) {
+        showToast('Download failed', 'error');
+    }
+}
+
+async function uploadPlan(input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (!file.name.endsWith('.jmx')) {
+        showToast('Only .jmx files are allowed', 'error');
+        input.value = '';
+        return;
+    }
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+        const resp = await fetch(BASE_PATH + '/api/plans/upload', {
+            method: 'POST',
+            body: formData,
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+            showToast(data.error || 'Upload failed', 'error');
+        } else {
+            showToast(`Uploaded ${data.filename}`, 'success');
+            await loadPlans();
+            document.getElementById('selectedPlan').value = data.filename;
+            onPlanSelected();
+        }
+    } catch(e) {
+        showToast('Upload failed', 'error');
+    }
+    input.value = '';
+}
+
+// ===== Keyboard shortcuts =====
+document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.key === 'Enter') {
+        e.preventDefault();
+        const startBtn = document.getElementById('startTestBtn');
+        if (startBtn && !startBtn.disabled) startTest();
+    }
+});
+
 // ===== Init =====
-loadPlans();
-loadPresets();
-checkStatus();
+(async function init() {
+    await loadPlans();  // must complete before checkStatus can select a plan
+    await loadPresets(); // must complete before user can apply a preset
+    await loadFilterConfig(); // load default filter checkbox + pattern from config.properties
+    checkStatus();
+    checkMode();
+    loadProperties();
+    loadLastRun();
+})();
 </script>
 {% endblock %}

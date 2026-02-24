@@ -46,10 +46,32 @@ Thread Group
 - Look at the timing - requests that happened within a short window are usually from the same page/action
 
 **Transaction Controller settings:**
-- Check **"Generate parent sample"** - this aggregates all child requests into one result in the report. You'll see "TC - Login Page" with the total time instead of individual requests
+- Uncheck **"Generate parent sample"** - this ensures the report captures all individual requests under the transaction, not just an aggregated parent. You'll see each request separately in the report, which is useful for identifying which specific request within a flow is slow
 
-<!-- TODO: Screenshot - Transaction Controller with Generate parent sample checked -->
+> **Note:** With "Generate parent sample" unchecked, the `.jtl` file will contain both the TC entry and individual sub-result entries (with `-0`, `-1`, etc. suffixes). These sub-results typically make up ~80-85% of the raw `.jtl` file. Always filter them out before generating reports — see [Section 9](09-execute-analyze.md#filtering-the-jtl-before-generating-reports).
+
+<!-- TODO: Screenshot - Transaction Controller with Generate parent sample unchecked -->
 <!-- TODO: Screenshot - Before and after grouping in JMeter tree -->
+
+### Optional: Outer Transaction Controller for User Tracking
+
+When using login-based flows, you can optionally wrap the entire flow in a parent Transaction Controller named `${username}`. Leave **"Generate parent sample" unchecked** - same as all other TCs - so that inner TCs and individual requests still appear in the `.jtl` file.
+
+```
+Thread Group
+├── TC: ${username}                    ← outer TC, Generate parent sample UNCHECKED
+│   ├── A - Login
+│   │   ├── 01 - POST - Submit Login
+│   │   └── ...
+│   ├── B - Dashboard
+│   │   └── ...
+│   └── C - Search
+│       └── ...
+```
+
+- The outer TC creates one row per user in the `.jtl` file, making it easy to spot which user failed
+- For deeper analysis, match the thread number in the `.jtl` to find the specific request that caused the failure
+- Before generating the web report, **always filter the `.jtl`** — this removes sub-results (child samples like `A - Login-0`, `A - Login-1`) which typically make up ~80-85% of the file, plus username rows and unresolved variables. See [Section 9 - Filtering Results](09-execute-analyze.md#filtering-the-jtl-before-generating-reports)
 
 ---
 

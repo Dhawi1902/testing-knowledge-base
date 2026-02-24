@@ -150,12 +150,12 @@ The `-e -o` flags generate an HTML report automatically. Open `index.html` in th
 
 ### How Transaction Controllers Appear in the Report
 
-If you used Transaction Controllers with **"Generate parent sample"** checked (see [Section 6](06-script-enhancement.md)):
-- The report shows the Transaction Controller name (e.g., `A - Login`) as a single entry
-- The total time includes all child requests
-- Individual child requests are not shown separately in the statistics table
+With **"Generate parent sample"** unchecked on Transaction Controllers (see [Section 6](06-script-enhancement.md)):
+- The report shows **both** the Transaction Controller name (e.g., `A - Login`) and each individual request inside it
+- This lets you pinpoint exactly which request within a flow is slow
+- The Transaction Controller entry shows the total time for the group, while individual requests show their own times
 
-This is why naming conventions matter - `A - Login`, `B - Dashboard` appear sorted and readable in the report.
+This is why naming conventions matter - `A - Login`, `B - Dashboard` appear sorted and readable in the report, and the numbered samplers (`01 - POST - Submit Login`) let you drill into specifics.
 
 ---
 
@@ -175,6 +175,57 @@ The `.jtl` file contains raw test data - one line per request. You can open it i
 ```bat
 jmeter -g results.jtl -o report-folder
 ```
+
+### Filtering the .jtl Before Generating Reports
+
+The raw `.jtl` file contains rows you don't want in the web report. Always filter before generating reports — this both cleans the data and drastically reduces file size, which matters for report generation speed and memory usage.
+
+**What gets filtered:**
+
+| Filter | What it Removes | Why |
+|--------|----------------|-----|
+| **Sub-results** | Labels ending with `-0`, `-1`, etc. | Transaction Controllers with "Generate parent sample" unchecked produce child samples (e.g., `A - Login-0`, `A - Login-1`). These are duplicate data — the parent TC already captures the aggregate. Sub-results typically make up **~80-85%** of a raw JTL file. |
+| **Unresolved variables** | Labels containing `${...}` | Rows where JMeter variables weren't resolved (e.g., `${username}`) — these are noise. |
+| **Username rows** (optional) | Labels matching a regex pattern | If you used an outer TC with `${username}` for user tracking (see [Section 6](06-script-enhancement.md#optional-outer-transaction-controller-for-user-tracking)), those rows clutter the report. |
+
+**Workflow:**
+
+1. Keep the **original `.jtl`** for per-user failure analysis and troubleshooting
+2. Run the filter script to create a **filtered copy**
+3. Generate the web report from the filtered copy
+
+```bat
+REM Filter out sub-results and unresolved variables (always recommended)
+python jtl_filter.py results.jtl filtered.jtl
+
+REM Optionally also filter by label regex (e.g., exclude username rows)
+python jtl_filter.py results.jtl filtered.jtl "^(?!user\d+)"
+
+REM Generate report from the filtered file
+jmeter -g filtered.jtl -o report-folder
+```
+
+> **Impact:** On a real test run with ~3.4 million rows (682 MB), filtering sub-results alone reduced the file to ~565K rows (153 MB) — an **83% reduction**. This makes report generation feasible where the unfiltered file would cause JMeter to run out of memory.
+
+### Optimizing the HTML Report
+
+The JMeter HTML report includes "over time" graphs that produce a very large `graph.js` file (can reach **500+ MB** for long test runs). This makes the report slow to open in a browser.
+
+To reduce report size, disable the heaviest graphs using JMeter properties:
+
+```bat
+jmeter -g filtered.jtl -o report-folder ^
+    -Jjmeter.reportgenerator.graph.responseTimeOverTime.enabled=false ^
+    -Jjmeter.reportgenerator.graph.latenciesOverTime.enabled=false ^
+    -Jjmeter.reportgenerator.graph.bytesThroughputOverTime.enabled=false ^
+    -Jjmeter.reportgenerator.graph.connectTimeOverTime.enabled=false
+```
+
+This disables four over-time graphs that contribute the most to `graph.js` size. The dashboard summary, statistics table, percentile charts, and throughput summary are preserved — these are the charts you actually need for analysis.
+
+> **When regenerating from .jtl:** If the original test saved results in XML format (not CSV), add `-Jjmeter.save.saveservice.output_format=csv` to force CSV parsing.
+
+This gives you two views: the full `.jtl` for tracking which users failed, and a clean, fast-loading report for aggregate analysis.
 
 ### Aggregate Report Columns
 
@@ -233,4 +284,5 @@ The web report includes a "Response Time vs Threads" chart. The ideal pattern:
 - **Name your result files** with the run number or timestamp (e.g., `results-run1.jtl`, `results-20260212.jtl`) so you don't lose previous results
 - **Watch the CLI output during the test** - if errors spike or response times explode early, you may want to stop and investigate before wasting time on a full run
 - **Run multiple iterations** - one run is not enough. Run at least 2-3 times to confirm results are consistent
+- **Always filter the .jtl before generating reports** - sub-results from Transaction Controllers inflate the file by ~80-85%. Filtering first makes report generation faster and prevents out-of-memory errors on large files
 - **Compare against NFRs immediately** - check the 90th percentile response time, throughput, and error rate against the targets from [Section 2](02-understand-requirements.md)

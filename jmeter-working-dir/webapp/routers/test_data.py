@@ -1,19 +1,24 @@
-import asyncio
 from pathlib import Path
 
-from fastapi import APIRouter, Request
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Request, UploadFile
+from fastapi.responses import FileResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 
-from services.config_parser import resolve_path, get_project_root
-from services.data import list_csv_files, preview_csv, get_csv_stats
-from services.process_manager import ProcessManager
+from services.config_parser import resolve_path, get_project_root, get_active_slaves, read_json_config
+from services.data import list_csv_files, preview_csv, preview_split, build_csv
+from services.slaves import distribute_files
 
 TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 router = APIRouter()
-data_process = ProcessManager()
+
+
+def _check_access(request: Request):
+    """Return 403 JSONResponse if viewer, None if allowed."""
+    if getattr(request.state, "access_level", "viewer") == "viewer":
+        return JSONResponse(status_code=403, content={"error": "Access denied — token required"})
+    return None
 
 
 @router.get("/data")
@@ -35,102 +40,210 @@ async def api_list_data_files(request: Request):
 
 
 @router.get("/api/data/preview/{filename:path}")
-async def api_preview_csv(request: Request, filename: str):
+async def api_preview_csv(request: Request, filename: str, rows: int = 50):
     project = request.app.state.project
     data_dir = resolve_path(project, "test_data_dir")
     file_path = (data_dir / filename).resolve()
     # Security check
     if not str(file_path).startswith(str(data_dir.resolve())):
         return JSONResponse(status_code=403, content={"error": "Access denied"})
-    result = preview_csv(file_path)
+    result = preview_csv(file_path, rows=min(rows, 10000))
     return result
 
 
-@router.post("/api/data/generate")
-async def api_generate_data(request: Request):
-    """Run generate_master_data.py as subprocess."""
+@router.get("/api/data/download/{filename}")
+async def api_download_csv(request: Request, filename: str):
     project = request.app.state.project
-    project_root = get_project_root(project)
-
-    # Look for the generate script
-    script = None
-    for candidate in ["utils/generate_master_data.py", "bin/data/generate_master_data.bat"]:
-        p = project_root / candidate
-        if p.exists():
-            script = p
-            break
-
-    if not script:
-        return JSONResponse(status_code=404, content={"error": "generate_master_data script not found"})
-
-    if data_process.is_running:
-        return JSONResponse(status_code=409, content={"error": "A data process is already running"})
-
-    if script.suffix == ".py":
-        cmd = ["python", str(script)]
-    else:
-        cmd = [str(script)]
-
-    data_process.start(cmd, cwd=project_root, label="generate_master_data")
-
-    # Collect output
-    lines = []
-    async for line in data_process.stream_output():
-        lines.append(line)
-
-    rc = data_process.return_code()
-    return {"ok": rc == 0, "output": "\n".join(lines), "return_code": rc}
+    data_dir = resolve_path(project, "test_data_dir")
+    file_path = (data_dir / filename).resolve()
+    if not str(file_path).startswith(str(data_dir.resolve())):
+        return JSONResponse(status_code=403, content={"error": "Access denied"})
+    if not file_path.exists():
+        return JSONResponse(status_code=404, content={"error": "File not found"})
+    return FileResponse(file_path, filename=filename, media_type="text/csv")
 
 
-@router.post("/api/data/split")
-async def api_split_data(request: Request):
-    """Run split_and_copy_to_vms.py."""
+@router.delete("/api/data/delete/{filename}")
+async def api_delete_csv(request: Request, filename: str):
+    """Delete a CSV file from the test data directory."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    project = request.app.state.project
+    data_dir = resolve_path(project, "test_data_dir")
+    file_path = (data_dir / filename).resolve()
+    if not str(file_path).startswith(str(data_dir.resolve())):
+        return JSONResponse(status_code=403, content={"error": "Access denied"})
+    if not file_path.exists():
+        return JSONResponse(status_code=404, content={"error": "File not found"})
+    file_path.unlink()
+    return {"ok": True, "filename": filename}
+
+
+@router.post("/api/data/rename")
+async def api_rename_csv(request: Request):
+    """Rename a CSV file.  Body: {"old": "a.csv", "new": "b.csv"}"""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    body = await request.json()
+    old_name = body.get("old", "").strip()
+    new_name = body.get("new", "").strip()
+    if not old_name or not new_name:
+        return JSONResponse(status_code=400, content={"error": "Both old and new names required"})
+    if not new_name.endswith(".csv"):
+        new_name += ".csv"
+
+    project = request.app.state.project
+    data_dir = resolve_path(project, "test_data_dir")
+    data_dir_resolved = str(data_dir.resolve())
+
+    old_path = (data_dir / old_name).resolve()
+    new_path = (data_dir / new_name).resolve()
+    if not str(old_path).startswith(data_dir_resolved) or not str(new_path).startswith(data_dir_resolved):
+        return JSONResponse(status_code=403, content={"error": "Access denied"})
+    if not old_path.exists():
+        return JSONResponse(status_code=404, content={"error": f"File not found: {old_name}"})
+    if new_path.exists():
+        return JSONResponse(status_code=400, content={"error": f"File already exists: {new_name}"})
+
+    old_path.rename(new_path)
+    return {"ok": True, "old": old_name, "new": new_name}
+
+
+@router.post("/api/data/build")
+async def api_build_data(request: Request):
+    """Build a CSV file from column definitions."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    body = await request.json()
+    project = request.app.state.project
+    data_dir = resolve_path(project, "test_data_dir")
+    result = build_csv(body, data_dir)
+    if "error" in result:
+        return JSONResponse(status_code=400, content=result)
+    return result
+
+
+@router.post("/api/data/upload")
+async def api_upload_data(request: Request, file: UploadFile):
+    """Upload a CSV file to the test data directory."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    project = request.app.state.project
+    data_dir = resolve_path(project, "test_data_dir")
+
+    if not file.filename or not file.filename.endswith(".csv"):
+        return JSONResponse(status_code=400, content={"error": "Only .csv files are accepted"})
+
+    data_dir.mkdir(parents=True, exist_ok=True)
+    dest = data_dir / file.filename
+    content = await file.read()
+    dest.write_bytes(content)
+
+    return {"ok": True, "filename": file.filename, "size": len(content)}
+
+
+@router.post("/api/distribute/preview")
+async def api_preview_split(request: Request):
+    """Preview how a CSV would be split across slaves.
+
+    Body: {"file": "name.csv", "offset": 0, "size": 0}
+    """
     body = await request.json()
     project = request.app.state.project
     project_root = get_project_root(project)
-    offset = body.get("offset", 0)
-    size = body.get("size", 15000)
+    data_dir = resolve_path(project, "test_data_dir")
+    data_dir_resolved = str(data_dir.resolve())
 
-    script = project_root / "utils" / "split_and_copy_to_vms.py"
-    if not script.exists():
-        return JSONResponse(status_code=404, content={"error": "split_and_copy_to_vms.py not found"})
+    fname = body.get("file", "")
+    fpath = (data_dir / fname).resolve()
+    if not str(fpath).startswith(data_dir_resolved):
+        return JSONResponse(status_code=403, content={"error": "Access denied"})
+    if not fpath.exists():
+        return JSONResponse(status_code=404, content={"error": f"File not found: {fname}"})
 
-    if data_process.is_running:
-        return JSONResponse(status_code=409, content={"error": "A data process is already running"})
+    # Get active slaves
+    slaves_path = project_root / project["paths"].get("slaves_file", "slaves.txt")
+    slave_ips = get_active_slaves(slaves_path)
+    if not slave_ips:
+        return JSONResponse(status_code=400, content={"error": "No active slaves configured"})
 
-    cmd = ["python", str(script), "--offset", str(offset), "--size", str(size)]
-    data_process.start(cmd, cwd=project_root, label="split_and_copy")
-
-    lines = []
-    async for line in data_process.stream_output():
-        lines.append(line)
-
-    rc = data_process.return_code()
-    return {"ok": rc == 0, "output": "\n".join(lines), "return_code": rc}
+    offset = int(body.get("offset", 0))
+    size = int(body.get("size", 0))
+    result = preview_split(fpath, slave_ips, offset, size)
+    if "error" in result:
+        return JSONResponse(status_code=400, content=result)
+    return result
 
 
 @router.post("/api/data/distribute")
 async def api_distribute_data(request: Request):
-    """Run split_and_copy_to_vms.py with distribute flag."""
+    """Distribute CSV files to slaves with per-file mode.
+
+    Body: {"items": [{"file": "name.csv", "mode": "copy"|"split", "offset": 0, "size": 0}, ...]}
+    """
+    denied = _check_access(request)
+    if denied:
+        return denied
     body = await request.json()
     project = request.app.state.project
     project_root = get_project_root(project)
-    offset = body.get("offset", 0)
-    size = body.get("size", 15000)
+    data_dir = resolve_path(project, "test_data_dir")
+    data_dir_resolved = str(data_dir.resolve())
 
-    script = project_root / "utils" / "split_and_copy_to_vms.py"
-    if not script.exists():
-        return JSONResponse(status_code=404, content={"error": "split_and_copy_to_vms.py not found"})
+    raw_items = body.get("items", [])
+    if not raw_items:
+        return JSONResponse(status_code=400, content={"error": "No files selected"})
 
-    if data_process.is_running:
-        return JSONResponse(status_code=409, content={"error": "A data process is already running"})
+    # Validate and resolve each item
+    items = []
+    for item in raw_items:
+        fname = item.get("file", "")
+        mode = item.get("mode", "copy")
+        if mode not in ("copy", "split"):
+            return JSONResponse(status_code=400, content={"error": f"Invalid mode '{mode}' for {fname}"})
+        fpath = (data_dir / fname).resolve()
+        if not str(fpath).startswith(data_dir_resolved):
+            return JSONResponse(status_code=403, content={"error": f"Access denied: {fname}"})
+        if not fpath.exists():
+            return JSONResponse(status_code=404, content={"error": f"File not found: {fname}"})
+        items.append({
+            "file_path": fpath,
+            "mode": mode,
+            "offset": int(item.get("offset", 0)),
+            "size": int(item.get("size", 0)),
+        })
 
-    cmd = ["python", str(script), "--offset", str(offset), "--size", str(size)]
-    data_process.start(cmd, cwd=project_root, label="distribute_data")
+    # Get active slaves
+    slaves_path = project_root / project["paths"].get("slaves_file", "slaves.txt")
+    slave_ips = get_active_slaves(slaves_path)
+    if not slave_ips:
+        return JSONResponse(status_code=400, content={"error": "No active slaves configured"})
 
-    lines = []
-    async for line in data_process.stream_output():
-        lines.append(line)
+    # Build per-slave SSH configs (global defaults + per-slave overrides)
+    from services.config_parser import read_slaves as _read_slaves
+    config_dir = resolve_path(project, "config_dir")
+    vm_config = read_json_config(config_dir / "vm_config.json")
+    all_slaves = _read_slaves(slaves_path)
+    global_ssh = vm_config.get("ssh_config", {})
+    ssh_configs = {}
+    for s in all_slaves:
+        ip = s["ip"]
+        overrides = s.get("overrides", {})
+        merged = {**global_ssh}
+        if overrides.get("user"):
+            merged["user"] = overrides["user"]
+        if overrides.get("password"):
+            merged["password"] = overrides["password"]
+        if overrides.get("dest_path"):
+            merged["dest_path"] = overrides["dest_path"]
+        ssh_configs[ip] = merged
 
-    rc = data_process.return_code()
-    return {"ok": rc == 0, "output": "\n".join(lines), "return_code": rc}
+    results = await distribute_files(slave_ips, ssh_configs, items, data_dir)
+
+    ok_count = sum(1 for r in results if r.get("ok"))
+    total = len(results)
+    return {"ok": ok_count == total, "results": results, "summary": f"{ok_count}/{total} transfers succeeded"}

@@ -1,16 +1,26 @@
 import asyncio
 import subprocess
-import signal
 from pathlib import Path
 
 
 class ProcessManager:
-    """Manages subprocesses with output streaming. Only one JMeter test at a time."""
+    """Manages subprocesses with output buffering and streaming.
+
+    Output is drained into a buffer by a background task, so:
+    - Multiple WebSocket clients can connect/reconnect without losing history
+    - The process stdout is always consumed (never blocks)
+    - Buffer persists until the next start() call
+    """
 
     def __init__(self):
         self._active_process: subprocess.Popen | None = None
         self._active_label: str = ""
+        self._post_commands: list[list[str]] = []
+        self._cwd: str | None = None
         self._lock = asyncio.Lock()
+        self._output_buffer: list[str] = []
+        self._drain_task: asyncio.Task | None = None
+        self._run_info: dict = {}
 
     @property
     def is_running(self) -> bool:
@@ -20,23 +30,47 @@ class ProcessManager:
     def active_label(self) -> str:
         return self._active_label if self.is_running else ""
 
-    def start(self, cmd: list[str], cwd: str | Path | None = None, label: str = "") -> subprocess.Popen:
+    @property
+    def output_buffer(self) -> list[str]:
+        """Returns a copy of all buffered output lines."""
+        return list(self._output_buffer)
+
+    @property
+    def run_info(self) -> dict:
+        """Metadata about the current/last run."""
+        return dict(self._run_info)
+
+    @property
+    def is_draining(self) -> bool:
+        """True if the background drain task is still running."""
+        return self._drain_task is not None and not self._drain_task.done()
+
+    def start(self, cmd: list[str], cwd: str | Path | None = None, label: str = "",
+              post_commands: list[list[str]] | None = None,
+              run_info: dict | None = None) -> subprocess.Popen:
         """Start a subprocess. Raises if one is already running."""
         if self.is_running:
             raise RuntimeError(f"A process is already running: {self._active_label}")
+        self._cwd = str(cwd) if cwd else None
+        self._post_commands = post_commands or []
+        self._run_info = run_info or {}
+        self._output_buffer = []
         self._active_process = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            cwd=str(cwd) if cwd else None,
+            cwd=self._cwd,
             text=True,
             bufsize=1,
         )
         self._active_label = label
+        # Start background drain task
+        loop = asyncio.get_event_loop()
+        self._drain_task = loop.create_task(self._drain_output())
         return self._active_process
 
-    async def stream_output(self):
-        """Async generator yielding stdout lines from the active process."""
+    async def _drain_output(self):
+        """Background task: reads process stdout and post-commands into buffer."""
         proc = self._active_process
         if not proc or not proc.stdout:
             return
@@ -45,8 +79,51 @@ class ProcessManager:
             line = await loop.run_in_executor(None, proc.stdout.readline)
             if not line:
                 break
-            yield line.rstrip("\n")
+            self._output_buffer.append(line.rstrip("\n"))
         proc.wait()
+
+        # Run post-commands sequentially
+        for post_cmd in self._post_commands:
+            self._output_buffer.append(f"\n--- Running: {' '.join(post_cmd)} ---")
+            try:
+                post_proc = subprocess.Popen(
+                    post_cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    cwd=self._cwd,
+                    text=True,
+                    bufsize=1,
+                )
+                while True:
+                    line = await loop.run_in_executor(None, post_proc.stdout.readline)
+                    if not line:
+                        break
+                    self._output_buffer.append(line.rstrip("\n"))
+                post_proc.wait()
+                self._output_buffer.append(f"--- Finished (exit code {post_proc.returncode}) ---")
+            except Exception as e:
+                self._output_buffer.append(f"--- Error: {e} ---")
+
+    async def subscribe_output(self, start_index: int = 0):
+        """Async generator: yields buffered lines from start_index, then tails new ones until drain completes."""
+        idx = start_index
+        while True:
+            # Yield all available buffered lines
+            while idx < len(self._output_buffer):
+                yield self._output_buffer[idx]
+                idx += 1
+            # If drain is done, yield any final lines and exit
+            if not self.is_draining:
+                while idx < len(self._output_buffer):
+                    yield self._output_buffer[idx]
+                    idx += 1
+                break
+            await asyncio.sleep(0.1)
+
+    async def stream_output(self):
+        """Backward-compatible wrapper: yields all output from the start."""
+        async for line in self.subscribe_output(0):
+            yield line
 
     def stop(self):
         """Terminate the active process."""

@@ -12,9 +12,20 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 router = APIRouter()
 
+_LOCALHOST_DENIED = JSONResponse(status_code=403, content={"error": "Scripts are only available from localhost"})
+
+
+def _check_localhost(request: Request):
+    if not getattr(request.state, "is_localhost", False):
+        return _LOCALHOST_DENIED
+    return None
+
 
 @router.get("/scripts")
 async def scripts_page(request: Request):
+    denied = _check_localhost(request)
+    if denied:
+        return denied
     project = request.app.state.project
     return templates.TemplateResponse("scripts.html", {
         "request": request,
@@ -25,6 +36,9 @@ async def scripts_page(request: Request):
 
 @router.get("/api/scripts/list")
 async def api_list_scripts(request: Request):
+    denied = _check_localhost(request)
+    if denied:
+        return denied
     project = request.app.state.project
     project_root = get_project_root(project)
     scripts_dirs = project["paths"].get("scripts_dirs", [])
@@ -49,6 +63,9 @@ async def api_list_scripts(request: Request):
 
 @router.post("/api/scripts/run")
 async def api_run_script(request: Request):
+    denied = _check_localhost(request)
+    if denied:
+        return denied
     body = await request.json()
     script_path = body.get("path", "")
     project = request.app.state.project
@@ -78,13 +95,19 @@ async def api_run_script(request: Request):
 
 
 @router.post("/api/scripts/stop")
-async def api_stop_script():
+async def api_stop_script(request: Request):
+    denied = _check_localhost(request)
+    if denied:
+        return denied
     script_process_manager.stop()
     return {"ok": True}
 
 
 @router.get("/api/scripts/status")
-async def api_script_status():
+async def api_script_status(request: Request):
+    denied = _check_localhost(request)
+    if denied:
+        return denied
     return {
         "running": script_process_manager.is_running,
         "label": script_process_manager.active_label,
@@ -94,6 +117,10 @@ async def api_script_status():
 @router.websocket("/ws/scripts/output")
 async def ws_script_output(websocket: WebSocket):
     await websocket.accept()
+    if not getattr(websocket.state, "is_localhost", True):
+        await websocket.send_text("[Access denied: localhost only]")
+        await websocket.close()
+        return
     try:
         if not script_process_manager.is_running:
             await websocket.send_text("[No active script]")

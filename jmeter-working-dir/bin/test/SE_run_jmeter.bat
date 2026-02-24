@@ -24,7 +24,7 @@ if not exist "%SLAVES%" (
     exit /b 1
 )
 
-REM Read properties file
+REM Read properties file (includes results_dir, test_plan, etc.)
 for /f "usebackq tokens=1,* delims==" %%A in ("%PROPS_FILE%") do (
     if not "%%A"=="" (
         if not "%%A:~0,1%"=="#" (
@@ -32,6 +32,9 @@ for /f "usebackq tokens=1,* delims==" %%A in ("%PROPS_FILE%") do (
         )
     )
 )
+
+REM Default results_dir if not set in config.properties
+if "!results_dir!"=="" set "results_dir=results/jmeter-report"
 
 REM Read slaves.txt and build comma-separated list
 FOR /F "eol=# tokens=*" %%A IN (slaves.txt) DO (
@@ -54,7 +57,7 @@ REM 2. Auto-increment run counter
 REM ===============================
 set COUNT=1
 :loop
-if exist "%CD%\results\%TODAY%_%COUNT%" (
+if exist "%CD%\!results_dir!\%TODAY%\%TODAY%_%COUNT%" (
     set /a COUNT+=1
     goto loop
 )
@@ -62,7 +65,7 @@ if exist "%CD%\results\%TODAY%_%COUNT%" (
 REM ===============================
 REM 3. Set paths and create folder
 REM ===============================
-set RESULT_FOLDER=%CD%\results\%TODAY%_%COUNT%
+set RESULT_FOLDER=%CD%\!results_dir!\%TODAY%\%TODAY%_%COUNT%
 set TEST_NAME=STUDENT_ENROLMENT_%student%_Student_Testing_%TODAY%_%COUNT%
 
 REM Create the result folder
@@ -77,6 +80,7 @@ echo Date      : %TODAY%
 echo Run No    : %COUNT%
 echo Run ID    : %runId%
 echo Folder    : %TODAY%_%COUNT%
+echo Results   : !results_dir!
 echo hosts     : %SLAVE_LIST%
 echo =========================================
 

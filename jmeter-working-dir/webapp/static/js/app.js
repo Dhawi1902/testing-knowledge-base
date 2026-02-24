@@ -197,5 +197,8 @@ function appendLog(containerId, text, className = '') {
     if (className) span.className = className;
     span.textContent = text + '\n';
     el.appendChild(span);
-    el.scrollTop = el.scrollHeight;
+    const autoScroll = document.getElementById('autoScrollToggle');
+    if (!autoScroll || autoScroll.checked) {
+        el.scrollTop = el.scrollHeight;
+    }
 }

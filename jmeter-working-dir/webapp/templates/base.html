@@ -19,14 +19,6 @@
                 <span class="nav-icon">&#9632;</span>
                 <span class="nav-label">Dashboard</span>
             </a>
-            <a href="{{ bp }}/config" class="nav-item {% if active_page == 'config' %}active{% endif %}">
-                <span class="nav-icon">&#9881;</span>
-                <span class="nav-label">Configuration</span>
-            </a>
-            <a href="{{ bp }}/data" class="nav-item {% if active_page == 'data' %}active{% endif %}">
-                <span class="nav-icon">&#9776;</span>
-                <span class="nav-label">Test Data</span>
-            </a>
             <a href="{{ bp }}/plans" class="nav-item {% if active_page == 'plans' %}active{% endif %}">
                 <span class="nav-icon">&#9654;</span>
                 <span class="nav-label">Test Plans & Runner</span>
@@ -35,14 +27,20 @@
                 <span class="nav-icon">&#9733;</span>
                 <span class="nav-label">Results</span>
             </a>
-            <a href="{{ bp }}/scripts" class="nav-item {% if active_page == 'scripts' %}active{% endif %}">
-                <span class="nav-icon">&#9000;</span>
-                <span class="nav-label">Scripts</span>
+            <a href="{{ bp }}/data" class="nav-item {% if active_page == 'data' %}active{% endif %}">
+                <span class="nav-icon">&#9776;</span>
+                <span class="nav-label">Test Data</span>
             </a>
             <a href="{{ bp }}/slaves" class="nav-item {% if active_page == 'slaves' %}active{% endif %}">
                 <span class="nav-icon">&#9731;</span>
                 <span class="nav-label">Slave VMs</span>
             </a>
+            {% if is_localhost %}
+            <a href="{{ bp }}/scripts" class="nav-item {% if active_page == 'scripts' %}active{% endif %}">
+                <span class="nav-icon">&#9000;</span>
+                <span class="nav-label">Scripts</span>
+            </a>
+            {% endif %}
             <a href="{{ bp }}/settings" class="nav-item {% if active_page == 'settings' %}active{% endif %}" style="margin-top:auto;">
                 <span class="nav-icon">&#9881;</span>
                 <span class="nav-label">Settings</span>
@@ -77,9 +75,9 @@
             <span class="bnav-icon">&#9733;</span>
             <span class="bnav-label">Results</span>
         </a>
-        <a href="{{ bp }}/slaves" class="bottom-nav-item {% if active_page == 'slaves' %}active{% endif %}" aria-label="Slave VMs">
-            <span class="bnav-icon">&#9731;</span>
-            <span class="bnav-label">Slaves</span>
+        <a href="{{ bp }}/data" class="bottom-nav-item {% if active_page == 'data' %}active{% endif %}" aria-label="Test Data">
+            <span class="bnav-icon">&#9776;</span>
+            <span class="bnav-label">Data</span>
         </a>
         <button class="bottom-nav-more" id="bottomNavMore" aria-label="More" onclick="toggleSidebar()">
             <span class="bnav-icon">&#9776;</span>

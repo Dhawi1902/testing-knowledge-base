@@ -24,7 +24,7 @@ if not exist "%SLAVES%" (
     exit /b 1
 )
 
-REM Read properties file
+REM Read properties file (includes results_dir, test_plan, etc.)
 for /f "usebackq tokens=1,* delims==" %%A in ("%PROPS_FILE%") do (
     if not "%%A"=="" (
         if not "%%A:~0,1%"=="#" (
@@ -32,6 +32,14 @@ for /f "usebackq tokens=1,* delims==" %%A in ("%PROPS_FILE%") do (
         )
     )
 )
+
+REM Default results_dir if not set in config.properties
+if "!results_dir!"=="" set "results_dir=results/jmeter-report"
+
+REM Create timestamped result folder
+for /f "tokens=1-3 delims=/ " %%a in ('date /t') do set "TODAY=%%c%%b%%a"
+SET RESULT_DIR=!results_dir!\%TODAY%\%TODAY%_1
+if not exist "!RESULT_DIR!" mkdir "!RESULT_DIR!"
 
 REM Read slaves.txt and build comma-separated list
 FOR /F "eol=# tokens=*" %%A IN (slaves.txt) DO (
@@ -44,6 +52,6 @@ FOR /F "eol=# tokens=*" %%A IN (slaves.txt) DO (
 )
 
 REM Run JMeter test
-jmeter -n -t %test_plan% -l result/result.jtl -e -o result/report -Glogout=%logout% -Jjmeter.save.saveservice.output_format=csv
+jmeter -n -t %test_plan% -l "!RESULT_DIR!\results.jtl" -e -o "!RESULT_DIR!\report" -Glogout=%logout% -Jjmeter.save.saveservice.output_format=csv
 
 pause
