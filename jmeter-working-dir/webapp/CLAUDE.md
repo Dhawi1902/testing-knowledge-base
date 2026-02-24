@@ -20,46 +20,65 @@ A self-contained web dashboard for managing JMeter performance test projects. Th
 
 ```
 webapp/
-├── main.py                  # FastAPI app, auth middleware, first-run redirect
+├── main.py                  # FastAPI app, auth middleware, logging, first-run redirect
 ├── __main__.py              # Entry point: python -m webapp
-├── requirements.txt         # Python dependencies
+├── requirements.txt         # Python dependencies (incl. pytest, pytest-cov)
 ├── project.json             # Project-specific config (auto-generated on first run)
 ├── settings.json            # App settings (auto-generated on first save)
 ├── presets.json             # Saved test parameter presets
+├── jmeter_properties.json   # User-defined JMeter properties (F2)
 ├── jtl_filter.py            # JTL filter script (sub-results, variables, regex)
 ├── routers/
-│   ├── dashboard.py         # GET / — overview stats, runner status, quick actions
-│   ├── config.py            # GET /slaves page, VM config CRUD, slave enable/disable
+│   ├── dashboard.py         # GET / — stats, trends, alerts, slave health, disk usage
+│   ├── config.py            # Slaves page, VM config, properties, JMeter props, slave mgmt
 │   ├── test_data.py         # CSV builder, generate, split, distribute, preview
-│   ├── test_plans.py        # JMX selector, params, presets, test execution, WebSocket logs
-│   ├── results.py           # Browse results, reports, regenerate, compare, download
-│   ├── scripts.py           # Discover and run .py/.bat (localhost only)
-│   └── settings.py          # App settings CRUD, system info, server restart
+│   ├── test_plans.py        # JMX management, runner, presets, filter config
+│   ├── results.py           # Results listing, reports, regeneration, compare, download, analysis
+│   ├── scripts.py           # Discover and run .py/.bat (REMOVED from nav, kept for reference)
+│   └── settings.py          # App settings CRUD, export/import, report config, system info
 ├── services/
+│   ├── auth.py              # Token auth, access control (admin/viewer), path safety (safe_join)
 │   ├── jmeter.py            # Build JMeter commands, REPORT_OPTIMIZE_PROPS, parse JMX
-│   ├── slaves.py            # SSH operations (start/stop/status, paramiko)
+│   ├── slaves.py            # SSH operations (start/stop/status, file distribution, paramiko)
 │   ├── data.py              # CSV generation (5 column types), split, distribute
 │   ├── config_parser.py     # Read/write config.properties, vm_config, slaves (JSON format)
-│   ├── jtl_parser.py        # Parse JTL files for summary stats
+│   ├── jtl_parser.py        # Parse JTL files with JSON caching for summary stats
 │   ├── analysis.py          # Rule-based analysis + optional Ollama AI
+│   ├── report_properties.py # Report graph configuration management
 │   └── process_manager.py   # Subprocess runner with WebSocket output streaming
+├── config/
+│   └── report.properties    # Default report generation properties
 ├── prompts/
 │   └── analysis.txt         # Ollama prompt template
 ├── static/
-│   ├── css/style.css        # Complete design system (light/dark themes, responsive)
+│   ├── css/style.css        # Design system (light/dark themes, responsive, a11y)
 │   └── js/app.js            # Core utilities (API, theme, sidebar, tabs, modals, toasts)
 ├── templates/
 │   ├── base.html            # Layout: sidebar nav, topbar, mobile bottom nav, theme toggle
-│   ├── dashboard.html       # Stats grid, runner status, last run, monitoring links
+│   ├── dashboard.html       # Stats, trend chart, alerts, slave health, disk usage
 │   ├── test_plans.html      # JMX selector, params, presets, execution, live summary, logs
-│   ├── results.html         # Results table, compare, download bundle
+│   ├── results.html         # Results table, compare, download, sortable columns
 │   ├── test_data.html       # CSV builder (5 types), file management, distribution
-│   ├── slaves.html          # List/grid views, enable/disable, SSH overrides, bulk actions
-│   ├── settings.html        # 4 tabs: General, Project, Integrations, System
+│   ├── slaves.html          # List/grid views, enable/disable, SSH overrides, nicknames
+│   ├── settings.html        # 5 tabs: General, Project, Report, Integrations, System
 │   ├── setup.html           # First-run setup wizard
 │   └── token.html           # Token entry page for remote users
+├── tests/                   # pytest suite (165 tests, 53% code coverage)
+│   ├── conftest.py          # Fixtures: temp dirs, admin/viewer clients, test data
+│   ├── test_auth.py         # Auth middleware, token verification, access levels
+│   ├── test_config_api.py   # VM config, slaves, project, properties, JMeter props
+│   ├── test_dashboard_api.py # Dashboard stats, recent runs, trends, alerts
+│   ├── test_data_api.py     # CSV upload, build, preview, distribute
+│   ├── test_plans_api.py    # JMX list, params, presets, delete, filter config
+│   ├── test_results_api.py  # Results listing, reports, download, compare, regenerate
+│   ├── test_security.py     # Viewer-denied tests for all write endpoints
+│   └── test_settings_api.py # Settings CRUD, export/import, report settings
+├── logs/                    # Rotating app logs (auto-created)
 ├── CLAUDE.md                # This file
-└── PLAN.md                  # Implementation plan (Phase 13 amendments)
+├── README.md                # Setup, architecture, config reference, new machine setup
+├── PLAN.md                  # Original implementation plan
+├── PHASE_PLAN.md            # Improvement phases A-G status tracker
+└── EVALUATION.md            # Page-by-page evaluation and audit findings
 ```
 
 ## Project Root Context
@@ -97,18 +116,19 @@ Two-tier access system:
 2. Enter token → `POST /api/auth/verify` → sets `jmeter_token` cookie
 3. Subsequent requests: middleware reads cookie, sets `request.state.access_level`
 
-## Pages (7 main + 1 auth)
+## Pages (6 main + 1 auth)
 
 | # | Page | Route | Key Features |
 |---|------|-------|-------------|
-| 1 | Dashboard | `/` | Stats grid (plans, results, slaves, mode), runner status, last run, monitoring links (Grafana/InfluxDB) |
-| 2 | Test Plans & Runner | `/plans` | JMX selector, parameter form, presets (save/load/delete), global properties, filter checkbox, mode indicator, live execution with WebSocket (summary stats, slave progress, raw logs), elapsed timer |
-| 3 | Results | `/results` | Browse result folders, open/download reports, regenerate (filter → temp dir → safe swap), compare 2 runs, download bundle, access-controlled delete |
+| 1 | Dashboard | `/` | Stats grid, trend chart (last 10 runs), alerts/warnings, slave health dots, disk usage, runner status, last run summary with metrics, monitoring links |
+| 2 | Test Plans & Runner | `/plans` | JMX selector, parameter form, presets (save/load/delete), global properties, filter config, mode indicator, live execution with WebSocket (summary stats, slave progress, raw logs), elapsed timer, delete plans |
+| 3 | Results | `/results` | Browse result folders, sortable columns, open/download reports, regenerate (filter → temp dir → safe swap), compare 2 runs, download bundle, stats preview, bulk regenerate, analysis badges |
 | 4 | Test Data | `/data` | CSV builder with 5 column types (Sequential, Static, Random Pick, Expression, Sequence), templates, preview, generate, upload, distribute to slaves (copy/split modes) |
-| 5 | Slave VMs | `/slaves` | List/grid view toggle, per-slave enable/disable toggle, SSH override panel, status check, Start/Stop All, bulk actions, VM config editor |
-| 6 | Scripts | `/scripts` | Discover .py/.bat files, run with output streaming (localhost only) |
-| 7 | Settings | `/settings` | 4 tabs — General (server, appearance, runner, results, security), Project (paths, JMeter detection), Integrations (Grafana, InfluxDB, Ollama), System (JMeter/Java/Python versions, disk space) |
+| 5 | Slave VMs | `/slaves` | List/grid view, per-slave enable/disable, nicknames, SSH overrides, per-VM JMeter paths, individual + bulk start/stop, status check, Windows slave support, SSH key auth |
+| 6 | Settings | `/settings` | 5 tabs — General (server, appearance, runner, results, security), Project (paths, JMeter detection), Report (graph toggles, presets), Integrations (Grafana, InfluxDB, Ollama), System (versions, disk). Export/import settings. |
 | — | Token | `/token` | Auth token entry for remote users |
+
+**Removed:** Scripts page (`/scripts`) — router disconnected, sidebar link removed. Files kept for reference.
 
 ## JTL Filter (`jtl_filter.py`)
 
@@ -227,7 +247,31 @@ python -m webapp --host 0.0.0.0 --port 8080
 
 # Run the app (development with reload)
 cd webapp && uvicorn main:app --reload --host 0.0.0.0 --port 8080
+
+# Run tests
+python -m pytest tests/ -v --tb=short
+
+# Run tests with coverage
+python -m pytest tests/ -v --tb=short \
+  --cov=routers --cov=services --cov=main \
+  --cov-report=term-missing
 ```
+
+## CI/CD
+
+GitHub Actions workflow at `.github/workflows/webapp-tests.yml`:
+- Triggers on push/PR to `jmeter-working-dir/webapp/**`
+- Runs on Ubuntu with Python 3.13
+- Executes all 165 tests with coverage reporting
+- Uploads HTML coverage report as artifact
+
+## Logging
+
+API requests logged to `logs/app.log` via `RotatingFileHandler` (5MB max, 3 backups).
+- All API requests: method, path, status code, duration (ms)
+- Static file requests excluded from logging
+- Errors include full stack traces
+- Logger name: `jmeter_dashboard`
 
 ## Tech Stack & Dependencies
 

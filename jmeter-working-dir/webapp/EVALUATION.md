@@ -462,10 +462,10 @@ Beyond the page-specific findings and future plans, these are project-level gaps
 
 | # | Item | Detail |
 |---|------|--------|
-| 4 | **Tests** | Zero test coverage. At minimum: API endpoint tests for auth, path traversal rejection, CRUD operations. FastAPI has `TestClient` built in. |
+| 4 | ~~**Tests**~~ DONE | 165 pytest tests across 8 files (auth, config, dashboard, data, plans, results, settings, security). 53% code coverage. CI/CD via GitHub Actions. |
 | 5 | ~~**Setup wizard / first-run flow**~~ PARTIAL | Token generation done (auto-generate + show once + hash). Path validation and JMeter detection already existed in setup.html. |
-| 6 | **Server-side logging** | No structured logging. When things fail, there's no audit trail. Add Python `logging` with rotation. |
-| 7 | **API docs** | FastAPI auto-generates OpenAPI/Swagger at `/docs`. Currently not exposed or may be behind base_path. Worth enabling for development. |
+| 6 | ~~**Server-side logging**~~ DONE | RotatingFileHandler to `logs/app.log` (5MB max, 3 backups). API requests logged with method, path, status, duration. Errors include stack traces. |
+| 7 | ~~**API docs**~~ DONE | FastAPI auto-generated docs at `{base_path}/docs` (Swagger UI) and `{base_path}/redoc` (ReDoc). |
 | 8 | ~~**Remove Scripts page**~~ DONE | Router disconnected from main.py, sidebar link removed from base.html. Files kept for reference. |
 
 ### Nice to Have
@@ -473,20 +473,20 @@ Beyond the page-specific findings and future plans, these are project-level gaps
 | # | Item | Detail |
 |---|------|--------|
 | 9 | **Setup script** | `setup.py` or shell script that checks prerequisites (Python, JMeter, Java), installs pip deps, creates default configs. Replaces need for Docker — JMeter needs bare-metal resources for accurate load generation. |
-| 10 | **README for webapp** | Setup instructions, architecture overview, configuration reference. |
-| 11 | **Mobile UX audit** | Test plans page has mobile action bar, but other pages haven't been checked for mobile. |
-| 12 | **Accessibility** | No a11y audit done. Keyboard navigation, screen reader labels, focus management in modals. |
+| 10 | ~~**README for webapp**~~ DONE | `webapp/README.md` — setup instructions, architecture overview, config reference, testing, logging, new machine setup. |
+| 11 | ~~**Mobile UX audit**~~ DONE | Removed hardcoded SVG max-width on dashboard. All pages checked for responsive behavior. |
+| 12 | ~~**Accessibility**~~ DONE | ARIA roles on modals (`role="dialog"`, `aria-modal`), tabs (`role="tablist"`, `aria-selected`), table headers (`scope`, `aria-sort`, keyboard nav), focus-visible styles, aria-labels on buttons. |
 | 13 | **Error boundary / global error handler** | Frontend currently has per-function try/catch. A global `api()` wrapper error handler would be more consistent. |
 
 ### Fix Priority Order
 
-If tackling everything, this is the recommended sequence:
+All items complete:
 
-1. ~~**Security fixes**~~ DONE — path traversal, token hashing, auth defaults
+1. ~~**Security fixes**~~ DONE — path traversal, token hashing, auth defaults, config properties auth bypass
 2. ~~**Bug fixes**~~ DONE — stale variable names from refactoring
 3. ~~**Remove dead code**~~ DONE — Scripts page removed, backward compat fallbacks removed
-4. **Add tests** — at least for auth and path traversal
+4. ~~**Add tests**~~ DONE — 165 tests, 53% code coverage, CI/CD via GitHub Actions
 5. ~~**Setup wizard**~~ DONE — first-run token generation + path validation
-6. ~~**Cross-cutting cleanup**~~ DONE — `escAttr` applied, error messages genericized. Inline styles kept (cosmetic, no impact).
-7. **Dashboard improvements** — Tier 1 (last run summary, run history, disk usage)
-8. **Future features** — Windows slaves, properties management, etc.
+6. ~~**Cross-cutting cleanup**~~ DONE — `escAttr` applied, error messages genericized, inline styles → CSS classes
+7. ~~**Dashboard improvements**~~ DONE — Tier 1 (last run summary, recent runs, disk usage) + Tier 2 (trend chart, slave health, alerts)
+8. ~~**Future features**~~ DONE — Windows slaves, properties management, SSH key auth, individual slave start/stop, per-VM JMeter paths, slave nicknames, filter gap fix, stats preview, bulk regenerate

@@ -1110,19 +1110,24 @@ Build in dependency order, grouping related changes:
 
 | # | Item | Status |
 |---|------|--------|
-| 13.1 | Token-based access control | Pending |
-| 13.2 | Conditional edit button | Pending |
-| 13.3 | Scripts page hidden | Pending |
-| 13.4 | Remove endpoints | Pending |
-| 13.5 | System info in settings | Pending |
-| 13.6 | Local mode | Pending |
-| 13.7 | Slaves enable/disable | Pending |
-| 13.8 | Filter username toggle | Pending |
-| 13.9 | Config snapshot per run | Pending |
-| 13.10 | JTL filter + report regen | Pending |
-| 13.11 | Report open in new tab | Pending |
-| 13.12 | Results comparison | Pending |
-| 13.13 | Analysis cache | Pending |
-| 13.14 | Dashboard enhancements | Pending |
-| 13.15 | Live logs: auto-scroll + summary | Pending |
-| 13.16 | Slave progress during test | Pending |
+| 13.1 | Token-based access control | DONE |
+| 13.2 | Conditional edit button | DONE |
+| 13.3 | Scripts page hidden | DONE (removed from nav + router) |
+| 13.4 | Remove endpoints | DONE |
+| 13.5 | System info in settings | DONE |
+| 13.6 | Local mode | DONE |
+| 13.7 | Slaves enable/disable | DONE |
+| 13.8 | Filter username toggle | DONE |
+| 13.9 | Config snapshot per run | DONE |
+| 13.10 | JTL filter + report regen | DONE |
+| 13.11 | Report open in new tab | DONE |
+| 13.12 | Results comparison | DONE |
+| 13.13 | Analysis cache | DONE |
+| 13.14 | Dashboard enhancements | DONE (Tier 1 + Tier 2) |
+| 13.15 | Live logs: auto-scroll + summary | DONE |
+| 13.16 | Slave progress during test | DONE |
+
+All Phase 13 items completed. Additional improvements beyond Phase 13:
+- Phases A-G (security, code quality, inline styles, features, dashboard tier 2, future features, project-level)
+- CI/CD via GitHub Actions with 165 tests
+- See `PHASE_PLAN.md` for full status.

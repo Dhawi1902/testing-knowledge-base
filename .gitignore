@@ -6,8 +6,8 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Claude Code
-.claude/
+# Claude Code (tracked for cross-machine continuity)
+# .claude/
 
 # Environment
 .env

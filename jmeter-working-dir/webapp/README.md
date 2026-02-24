@@ -29,7 +29,9 @@ webapp/
 │   ├── jmeter.py        ← JMeter CLI wrapper
 │   ├── jtl_parser.py    ← JTL parsing with JSON caching
 │   ├── slaves.py        ← SSH operations, file distribution
+│   ├── data.py          ← CSV generation, split, distribute
 │   ├── analysis.py      ← AI-powered result analysis
+│   ├── report_properties.py ← Report graph configuration
 │   └── process_manager.py ← JMeter process lifecycle
 ├── templates/           ← Jinja2 HTML (extends base.html)
 ├── static/              ← CSS + JS

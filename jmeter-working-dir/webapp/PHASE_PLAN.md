@@ -104,3 +104,12 @@ Pages affected: settings.html, test_data.html, slaves.html, test_plans.html, res
 | Phase E (Dashboard Tier 2) | DONE | 129 passing |
 | Phase F (Future features) | DONE | 137 passing |
 | Phase G (Project-level) | DONE | 137 passing |
+| CI/CD + Test Coverage Expansion | DONE | 165 passing (53% code coverage) |
+
+## CI/CD
+
+- **GitHub Actions**: `.github/workflows/webapp-tests.yml` triggers on push/PR to `jmeter-working-dir/webapp/**`
+- **Test suite**: 165 pytest tests across 8 test files
+- **Coverage**: 53% code coverage (routers + services + main), reported via pytest-cov
+- **Artifact**: HTML coverage report uploaded as GitHub Actions artifact
+- **Security bug found during testing**: `PUT /api/config/properties` was missing `_check_access()` — fixed
