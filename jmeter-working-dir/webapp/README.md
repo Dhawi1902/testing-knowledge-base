@@ -33,7 +33,7 @@ webapp/
 │   └── process_manager.py ← JMeter process lifecycle
 ├── templates/           ← Jinja2 HTML (extends base.html)
 ├── static/              ← CSS + JS
-├── tests/               ← pytest suite (137 tests)
+├── tests/               ← pytest suite (165 tests)
 └── logs/                ← Rotating app logs (auto-created)
 ```
 
@@ -73,8 +73,30 @@ FastAPI auto-generated docs are available at:
 ## Running Tests
 
 ```bash
-cd webapp
-python -m pytest tests/ -v
+cd jmeter-working-dir/webapp
+pip install -r requirements.txt
+python -m pytest tests/ -v --tb=short
+```
+
+With coverage report:
+
+```bash
+python -m pytest tests/ -v --tb=short \
+  --cov=routers --cov=services --cov=main \
+  --cov-report=term-missing
+```
+
+CI runs automatically via GitHub Actions on push/PR to `jmeter-working-dir/webapp/**`.
+
+## Setup on a New Machine
+
+```bash
+git clone https://github.com/Dhawi1902/testing-knowledge-base.git
+cd testing-knowledge-base/jmeter-working-dir/webapp
+python -m venv venv
+source venv/bin/activate   # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+python -m uvicorn main:app --reload --port 8080
 ```
 
 ## Logging

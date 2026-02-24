@@ -6,6 +6,14 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Claude Code
+.claude/
+
 # Environment
 .env
 *.log
+
+# Python
+__pycache__/
+*.py[cod]
+.coverage
