@@ -184,13 +184,13 @@ class WSManager {
         this.ws.onmessage = (e) => {
             if (this.onMessage) this.onMessage(e.data);
         };
-        this.ws.onclose = () => {
-            if (!this._intentionalClose && this._autoReconnect && this._retryCount < this._maxRetries) {
+        this.ws.onclose = (e) => {
+            if (!this._intentionalClose && this._autoReconnect && this._retryCount < this._maxRetries && e.code !== 4001) {
                 const delay = Math.min(1000 * Math.pow(2, this._retryCount), 30000);
                 this._retryCount++;
                 setTimeout(() => this.connect(), delay);
             } else {
-                if (this.onClose) this.onClose();
+                if (this.onClose) this.onClose(e.code);
             }
         };
         this.ws.onerror = (e) => {

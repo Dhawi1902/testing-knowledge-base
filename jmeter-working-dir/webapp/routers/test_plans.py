@@ -165,7 +165,7 @@ async def ws_runner_logs(websocket: WebSocket):
         start_index = int(websocket.query_params.get("from", "0"))
         if not jmeter_process_manager.is_running and not jmeter_process_manager.is_draining:
             await websocket.send_text("[No active test]")
-            await websocket.close()
+            await websocket.close(code=4001, reason="no_active_test")
             return
         async for line in jmeter_process_manager.subscribe_output(start_index):
             await websocket.send_text(line)

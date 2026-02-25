@@ -69,6 +69,10 @@
                 <span class="toggle-track"></span>
                 <span class="text-sm">Filter labels</span>
             </label>
+            <span id="filterPatternDisplay" class="text-sm text-light" style="font-family:var(--font-mono);display:none;">
+                pattern: <code id="filterPatternText" style="background:var(--color-primary-bg,rgba(59,130,246,0.1));padding:2px 6px;border-radius:4px;"></code>
+                <a href="{{ bp }}/settings" class="text-sm" style="margin-left:4px;" title="Edit filter pattern in Settings">edit</a>
+            </span>
             {% endif %}
             <a href="#" id="lastRunLink" class="text-sm" style="display:none;">Last run &rarr;</a>
         </div>
@@ -450,6 +454,17 @@ async function loadFilterConfig() {
         const el = document.getElementById('filterSubResults');
         if (el) el.checked = data.filter_sub_results;
         labelPattern = data.label_pattern || '';
+        // Show current pattern next to toggle
+        const patternDisplay = document.getElementById('filterPatternDisplay');
+        const patternText = document.getElementById('filterPatternText');
+        if (patternDisplay && patternText) {
+            if (labelPattern) {
+                patternText.textContent = labelPattern;
+                patternDisplay.style.display = '';
+            } else {
+                patternDisplay.style.display = 'none';
+            }
+        }
     } catch(e) { console.error('loadFilterConfig:', e); }
 }
 
@@ -572,7 +587,12 @@ async function connectLogStream() {
         appendLog('logOutput', line);
         parseLogLine(line);
     };
-    wm.onClose = () => {
+    wm.onClose = (code) => {
+        if (code === 4001) {
+            // Server says no active test — test already finished before WS connected
+            setRunnerState(false);
+            return;
+        }
         appendLog('logOutput', '\n--- Connection closed ---', 'log-info');
         const wasRunning = isTestRunning;
         setRunnerState(false);

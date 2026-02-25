@@ -163,13 +163,23 @@ async def api_system_info(request: Request):
     denied = _check_access(request)
     if denied:
         return denied
-    # JMeter version
-    jmeter_version = _run_cmd(["jmeter", "--version"])
-    # Extract just the version line if verbose output
-    for line in jmeter_version.splitlines():
-        if "apache jmeter" in line.lower() or line.strip().startswith("5.") or line.strip().startswith("4."):
-            jmeter_version = line.strip()
-            break
+    # JMeter version — read from ApacheJMeter.jar manifest (subprocess hangs on Windows .bat)
+    project = request.app.state.project
+    jmeter_cmd = project.get("jmeter_path", "jmeter")
+    jmeter_version = "N/A"
+    try:
+        jmeter_bin_dir = Path(jmeter_cmd).resolve().parent
+        jar_path = jmeter_bin_dir / "ApacheJMeter.jar"
+        if jar_path.is_file():
+            import zipfile
+            with zipfile.ZipFile(jar_path) as zf:
+                with zf.open("META-INF/MANIFEST.MF") as mf:
+                    for line in mf.read().decode().splitlines():
+                        if line.startswith("Implementation-Version:"):
+                            jmeter_version = "Apache JMeter " + line.split(":", 1)[1].strip()
+                            break
+    except Exception:
+        pass
 
     # Java version
     java_out = _run_cmd(["java", "-version"])
