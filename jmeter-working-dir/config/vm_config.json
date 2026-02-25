@@ -1,7 +1,7 @@
 {
   "ssh_config": {
     "user": "opc",
-    "key_file": "C:/Users/MuhammadAl-QardhawiB/Documents/2026/testing-knowledge-base/jmeter-working-dir/ssh_key/ssh-key-2026-02-25.key",
+    "key_file": "C:/Users/user/Documents/VTC/2026/testing-knowledge-base/jmeter-working-dir/ssh_key/ssh-key-2026-02-25.key",
     "dest_path": "/home/opc/jmeter-PT/linux/test_data/",
     "extensions_path": "/opt/jmeter/lib/ext/"
   },

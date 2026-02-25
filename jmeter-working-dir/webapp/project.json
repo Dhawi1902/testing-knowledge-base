@@ -1,7 +1,7 @@
 {
   "name": "PerfTest",
   "project_root": "..",
-  "jmeter_path": "C:\\Users\\MuhammadAl-QardhawiB\\Documents\\tools\\apache-jmeter-5.6.3\\bin\\jmeter.bat",
+  "jmeter_path": "C:\\Users\\user\\Documents\\apache-jmeter-5.6.3\\apache-jmeter-5.6.3\\bin\\jmeter.bat",
   "paths": {
     "jmx_dir": "test_plan",
     "config_dir": "config",

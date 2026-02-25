@@ -1,23 +1,4 @@
 {
-  "Baseline": {
-    "student": "10",
-    "rampUp": "10",
-    "loop": "1",
-    "thinkTime": "3000"
-  },
-  "Stress": {
-    "student": "100",
-    "rampUp": "60",
-    "loop": "1",
-    "thinkTime": "500"
-  },
-  "Spike": {
-    "student": "500",
-    "rampUp": "30",
-    "loop": "1",
-    "thinkTime": "100",
-    "syncTimer": "true"
-  },
   "test 1": {
     "student": "10",
     "rampUp": "10",
@@ -29,5 +10,11 @@
     "smoke": "true",
     "thinkTime": "3000",
     "student_data": "test_data/student_data.csv"
+  },
+  "E2E Test Preset": {
+    "threads": "99",
+    "rampup": "5",
+    "duration": "30",
+    "thinkTime": "1000"
   }
 }
