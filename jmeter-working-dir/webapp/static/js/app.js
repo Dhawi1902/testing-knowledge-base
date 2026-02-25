@@ -162,22 +162,36 @@ function confirmAction(message) {
 
 /* ===== WebSocket Manager ===== */
 class WSManager {
-    constructor(url) {
+    constructor(url, options = {}) {
         this.url = url;
         this.ws = null;
         this.onMessage = null;
         this.onClose = null;
         this.onError = null;
+        this._intentionalClose = false;
+        this._retryCount = 0;
+        this._maxRetries = options.maxRetries || 10;
+        this._autoReconnect = options.autoReconnect !== false;
     }
 
     connect() {
+        this._intentionalClose = false;
         const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
         this.ws = new WebSocket(`${protocol}//${location.host}${BASE_PATH}${this.url}`);
+        this.ws.onopen = () => {
+            this._retryCount = 0;
+        };
         this.ws.onmessage = (e) => {
             if (this.onMessage) this.onMessage(e.data);
         };
         this.ws.onclose = () => {
-            if (this.onClose) this.onClose();
+            if (!this._intentionalClose && this._autoReconnect && this._retryCount < this._maxRetries) {
+                const delay = Math.min(1000 * Math.pow(2, this._retryCount), 30000);
+                this._retryCount++;
+                setTimeout(() => this.connect(), delay);
+            } else {
+                if (this.onClose) this.onClose();
+            }
         };
         this.ws.onerror = (e) => {
             if (this.onError) this.onError(e);
@@ -192,6 +206,7 @@ class WSManager {
     }
 
     close() {
+        this._intentionalClose = true;
         if (this.ws) this.ws.close();
     }
 }

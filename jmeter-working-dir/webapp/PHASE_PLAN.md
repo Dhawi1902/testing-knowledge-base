@@ -105,11 +105,33 @@ Pages affected: settings.html, test_data.html, slaves.html, test_plans.html, res
 | Phase F (Future features) | DONE | 137 passing |
 | Phase G (Project-level) | DONE | 137 passing |
 | CI/CD + Test Coverage Expansion | DONE | 165 passing (53% code coverage) |
+| Phase 14: Webapp improvements + distributed testing | DONE | 198 passing (56% code coverage) |
 
 ## CI/CD
 
 - **GitHub Actions**: `.github/workflows/webapp-tests.yml` triggers on push/PR to `jmeter-working-dir/webapp/**`
-- **Test suite**: 165 pytest tests across 8 test files
-- **Coverage**: 53% code coverage (routers + services + main), reported via pytest-cov
+- **Test suite**: 198 pytest tests across 8 test files
+- **Coverage**: 56% code coverage (routers + services + main), minimum 55% enforced
 - **Artifact**: HTML coverage report uploaded as GitHub Actions artifact
 - **Security bug found during testing**: `PUT /api/config/properties` was missing `_check_access()` — fixed
+
+## Phase 14 Changes (2026-02-25)
+
+### Webapp
+- New services: `jmx_patcher.py` (JMX XML patching), `report.py` (async report regen), `settings.py` (settings service)
+- `jmeter.py`: Added `-Jserver.rmi.ssl.disable=true` for distributed mode, JMX patching integration
+- `settings.json` structure: Removed `domain`, added `filter` and `report` sections with graph toggles
+- `project.json`: Updated JMeter path
+- 33 new tests added (165 → 198)
+
+### Infrastructure
+- 2 OCI Linux slaves set up (Oracle Linux 9, VM.Standard.E5.Flex)
+- `setup-linux-slave.sh`: Automated setup script for new OCI instances
+- `Dummy-HTTP-Test.jmx`: Validation test plan (httpbin.org)
+- `slaves.txt`: Updated with OCI IPs
+- `vm_config.json`: Updated for SSH key auth (opc user, key-based)
+
+### Documentation
+- New: `jmeter/docs/15-oci-linux-slave-setup.md` (full OCI slave setup guide)
+- Updated: `jmeter/docs/12-distributed-testing.md` (practical lessons learned)
+- Updated: `jmeter/README.md` (added doc 15 entry)

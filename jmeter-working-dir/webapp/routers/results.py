@@ -1,5 +1,4 @@
 import asyncio
-import io
 import json
 import os
 import re
@@ -8,7 +7,6 @@ import subprocess
 import sys
 import tempfile
 import zipfile
-from datetime import datetime
 from pathlib import Path
 
 from fastapi import APIRouter, Request
@@ -17,9 +15,8 @@ from fastapi.templating import Jinja2Templates
 
 from services.auth import check_access as _check_access, safe_join
 from services.config_parser import resolve_path, read_json_config
-from services.report_properties import cleanup_report_html
-from services.jmeter import build_report_command
-from services.jtl_parser import list_result_folders, find_result_folder, parse_jtl, compare_runs
+from services.report import regenerate_report as _regen_report
+from services.jtl_parser import list_result_folders, find_result_folder, parse_jtl, compare_runs, ensure_summary
 from services.analysis import (
     preprocess_jtl,
     rule_based_analysis,
@@ -34,9 +31,24 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 router = APIRouter()
 
-# Track active regeneration — lock prevents concurrent runs, folder tracks which one
+def _find_jtl(folder_path: Path) -> Path | None:
+    """Find the best JTL file for stats: prefer filtered.jtl over results.jtl.
+
+    filtered.jtl is the source of truth when filtering was applied at run time
+    or regeneration time. Falls back to results.jtl, then any *.jtl file.
+    """
+    filtered = folder_path / "filtered.jtl"
+    if filtered.exists():
+        return filtered
+    results_jtl = folder_path / "results.jtl"
+    if results_jtl.exists():
+        return results_jtl
+    jtl_files = list(folder_path.glob("*.jtl"))
+    return jtl_files[0] if jtl_files else None
+
+
+# Track active regeneration — lock prevents concurrent runs
 _regen_lock = asyncio.Lock()
-_active_regen: subprocess.Popen | None = None
 _active_regen_folder: str | None = None
 
 
@@ -51,11 +63,45 @@ async def results_page(request: Request):
 
 
 @router.get("/api/results/list")
-async def api_list_results(request: Request):
+async def api_list_results(request: Request, page: int = 0, per_page: int = 0, q: str = ""):
+    """List results with optional pagination and search.
+
+    page/per_page=0 means no pagination (return all). page is 1-based.
+    q filters by folder name (case-insensitive substring match).
+    Each folder includes compact metrics from run_summary.json when available.
+    """
     project = request.app.state.project
     results_dir = resolve_path(project, "results_dir")
     folders = list_result_folders(results_dir)
-    return {"folders": folders}
+
+    # Search filter
+    if q:
+        q_lower = q.lower()
+        folders = [f for f in folders if q_lower in f["name"].lower()]
+
+    total = len(folders)
+
+    # Pagination
+    if page > 0 and per_page > 0:
+        start = (page - 1) * per_page
+        folders = folders[start:start + per_page]
+
+    # Enrich with metrics from run_summary.json (lazy — computed on first access)
+    for f in folders:
+        folder_path = Path(f["path"])
+        summary = ensure_summary(folder_path)
+        if summary and "stats" in summary:
+            s = summary["stats"]
+            f["metrics"] = {
+                "avg": s.get("avg"),
+                "p95": s.get("p95"),
+                "error_pct": s.get("error_pct"),
+                "throughput": s.get("throughput"),
+                "peak_vus": s.get("peak_vus"),
+                "total_samples": s.get("total_samples"),
+            }
+
+    return {"folders": folders, "total": total}
 
 
 @router.get("/api/results/{folder}/stats")
@@ -65,10 +111,10 @@ async def api_result_stats(request: Request, folder: str):
     folder_path = find_result_folder(results_dir, folder)
     if not folder_path:
         return JSONResponse(status_code=404, content={"error": "Folder not found"})
-    jtl_files = list(folder_path.glob("*.jtl"))
-    if not jtl_files:
+    jtl_path = _find_jtl(folder_path)
+    if not jtl_path:
         return JSONResponse(status_code=404, content={"error": "No JTL file found"})
-    stats = parse_jtl(jtl_files[0])
+    stats = parse_jtl(jtl_path)
     return stats
 
 
@@ -156,12 +202,11 @@ async def api_delete_result(request: Request, folder: str):
 
 @router.post("/api/results/{folder}/regenerate")
 async def api_regenerate_report(request: Request, folder: str):
-    """Regenerate HTML report: filter JTL, then generate report with current graph settings."""
+    """Regenerate HTML report using async service (non-blocking)."""
     denied = _check_access(request)
     if denied:
         return denied
 
-    # Parse optional filter parameters from request body
     body = {}
     try:
         body = await request.json()
@@ -170,104 +215,31 @@ async def api_regenerate_report(request: Request, folder: str):
     filter_sub_results = body.get("filter_sub_results", True)
     label_pattern = body.get("label_pattern", "")
 
-    project = request.app.state.project
-    results_dir = resolve_path(project, "results_dir")
-    folder_path = find_result_folder(results_dir, folder)
-    if not folder_path:
-        return JSONResponse(status_code=404, content={"error": "Folder not found"})
-
-    # Find original JTL (always use results.jtl, not filtered.jtl)
-    jtl_path = folder_path / "results.jtl"
-    if not jtl_path.exists():
-        jtl_files = [f for f in folder_path.glob("*.jtl") if f.name != "filtered.jtl"]
-        if not jtl_files:
-            return JSONResponse(status_code=404, content={"error": "No JTL file found"})
-        jtl_path = jtl_files[0]
-
-    report_dir = folder_path / "report"
-    report_tmp = folder_path / "report_tmp"
-    filtered_jtl_path = folder_path / "filtered.jtl"
-
-    # Clean up leftovers
-    if report_tmp.exists():
-        shutil.rmtree(str(report_tmp))
-    if filtered_jtl_path.exists():
-        filtered_jtl_path.unlink()
-
-    # Validate regex pattern before spawning subprocess
     if label_pattern:
         try:
             re.compile(label_pattern)
         except re.error as e:
             return JSONResponse(status_code=400, content={"error": f"Invalid regex pattern: {e}"})
 
-    jmeter_path = project.get("jmeter_path", "jmeter")
-    app_dir = Path(__file__).resolve().parent.parent
+    project = request.app.state.project
+    results_dir = resolve_path(project, "results_dir")
+    folder_path = find_result_folder(results_dir, folder)
+    if not folder_path:
+        return JSONResponse(status_code=404, content={"error": "Folder not found"})
 
-    global _active_regen, _active_regen_folder
-
+    global _active_regen_folder
     if _regen_lock.locked():
         return JSONResponse(status_code=409, content={"error": f"Regeneration already in progress for '{_active_regen_folder}'"})
+
+    jmeter_path = project.get("jmeter_path", "jmeter")
 
     async with _regen_lock:
         _active_regen_folder = folder
         try:
-            # Step 1: Filter JTL (removes sub-results + unresolved variables + optional label pattern)
-            source_jtl = jtl_path
-            if filter_sub_results:
-                filter_cmd = [sys.executable, str(app_dir / "jtl_filter.py"), str(jtl_path), str(filtered_jtl_path)]
-                if label_pattern:
-                    filter_cmd.append(label_pattern)
-                filter_result = subprocess.run(filter_cmd, capture_output=True, text=True, timeout=600)
-                if filter_result.returncode != 0:
-                    return JSONResponse(status_code=500, content={"error": f"Filter failed: {filter_result.stderr}"})
-                source_jtl = filtered_jtl_path
-
-            # Step 2: Generate report to temp dir (don't destroy old report until success)
-            proc = subprocess.Popen(
-                build_report_command(jmeter_path, str(source_jtl), str(report_tmp)),
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
-            )
-            _active_regen = proc
-            try:
-                stdout, stderr = proc.communicate(timeout=600)
-            except subprocess.TimeoutExpired:
-                proc.kill()
-                proc.communicate()
-                if report_tmp.exists():
-                    shutil.rmtree(str(report_tmp))
-                return JSONResponse(status_code=500, content={"error": "Report generation timed out (10 min)"})
-            finally:
-                _active_regen = None
-            # Clean up filtered JTL
-            if filtered_jtl_path.exists():
-                filtered_jtl_path.unlink()
-
-            if proc.returncode != 0:
-                # Failed — clean up temp, keep old report intact
-                if report_tmp.exists():
-                    shutil.rmtree(str(report_tmp))
-                return JSONResponse(status_code=500, content={"error": f"Report generation failed: {stderr[:500]}"})
-
-            # Post-process: remove disabled graph panels from HTML
-            cleanup_report_html(report_tmp)
-
-            # Success — swap temp report in
-            if report_dir.exists():
-                shutil.rmtree(str(report_dir))
-            report_tmp.rename(report_dir)
-
-            # Save regeneration filter params for future pre-fill
-            regen_info = {
-                "timestamp": datetime.now().isoformat(),
-                "filter_sub_results": filter_sub_results,
-                "label_pattern": label_pattern,
-            }
-            (folder_path / "regen_info.json").write_text(
-                json.dumps(regen_info, indent=2), encoding="utf-8"
-            )
-
-            return {"ok": True, "message": "Report regenerated"}
+            result = await _regen_report(folder_path, jmeter_path, filter_sub_results, label_pattern)
+            if not result.get("ok"):
+                return JSONResponse(status_code=500, content={"error": result.get("error", "Unknown error")})
+            return result
         finally:
             _active_regen_folder = None
 
@@ -280,31 +252,35 @@ async def api_result_labels(request: Request, folder: str):
     folder_path = find_result_folder(results_dir, folder)
     if not folder_path:
         return JSONResponse(status_code=404, content={"error": "Folder not found"})
-    jtl_files = list(folder_path.glob("*.jtl"))
-    if not jtl_files:
+    jtl_path = _find_jtl(folder_path)
+    if not jtl_path:
         return JSONResponse(status_code=404, content={"error": "No JTL file found"})
-    stats = parse_jtl(jtl_files[0])
+    stats = parse_jtl(jtl_path)
     labels = [t["label"] for t in stats.get("transactions", [])]
     return {"labels": labels}
 
 
 @router.post("/api/results/bulk-regenerate")
 async def api_bulk_regenerate(request: Request):
-    """Regenerate reports for multiple result folders sequentially (F11)."""
+    """Regenerate reports for multiple folders sequentially using async service.
+
+    Uses per-result saved filter settings from regen_info.json/run_summary.json
+    when use_saved_settings=true, falling back to request body defaults.
+    """
     denied = _check_access(request)
     if denied:
         return denied
     body = await request.json()
     folders = body.get("folders", [])
-    filter_sub_results = body.get("filter_sub_results", True)
-    label_pattern = body.get("label_pattern", "")
+    default_filter = body.get("filter_sub_results", True)
+    default_pattern = body.get("label_pattern", "")
+    use_saved = body.get("use_saved_settings", False)
     if not folders:
         return JSONResponse(status_code=400, content={"error": "No folders specified"})
 
     project = request.app.state.project
     results_dir = resolve_path(project, "results_dir")
     jmeter_path = project.get("jmeter_path", "jmeter")
-    app_dir = Path(__file__).resolve().parent.parent
     results = []
 
     for folder_name in folders:
@@ -312,56 +288,24 @@ async def api_bulk_regenerate(request: Request):
         if not folder_path:
             results.append({"folder": folder_name, "ok": False, "error": "Not found"})
             continue
-        jtl_path = folder_path / "results.jtl"
-        if not jtl_path.exists():
-            jtl_files = [f for f in folder_path.glob("*.jtl") if f.name != "filtered.jtl"]
-            if not jtl_files:
-                results.append({"folder": folder_name, "ok": False, "error": "No JTL"})
-                continue
-            jtl_path = jtl_files[0]
 
-        report_dir = folder_path / "report"
-        report_tmp = folder_path / "report_tmp"
-        filtered_jtl = folder_path / "filtered.jtl"
+        # Per-result settings (14.4.7)
+        filt = default_filter
+        pat = default_pattern
+        if use_saved:
+            for info_name in ("regen_info.json", "run_summary.json", "run_info.json"):
+                info_path = folder_path / info_name
+                if info_path.exists():
+                    try:
+                        info = json.loads(info_path.read_text(encoding="utf-8"))
+                        filt = info.get("filter_sub_results", filt)
+                        pat = info.get("label_pattern", pat)
+                        break
+                    except Exception:
+                        pass
 
-        if report_tmp.exists():
-            shutil.rmtree(str(report_tmp))
-        if filtered_jtl.exists():
-            filtered_jtl.unlink()
-
-        try:
-            source = jtl_path
-            if filter_sub_results:
-                filter_cmd = [sys.executable, str(app_dir / "jtl_filter.py"), str(jtl_path), str(filtered_jtl)]
-                if label_pattern:
-                    filter_cmd.append(label_pattern)
-                fr = subprocess.run(filter_cmd, capture_output=True, text=True, timeout=600)
-                if fr.returncode != 0:
-                    results.append({"folder": folder_name, "ok": False, "error": "Filter failed"})
-                    continue
-                source = filtered_jtl
-
-            proc = subprocess.run(
-                build_report_command(jmeter_path, str(source), str(report_tmp)),
-                capture_output=True, text=True, timeout=600,
-            )
-            if filtered_jtl.exists():
-                filtered_jtl.unlink()
-            if proc.returncode != 0:
-                if report_tmp.exists():
-                    shutil.rmtree(str(report_tmp))
-                results.append({"folder": folder_name, "ok": False, "error": "Report gen failed"})
-                continue
-
-            cleanup_report_html(report_tmp)
-            if report_dir.exists():
-                shutil.rmtree(str(report_dir))
-            report_tmp.rename(report_dir)
-            results.append({"folder": folder_name, "ok": True})
-        except Exception:
-            results.append({"folder": folder_name, "ok": False, "error": "Unexpected error"})
-            if report_tmp.exists():
-                shutil.rmtree(str(report_tmp))
+        result = await _regen_report(folder_path, jmeter_path, filt, pat)
+        results.append({"folder": folder_name, **result})
 
     return {"results": results}
 
@@ -374,10 +318,11 @@ async def api_filter_info(request: Request, folder: str):
     folder_path = find_result_folder(results_dir, folder)
     if not folder_path:
         return {"filter_sub_results": True, "label_pattern": ""}
-    # Prefer regen_info (last regeneration), fall back to run_info (original test run)
+    # Prefer regen_info (last regeneration), fall back to run_summary, then run_info
     regen_info = folder_path / "regen_info.json"
+    run_summary = folder_path / "run_summary.json"
     run_info = folder_path / "run_info.json"
-    for info_file in (regen_info, run_info):
+    for info_file in (regen_info, run_summary, run_info):
         if info_file.exists():
             try:
                 data = json.loads(info_file.read_text(encoding="utf-8"))
@@ -396,12 +341,10 @@ async def api_stop_regenerate(request: Request):
     denied = _check_access(request)
     if denied:
         return denied
-    global _active_regen, _active_regen_folder
-    if _active_regen and _active_regen.poll() is None:
-        _active_regen.kill()
-        _active_regen = None
+    global _active_regen_folder
+    if _regen_lock.locked():
         _active_regen_folder = None
-        return {"ok": True, "message": "Regeneration stopped"}
+        return {"ok": True, "message": "Regeneration will be stopped"}
     return {"ok": True, "message": "No active regeneration"}
 
 
@@ -410,15 +353,14 @@ async def api_compare_results(request: Request, folder1: str, folder2: str):
     project = request.app.state.project
     results_dir = resolve_path(project, "results_dir")
 
-    def find_jtl(folder_name: str) -> Path | None:
+    def locate_jtl(folder_name: str) -> Path | None:
         fp = find_result_folder(results_dir, folder_name)
         if not fp:
             return None
-        jtls = list(fp.glob("*.jtl"))
-        return jtls[0] if jtls else None
+        return _find_jtl(fp)
 
-    jtl1 = find_jtl(folder1)
-    jtl2 = find_jtl(folder2)
+    jtl1 = locate_jtl(folder1)
+    jtl2 = locate_jtl(folder2)
     if not jtl1 or not jtl2:
         return JSONResponse(status_code=404, content={"error": "JTL file not found in one or both folders"})
     result = compare_runs(jtl1, jtl2)
@@ -434,7 +376,7 @@ def _add_report_to_zip(zf: zipfile.ZipFile, folder_path: Path, folder_name: str,
         for f in report_dir.rglob("*"):
             if f.is_file():
                 zf.write(f, f"{folder_name}/report/{f.relative_to(report_dir)}")
-    for meta in ("run_info.json", "config.properties"):
+    for meta in ("run_summary.json", "run_info.json", "config.properties"):
         meta_path = folder_path / meta
         if meta_path.exists():
             zf.write(meta_path, f"{folder_name}/{meta}")
@@ -445,7 +387,7 @@ def _add_report_to_zip(zf: zipfile.ZipFile, folder_path: Path, folder_name: str,
 
 def _zip_report_to_file(folder_path: Path, folder_name: str, zip_path: Path):
     """Create a zip of the report directory on disk (excludes JTL files)."""
-    with zipfile.ZipFile(str(zip_path), "w", zipfile.ZIP_STORED) as zf:
+    with zipfile.ZipFile(str(zip_path), "w", zipfile.ZIP_DEFLATED) as zf:
         _add_report_to_zip(zf, folder_path, folder_name)
 
 
@@ -486,7 +428,7 @@ async def api_download_report(request: Request, folder: str, include_jtl: bool =
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")
     tmp.close()
     try:
-        with zipfile.ZipFile(str(tmp.name), "w", zipfile.ZIP_STORED) as zf:
+        with zipfile.ZipFile(str(tmp.name), "w", zipfile.ZIP_DEFLATED) as zf:
             _add_report_to_zip(zf, folder_path, folder, include_jtl=include_jtl)
         suffix = "_full" if include_jtl else "_report"
         return FileResponse(
@@ -513,7 +455,7 @@ async def api_download_bundle(request: Request):
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")
     tmp.close()
     try:
-        with zipfile.ZipFile(tmp.name, "w", zipfile.ZIP_STORED) as zf:
+        with zipfile.ZipFile(tmp.name, "w", zipfile.ZIP_DEFLATED) as zf:
             for folder_name in folders:
                 folder_path = find_result_folder(results_dir, folder_name)
                 if not folder_path:
@@ -555,12 +497,12 @@ async def api_analyze_result(request: Request, folder: str):
     if not folder_path:
         return JSONResponse(status_code=404, content={"error": "Folder not found"})
 
-    jtl_files = list(folder_path.glob("*.jtl"))
-    if not jtl_files:
+    jtl_path = _find_jtl(folder_path)
+    if not jtl_path:
         return JSONResponse(status_code=404, content={"error": "No JTL file found"})
 
     # Pre-process JTL
-    summary = preprocess_jtl(jtl_files[0])
+    summary = preprocess_jtl(jtl_path)
     if "error" in summary:
         return JSONResponse(status_code=500, content={"error": summary["error"]})
 

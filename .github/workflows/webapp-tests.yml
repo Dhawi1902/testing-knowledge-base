@@ -28,7 +28,8 @@ jobs:
           python -m pytest tests/ -v --tb=short \
             --cov=routers --cov=services --cov=main \
             --cov-report=term-missing \
-            --cov-report=html:htmlcov
+            --cov-report=html:htmlcov \
+            --cov-fail-under=55
 
       - name: Upload coverage report
         if: always()

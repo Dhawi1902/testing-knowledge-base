@@ -13,8 +13,9 @@ from services.config_parser import (
     read_config_properties,
     get_active_slaves,
 )
-
+from services.jmx_patcher import patch_jmx, extract_csv_data_set_configs
 from services.report_properties import get_properties_args
+from services.settings import atomic_write_json
 
 APP_DIR = Path(__file__).resolve().parent.parent
 
@@ -81,41 +82,45 @@ def build_jmeter_command(
     filter_sub_results: bool = False,
     label_pattern: str = "",
     dry_run: bool = False,
+    backend_patches: dict | None = None,
 ) -> tuple[list[str], str, list[list[str]]]:
     """
-    Build the JMeter CLI command from config.properties.
+    Build the JMeter CLI command.
 
     Convention:
     - 'test_plan' is reserved -> maps to -t
     - Only params detected in the JMX script (__P() refs) -> -G{key}={value}
+    - Parameter defaults come from __P(name,default) in the JMX, not config.properties
+    - UI overrides are passed directly
 
     Returns (cmd_list, result_dir_path, post_commands).
     post_commands is a list of subprocess commands to run after JMeter finishes.
 
     If dry_run=True, no directories are created and no snapshots are saved.
     Used by get_command_preview() to avoid side effects.
+
+    backend_patches: dict of Backend Listener property overrides (e.g. runId, influxdbUrl).
+    If provided, a patched copy of the JMX is written to the result dir and used instead.
     """
     jmeter_path = project_config.get("jmeter_path", "jmeter")
     project_root = get_project_root(project_config)
-    props_path = resolve_path(project_config, "config_properties")
-    props = read_config_properties(props_path)
 
     # Resolve test plan
     if jmx_filename:
         jmx_dir = resolve_path(project_config, "jmx_dir")
         test_plan_path = str(jmx_dir / jmx_filename)
     else:
+        # Legacy fallback: read test_plan from config.properties
+        props_path = resolve_path(project_config, "config_properties")
+        props = read_config_properties(props_path)
         test_plan_rel = props.get("test_plan", "")
         test_plan_path = str(project_root / test_plan_rel)
 
     # Detect which params the script actually uses
     script_params = {p["name"] for p in extract_jmx_params(test_plan_path)}
 
-    # Build effective values: script defaults from config.properties, overridden by UI values
+    # Build effective values: only UI overrides for script-detected params
     effective = {}
-    for name in script_params:
-        if name in props:
-            effective[name] = props[name]
     if overrides:
         for name, value in overrides.items():
             if name in script_params:
@@ -146,6 +151,16 @@ def build_jmeter_command(
     if not dry_run:
         result_dir.mkdir(parents=True, exist_ok=True)
 
+        # Patch JMX for Backend Listener if patches provided
+        if backend_patches:
+            # Auto-inject runId from result folder name if not explicitly set
+            if "runId" not in backend_patches:
+                backend_patches["runId"] = result_folder
+            patched_jmx = result_dir / f"patched_{Path(test_plan_path).name}"
+            patch_jmx(Path(test_plan_path), backend_patches, patched_jmx)
+            if patched_jmx.exists():
+                test_plan_path = str(patched_jmx)
+
     # Add slaves (enabled only)
     slaves_path = project_root / project_config["paths"].get("slaves_file", "slaves.txt")
     slaves = get_active_slaves(slaves_path)
@@ -154,6 +169,8 @@ def build_jmeter_command(
     cmd = [jmeter_path, "-n", "-t", test_plan_path]
     if slaves:
         cmd.extend(["-R", ",".join(slaves)])
+        # Disable RMI SSL for distributed testing (matches slave-side config)
+        cmd.append("-Jserver.rmi.ssl.disable=true")
 
     # Add -G flags only for parameters used by the script
     for key, value in effective.items():
@@ -178,8 +195,10 @@ def build_jmeter_command(
 
     # Save config snapshot and run info (only on real runs)
     if not dry_run:
-        _save_run_snapshot(result_dir, props_path, jmx_filename, effective, slaves,
-                          filter_sub_results, label_pattern)
+        props_path = resolve_path(project_config, "config_properties")
+        _save_run_snapshot(result_dir, props_path, jmx_filename, test_plan_path,
+                          effective, slaves, filter_sub_results, label_pattern,
+                          backend_patches=backend_patches)
 
     return cmd, str(result_dir), post_commands
 
@@ -188,19 +207,26 @@ def _save_run_snapshot(
     result_dir: Path,
     props_path: Path,
     jmx_filename: str,
+    jmx_path: Path | str,
     overrides: dict,
     slaves: list[str],
     filter_sub_results: bool,
     label_pattern: str = "",
+    backend_patches: dict | None = None,
 ):
-    """Save config.properties copy and run_info.json to the result directory."""
+    """Save config.properties copy and run_summary.json (pre-run) to result dir.
+
+    run_summary.json is the single source of truth for run metadata + stats.
+    Pre-run phase writes metadata; stats are appended lazily on first access.
+    Also writes run_info.json for backward compatibility.
+    """
     # Copy config.properties
     if props_path.exists():
         shutil.copy2(str(props_path), str(result_dir / "config.properties"))
 
-    # Write run info
-    run_info = {
-        "timestamp": datetime.now().isoformat(),
+    now = datetime.now()
+    run_meta = {
+        "timestamp": now.isoformat(),
         "test_plan": jmx_filename,
         "overrides": overrides,
         "slaves": slaves,
@@ -208,9 +234,46 @@ def _save_run_snapshot(
         "filter_sub_results": filter_sub_results,
         "label_pattern": label_pattern,
     }
-    (result_dir / "run_info.json").write_text(
-        json.dumps(run_info, indent=2, ensure_ascii=False), encoding="utf-8"
-    )
+
+    if backend_patches:
+        run_meta["backend_patches"] = backend_patches
+
+    # Scan JMX for CSV Data Set Config — record test data files
+    jmx_file = Path(jmx_path)
+    if jmx_file.exists():
+        csv_configs = extract_csv_data_set_configs(jmx_file)
+        if csv_configs:
+            test_data = []
+            for cfg in csv_configs:
+                filename = cfg.get("filename", "")
+                entry = {"filename": filename, "variables": cfg.get("variableNames", "")}
+                # Try to get file stats (row count, size)
+                if filename:
+                    csv_path = jmx_file.parent / filename
+                    if not csv_path.exists():
+                        # Try relative to project root
+                        csv_path = result_dir.parent.parent.parent / filename
+                    if csv_path.exists():
+                        try:
+                            entry["size"] = csv_path.stat().st_size
+                            # Count lines (fast — no full parse)
+                            with open(csv_path, "r", encoding="utf-8", errors="replace") as f:
+                                entry["rows"] = sum(1 for _ in f)
+                        except OSError:
+                            pass
+                test_data.append(entry)
+            run_meta["test_data"] = test_data
+
+    # Write run_summary.json (pre-run phase — stats added lazily later)
+    summary = {
+        "version": 1,
+        "phase": "pre-run",
+        **run_meta,
+    }
+    atomic_write_json(result_dir / "run_summary.json", summary)
+
+    # Backward-compatible run_info.json
+    atomic_write_json(result_dir / "run_info.json", run_meta)
 
 
 def build_report_command(jmeter_path: str, source_jtl: str, output_dir: str) -> list[str]:

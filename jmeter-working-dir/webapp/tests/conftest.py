@@ -132,17 +132,19 @@ def _patch_paths(tmp_project_dir):
     d = tmp_project_dir
 
     import main
-    import routers.settings as settings_mod
+    import services.settings as settings_svc
     import routers.config as config_mod
     import routers.test_plans as plans_mod
+    import routers.test_data as data_mod
     import services.auth as auth_mod
 
     patches = [
         patch.object(main, "PROJECT_JSON", d["project_json_path"]),
-        patch.object(settings_mod, "SETTINGS_FILE", d["settings_path"]),
+        patch.object(settings_svc, "SETTINGS_FILE", d["settings_path"]),
         patch.object(auth_mod, "_SETTINGS_FILE", d["settings_path"]),
         patch.object(config_mod, "PROJECT_JSON", d["project_json_path"]),
         patch.object(plans_mod, "PRESETS_FILE", d["webapp_dir"] / "presets.json"),
+        patch.object(data_mod, "CSV_TEMPLATES_FILE", d["webapp_dir"] / "csv_templates.json"),
     ]
     for p in patches:
         p.start()

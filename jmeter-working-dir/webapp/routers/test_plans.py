@@ -141,8 +141,10 @@ async def api_stop_test(request: Request):
 async def api_runner_status():
     return {
         "running": jmeter_process_manager.is_running,
+        "post_processing": jmeter_process_manager.is_post_processing,
         "label": jmeter_process_manager.active_label,
         "run_info": jmeter_process_manager.run_info,
+        "live_stats": jmeter_process_manager.live_stats,
     }
 
 
@@ -180,13 +182,13 @@ async def ws_runner_logs(websocket: WebSocket):
 
 @router.get("/api/runner/filter-config")
 async def api_filter_config(request: Request):
-    """Return the default filter settings from config.properties."""
-    project = request.app.state.project
-    props_path = resolve_path(project, "config_properties")
-    props = read_config_properties(props_path)
+    """Return the default filter settings from settings.json."""
+    from services.settings import load_settings
+    settings = load_settings()
+    filter_cfg = settings.get("filter", {})
     return {
-        "filter_sub_results": props.get("filter_sub_results", "false").lower() == "true",
-        "label_pattern": props.get("label_pattern", ""),
+        "filter_sub_results": filter_cfg.get("sub_results", True),
+        "label_pattern": filter_cfg.get("label_pattern", ""),
     }
 
 

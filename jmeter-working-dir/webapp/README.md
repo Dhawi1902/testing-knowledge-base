@@ -6,7 +6,7 @@ Web-based dashboard for managing JMeter performance tests — run tests, manage 
 
 ```bash
 pip install -r requirements.txt
-python -m uvicorn main:app --reload --port 8080
+python -m webapp
 ```
 
 Open `http://localhost:8080`. On first run a setup wizard configures your project and generates an access token.
@@ -26,16 +26,19 @@ webapp/
 ├── services/            ← Business logic
 │   ├── auth.py          ← Token auth, access control, path safety
 │   ├── config_parser.py ← Project config, path resolution
-│   ├── jmeter.py        ← JMeter CLI wrapper
+│   ├── jmeter.py        ← JMeter CLI wrapper, distributed mode support
+│   ├── jmx_patcher.py   ← JMX XML patching (Backend Listener, etc.)
 │   ├── jtl_parser.py    ← JTL parsing with JSON caching
 │   ├── slaves.py        ← SSH operations, file distribution
 │   ├── data.py          ← CSV generation, split, distribute
 │   ├── analysis.py      ← AI-powered result analysis
+│   ├── report.py        ← Async report regeneration pipeline
 │   ├── report_properties.py ← Report graph configuration
+│   ├── settings.py      ← Settings service (load/save/validate)
 │   └── process_manager.py ← JMeter process lifecycle
 ├── templates/           ← Jinja2 HTML (extends base.html)
 ├── static/              ← CSS + JS
-├── tests/               ← pytest suite (165 tests)
+├── tests/               ← pytest suite (198 tests, 56% coverage)
 └── logs/                ← Rotating app logs (auto-created)
 ```
 
@@ -98,7 +101,7 @@ cd testing-knowledge-base/jmeter-working-dir/webapp
 python -m venv venv
 source venv/bin/activate   # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-python -m uvicorn main:app --reload --port 8080
+python -m webapp
 ```
 
 ## Logging

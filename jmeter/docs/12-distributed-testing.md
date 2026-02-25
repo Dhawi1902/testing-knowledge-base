@@ -9,6 +9,7 @@ When a single machine can't generate enough load (CPU or memory maxes out before
 - [Configuring JMeter for Distributed Mode](#configuring-jmeter-for-distributed-mode)
 - [Running Distributed Tests](#running-distributed-tests)
 - [Important Considerations](#important-considerations)
+- [Practical Lessons Learned](#practical-lessons-learned)
 - [Tips](#tips)
 
 ---
@@ -178,6 +179,54 @@ If using a Backend Listener for Grafana monitoring, each worker sends data direc
 
 ---
 
+## Practical Lessons Learned
+
+These lessons came from hands-on distributed testing with OCI Linux VMs and Windows machines. For the full setup walkthrough, see [Section 15 — OCI Linux Slave Setup](15-oci-linux-slave-setup.md).
+
+### RMI SSL must be disabled on both sides
+
+JMeter 5.x enables RMI SSL by default and expects `rmi_keystore.jks`. Since we don't generate certificates for internal testing, disable it on **both** controller and slave:
+
+```properties
+# Controller: jmeter.properties (or -Jserver.rmi.ssl.disable=true)
+server.rmi.ssl.disable=true
+```
+
+```bash
+# Slave: in start script
+jmeter-server -Dserver.rmi.ssl.disable=true
+```
+
+If you only disable one side, you'll get cryptic connection errors.
+
+### NAT breaks distributed testing
+
+JMeter requires **bidirectional** RMI: controller → slave (send test plan) and slave → controller (send results). If your controller is behind NAT (home router, office firewall), slaves can't send results back.
+
+**Symptom:** Test starts on slaves, but JTL is empty and console shows `summary = 0`.
+
+**Solutions:** Use same-LAN machines, port forwarding, VPN, or run the controller in the cloud alongside the slaves.
+
+### Console `summary = 0` is often a display quirk
+
+In distributed mode, the console summariser sometimes shows `summary = 0` even when results are being collected. Always check the actual JTL file — it usually has the data.
+
+### `-J` vs `-G` for properties
+
+- `-J` sets properties on the **controller** only
+- `-G` sets properties on **all slaves** (sent via RMI)
+- Use `-G` for things like thread count and duration that slaves need: `-Gthreads=10 -Gduration=60`
+
+### Enterprise antivirus is a silent blocker
+
+Corporate security tools (Symantec, CrowdStrike, etc.) can silently drop JMeter RMI traffic. If distributed testing works on a personal PC but not on a work PC, the antivirus is likely the cause. Ask IT for exceptions on `java.exe` and JMeter ports.
+
+### Use a dummy test plan for setup validation
+
+Before testing with your real application scripts, create a lightweight test plan hitting a public endpoint like [httpbin.org](https://httpbin.org). This isolates network/configuration issues from application-specific problems. See `test_plan/Dummy-HTTP-Test.jmx` in the project.
+
+---
+
 ## Tips
 
 - **Test with 1 worker first** - validate the distributed setup works before adding more workers
@@ -186,3 +235,4 @@ If using a Backend Listener for Grafana monitoring, each worker sends data direc
 - **Use the same network** - controller and workers should ideally be on the same network or low-latency connection. High latency between controller and workers can affect result collection
 - **Automate worker setup** - when you have many workers, manually copying files and starting jmeter-server is tedious. Use batch scripts (see [Section 14](14-automation-batch.md))
 - **Check firewall rules** - the most common distributed testing issue is connectivity. Verify workers can be reached from the controller before starting the test
+- **RMI hostname matters** — on cloud VMs, `hostname -I` returns the private IP but external controllers connect via the public IP. Use the public IP for `-Djava.rmi.server.hostname` when controller is external, private IP when in the same VCN

@@ -32,6 +32,7 @@ A practical guide on how to approach performance testing using JMeter - from set
 | 12 | [Distributed Testing](docs/12-distributed-testing.md) | Scaling with multiple machines |
 | 13 | [Test Data Preparation with Python](docs/13-test-data-python.md) | Generating and distributing test data |
 | 14 | [Automation with Batch Files](docs/14-automation-batch.md) | Automating execution and data distribution |
+| 15 | [OCI Linux Slave Setup](docs/15-oci-linux-slave-setup.md) | Hands-on guide for setting up JMeter slaves on OCI |
 
 ## Appendix
 

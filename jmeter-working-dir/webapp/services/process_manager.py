@@ -1,6 +1,15 @@
 import asyncio
+import re
 import subprocess
 from pathlib import Path
+
+# Regex to parse JMeter summary lines (both "summary +" and "summary =")
+# Example: summary =  10000 in 00:01:40 =  100.0/s Avg:   148 Min:     5 Max:  2400 Err:    45 (0.45%)
+_SUMMARY_RE = re.compile(
+    r"summary\s+[+=]\s+(\d+)\s+in\s+\S+\s+=\s+([\d.]+)/s\s+"
+    r"Avg:\s+(\d+)\s+Min:\s+(\d+)\s+Max:\s+(\d+)\s+"
+    r"Err:\s+(\d+)\s+\(([\d.]+)%\)"
+)
 
 
 class ProcessManager:
@@ -21,14 +30,21 @@ class ProcessManager:
         self._output_buffer: list[str] = []
         self._drain_task: asyncio.Task | None = None
         self._run_info: dict = {}
+        self._post_processing: bool = False
+        self._live_stats: dict = {}
 
     @property
     def is_running(self) -> bool:
         return self._active_process is not None and self._active_process.poll() is None
 
     @property
+    def is_post_processing(self) -> bool:
+        """True after the main process exits but post-commands are still running."""
+        return self._post_processing
+
+    @property
     def active_label(self) -> str:
-        return self._active_label if self.is_running else ""
+        return self._active_label if self.is_running or self._post_processing else ""
 
     @property
     def output_buffer(self) -> list[str]:
@@ -39,6 +55,11 @@ class ProcessManager:
     def run_info(self) -> dict:
         """Metadata about the current/last run."""
         return dict(self._run_info)
+
+    @property
+    def live_stats(self) -> dict:
+        """Latest parsed JMeter summary stats (throughput, avg RT, etc.)."""
+        return dict(self._live_stats)
 
     @property
     def is_draining(self) -> bool:
@@ -55,6 +76,8 @@ class ProcessManager:
         self._post_commands = post_commands or []
         self._run_info = run_info or {}
         self._output_buffer = []
+        self._post_processing = False
+        self._live_stats = {}
         self._active_process = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
@@ -65,22 +88,45 @@ class ProcessManager:
         )
         self._active_label = label
         # Start background drain task
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         self._drain_task = loop.create_task(self._drain_output())
         return self._active_process
+
+    def _parse_summary_line(self, line: str) -> None:
+        """Parse JMeter summary lines and update _live_stats."""
+        m = _SUMMARY_RE.search(line)
+        if not m:
+            return
+        # Only update from cumulative "summary =" lines
+        if "summary =" not in line:
+            return
+        self._live_stats = {
+            "total_samples": int(m.group(1)),
+            "throughput": float(m.group(2)),
+            "avg": int(m.group(3)),
+            "min": int(m.group(4)),
+            "max": int(m.group(5)),
+            "error_count": int(m.group(6)),
+            "error_pct": float(m.group(7)),
+        }
 
     async def _drain_output(self):
         """Background task: reads process stdout and post-commands into buffer."""
         proc = self._active_process
         if not proc or not proc.stdout:
             return
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         while True:
             line = await loop.run_in_executor(None, proc.stdout.readline)
             if not line:
                 break
-            self._output_buffer.append(line.rstrip("\n"))
-        proc.wait()
+            stripped = line.rstrip("\n")
+            self._output_buffer.append(stripped)
+            self._parse_summary_line(stripped)
+        await loop.run_in_executor(None, proc.wait)
+
+        # Enter post-processing state
+        self._post_processing = True
 
         # Run post-commands sequentially (with timeout matching regeneration: 600s)
         for post_cmd in self._post_commands:
@@ -122,13 +168,9 @@ class ProcessManager:
                     self._output_buffer.append("--- Cleaned up disabled graph panels from report HTML ---")
             except Exception as e:
                 self._output_buffer.append(f"--- Report HTML cleanup error: {e} ---")
-            # Clean up filtered.jtl (same as regeneration does)
-            filtered_jtl = result_path / "filtered.jtl"
-            if filtered_jtl.exists():
-                try:
-                    filtered_jtl.unlink()
-                except OSError:
-                    pass
+
+        # Exit post-processing state
+        self._post_processing = False
 
     async def subscribe_output(self, start_index: int = 0):
         """Async generator: yields buffered lines from start_index, then tails new ones until drain completes."""
@@ -164,6 +206,7 @@ class ProcessManager:
                 pass
         self._active_process = None
         self._active_label = ""
+        self._post_processing = False
 
     def return_code(self) -> int | None:
         if self._active_process:

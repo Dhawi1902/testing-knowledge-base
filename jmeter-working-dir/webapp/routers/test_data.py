@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from fastapi import APIRouter, Request, UploadFile
@@ -9,10 +10,25 @@ from services.auth import check_access as _check_access, safe_join
 from services.data import list_csv_files, preview_csv, preview_split, build_csv
 from services.slaves import distribute_files, build_ssh_configs
 
-TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
+APP_DIR = Path(__file__).resolve().parent.parent
+TEMPLATES_DIR = APP_DIR / "templates"
+CSV_TEMPLATES_FILE = APP_DIR / "csv_templates.json"
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 router = APIRouter()
+
+
+def _load_csv_templates() -> dict:
+    if CSV_TEMPLATES_FILE.exists():
+        try:
+            return json.loads(CSV_TEMPLATES_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return {}
+
+
+def _save_csv_templates(data: dict):
+    CSV_TEMPLATES_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
 @router.get("/data")
@@ -119,8 +135,12 @@ async def api_build_data(request: Request):
 
 
 @router.post("/api/data/upload")
-async def api_upload_data(request: Request, file: UploadFile):
-    """Upload a CSV file to the test data directory."""
+async def api_upload_data(request: Request, file: UploadFile, overwrite: bool = False):
+    """Upload a CSV file to the test data directory.
+
+    Returns 409 if file exists and overwrite is not set.
+    Pass ?overwrite=true to replace an existing file.
+    """
     denied = _check_access(request)
     if denied:
         return denied
@@ -136,6 +156,9 @@ async def api_upload_data(request: Request, file: UploadFile):
     dest = safe_join(data_dir, file.filename)
     if dest is None:
         return JSONResponse(status_code=403, content={"error": "Invalid filename"})
+
+    if dest.exists() and not overwrite:
+        return JSONResponse(status_code=409, content={"error": f"{file.filename} already exists. Use overwrite=true to replace."})
 
     # Stream to disk in chunks to avoid loading entire file into memory
     total_size = 0
@@ -245,3 +268,40 @@ async def api_distribute_data(request: Request):
     ok_count = sum(1 for r in results if r.get("ok"))
     total = len(results)
     return {"ok": ok_count == total, "results": results, "summary": f"{ok_count}/{total} transfers succeeded"}
+
+
+# --- CSV Builder Templates ---
+
+@router.get("/api/data/templates")
+async def api_list_csv_templates():
+    """Return all saved CSV builder templates."""
+    return {"templates": _load_csv_templates()}
+
+
+@router.post("/api/data/templates")
+async def api_save_csv_template(request: Request):
+    """Save a CSV builder template. Body: {"name": "...", "columns": [...]}"""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    body = await request.json()
+    name = body.get("name", "").strip()
+    columns = body.get("columns", [])
+    if not name:
+        return JSONResponse(status_code=400, content={"error": "Template name is required"})
+    templates_data = _load_csv_templates()
+    templates_data[name] = columns
+    _save_csv_templates(templates_data)
+    return {"ok": True}
+
+
+@router.delete("/api/data/templates/{name}")
+async def api_delete_csv_template(request: Request, name: str):
+    """Delete a CSV builder template by name."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    templates_data = _load_csv_templates()
+    templates_data.pop(name, None)
+    _save_csv_templates(templates_data)
+    return {"ok": True}

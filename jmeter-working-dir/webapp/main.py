@@ -45,7 +45,7 @@ _handler.setFormatter(logging.Formatter(
 logger.addHandler(_handler)
 
 # Read base_path from settings (e.g. "/perftest")
-from routers.settings import load_settings as _load_settings
+from services.settings import load_settings as _load_settings
 _settings = _load_settings()
 BASE_PATH = (_settings.get("server", {}).get("base_path") or "").rstrip("/")
 
@@ -67,7 +67,7 @@ async def lifespan(app: FastAPI):
         plain_token = secrets.token_urlsafe(32)
         app.state.setup_token = plain_token
         # Save the hash to settings.json
-        from routers.settings import load_settings as _load_s, save_settings as _save_s
+        from services.settings import load_settings as _load_s, save_settings as _save_s
         settings = _load_s()
         settings.setdefault("auth", {})["token"] = hash_token(plain_token)
         _save_s(settings)
@@ -235,7 +235,7 @@ def get_project(request: Request) -> dict:
 @app.post(f"{BASE_PATH}/api/server/restart")
 async def restart_server():
     """Restart the server with updated settings."""
-    from routers.settings import load_settings
+    from services.settings import load_settings
     settings = load_settings()
     server = settings.get("server", {})
     host = "0.0.0.0" if server.get("allow_external") else server.get("host", "127.0.0.1")

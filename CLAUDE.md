@@ -17,11 +17,13 @@ testing-knowledge-base/
 ├── .github/workflows/     ← CI/CD (GitHub Actions)
 ├── jmeter/                ← JMeter performance testing docs (active)
 ├── jmeter-working-dir/    ← JMeter project + webapp
-│   ├── webapp/            ← FastAPI test dashboard (165 tests, CI/CD)
-│   ├── script/            ← JMeter test plans (.jmx)
+│   ├── webapp/            ← FastAPI test dashboard (198 tests, CI/CD)
+│   ├── test_plan/         ← JMeter test plans (.jmx)
 │   ├── test_data/         ← CSV test data
 │   ├── results/           ← JTL logs and HTML reports
-│   └── config/            ← VM and test configuration
+│   ├── config/            ← VM and test configuration
+│   ├── ssh_key/           ← SSH keys for OCI slave access
+│   └── setup-linux-slave.sh ← Automated OCI slave setup script
 ├── playwright/            ← UI automation testing (planned)
 ├── k6/                    ← Load testing (planned)
 └── playground/            ← Docker-based target app (planned)
@@ -33,10 +35,11 @@ Each topic folder has its own `CLAUDE.md`, `PLAN.md`, and `README.md` with tool-
 
 The JMeter Test Dashboard (`jmeter-working-dir/webapp/`) is a FastAPI web app for managing performance tests. See `webapp/CLAUDE.md` for full details. Key facts:
 
-- **165 tests** across 8 test files (53% code coverage)
+- **198 tests** across 8 test files (56% code coverage)
 - **CI/CD**: GitHub Actions triggers on push/PR to `jmeter-working-dir/webapp/**`
 - **Access control**: Token-based auth (localhost=admin, remote=token, viewer=read-only)
-- Run with: `cd jmeter-working-dir/webapp && pip install -r requirements.txt && python -m uvicorn main:app --reload --port 8080`
+- **Distributed testing**: Supports OCI Linux slaves + local slaves (see docs 12 & 15)
+- Run with: `cd jmeter-working-dir/webapp && pip install -r requirements.txt && python -m webapp`
 
 ## Content Conventions (All Topics)
 

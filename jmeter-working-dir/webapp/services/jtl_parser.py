@@ -6,6 +6,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from services.settings import atomic_write_json
+
 
 def _quick_folder_size(folder: Path) -> int:
     """Estimate folder size from top-level files + JTL files only (no deep rglob)."""
@@ -19,25 +21,105 @@ def _quick_folder_size(folder: Path) -> int:
     return total
 
 
+def _preferred_jtl(d: Path) -> Path | None:
+    """Find best JTL: prefer filtered.jtl over results.jtl, then any *.jtl."""
+    filtered = d / "filtered.jtl"
+    if filtered.exists():
+        return filtered
+    results_jtl = d / "results.jtl"
+    if results_jtl.exists():
+        return results_jtl
+    jtl_files = list(d.glob("*.jtl"))
+    return jtl_files[0] if jtl_files else None
+
+
+def ensure_summary(folder_path: Path) -> dict | None:
+    """Ensure run_summary.json has stats. Parse JTL lazily if needed.
+
+    Called from dashboard recent-runs, results list, and stats endpoints.
+    Returns the summary dict, or None if no JTL exists.
+
+    - If run_summary.json already has stats (phase=complete), return it.
+    - If run_summary.json exists without stats (phase=pre-run), parse JTL and append.
+    - If run_summary.json doesn't exist (legacy folder), create from scratch.
+    """
+    summary_path = folder_path / "run_summary.json"
+    existing = {}
+    if summary_path.exists():
+        try:
+            existing = json.loads(summary_path.read_text(encoding="utf-8"))
+            if existing.get("phase") == "complete" and "stats" in existing:
+                return existing
+        except Exception:
+            pass
+
+    # Find JTL to parse stats from
+    jtl_path = _preferred_jtl(folder_path)
+    if not jtl_path:
+        return existing or None
+
+    stats = parse_jtl(jtl_path)
+    if "error" in stats:
+        return existing or None
+
+    # Build or update summary
+    if not existing:
+        # Legacy folder — bootstrap from run_info.json if available
+        run_info_path = folder_path / "run_info.json"
+        if run_info_path.exists():
+            try:
+                existing = json.loads(run_info_path.read_text(encoding="utf-8"))
+            except Exception:
+                existing = {}
+        existing["version"] = 1
+
+    existing["phase"] = "complete"
+    existing["stats"] = stats.get("overall", {})
+    existing["transactions"] = stats.get("transactions", [])
+    existing["jtl_source"] = jtl_path.name
+
+    try:
+        atomic_write_json(summary_path, existing)
+    except OSError:
+        pass
+
+    return existing
+
+
 def _folder_info(d: Path) -> dict:
     """Build metadata dict for a single result folder."""
     stat = d.stat()
     has_report = (d / "report" / "index.html").exists()
     jtl_files = list(d.glob("*.jtl"))
     has_jtl = len(jtl_files) > 0
+    preferred = _preferred_jtl(d)
     date = datetime.fromtimestamp(stat.st_mtime).isoformat()
 
-    # Override date with actual run start time from cached JTL summary
-    if has_jtl and jtl_files:
-        cache_path = jtl_files[0].parent / f"{jtl_files[0].name}.summary.json"
-        if cache_path.exists():
+    # Override date with actual run start time from run_summary or JTL cache
+    if preferred:
+        # Try run_summary.json first (new format)
+        summary_path = d / "run_summary.json"
+        start_found = False
+        if summary_path.exists():
             try:
-                cached = json.loads(cache_path.read_text(encoding="utf-8"))
-                start_ms = cached.get("overall", {}).get("start_time")
+                summary = json.loads(summary_path.read_text(encoding="utf-8"))
+                start_ms = summary.get("stats", {}).get("start_time")
                 if start_ms:
                     date = datetime.fromtimestamp(start_ms / 1000).isoformat()
+                    start_found = True
             except Exception:
                 pass
+        # Fall back to legacy .summary.json cache
+        if not start_found:
+            cache_path = preferred.parent / f"{preferred.name}.summary.json"
+            if cache_path.exists():
+                try:
+                    cached = json.loads(cache_path.read_text(encoding="utf-8"))
+                    start_ms = cached.get("overall", {}).get("start_time")
+                    if start_ms:
+                        date = datetime.fromtimestamp(start_ms / 1000).isoformat()
+                except Exception:
+                    pass
 
     return {
         "name": d.name,
@@ -46,7 +128,7 @@ def _folder_info(d: Path) -> dict:
         "size": _quick_folder_size(d),
         "has_report": has_report,
         "has_jtl": has_jtl,
-        "jtl_file": str(jtl_files[0]) if jtl_files else None,
+        "jtl_file": str(preferred) if preferred else None,
         "jtl_files": [f.name for f in jtl_files],
         "has_analysis": (d / "analysis_cache.json").exists(),
     }
@@ -157,6 +239,23 @@ def parse_jtl(jtl_path: str | Path) -> dict:
     if "elapsed" not in df.columns or "success" not in df.columns:
         return {"error": "JTL file missing required columns (elapsed, success)"}
 
+    if len(df) == 0:
+        empty_overall = {
+            "total_samples": 0, "avg": 0, "median": 0,
+            "p90": 0, "p95": 0, "p99": 0, "min": 0, "max": 0,
+            "error_count": 0, "error_pct": 0, "throughput": 0,
+            "duration_sec": 0, "start_time": 0, "end_time": 0, "peak_vus": 0,
+        }
+        result = {"overall": empty_overall, "transactions": []}
+        try:
+            cache_path.write_text(
+                json.dumps({**result, "_jtl_mtime": jtl_mtime}, indent=2),
+                encoding="utf-8",
+            )
+        except Exception:
+            pass
+        return result
+
     elapsed = df["elapsed"].dropna()
     success_col = df["success"].astype(str).str.lower()
     error_count = (success_col != "true").sum()
@@ -166,15 +265,21 @@ def parse_jtl(jtl_path: str | Path) -> dict:
     start_time = 0
     end_time = 0
     if "timeStamp" in df.columns:
-        ts = df["timeStamp"]
-        start_time = int(ts.min())
-        end_time = int(ts.max())
+        ts = df["timeStamp"].dropna()
+        start_time = int(ts.min()) if len(ts) > 0 else 0
+        end_time = int(ts.max()) if len(ts) > 0 else 0
         duration_ms = end_time - start_time
         duration_sec = duration_ms / 1000.0
         throughput = total / duration_sec if duration_sec > 0 else 0
     else:
         duration_sec = 0
         throughput = 0
+
+    # Peak concurrent virtual users
+    peak_vus = 0
+    if "allThreads" in df.columns:
+        at = df["allThreads"].dropna()
+        peak_vus = int(at.max()) if len(at) > 0 else 0
 
     overall = {
         "total_samples": int(total),
@@ -191,6 +296,7 @@ def parse_jtl(jtl_path: str | Path) -> dict:
         "duration_sec": round(duration_sec, 1),
         "start_time": start_time,
         "end_time": end_time,
+        "peak_vus": peak_vus,
     }
 
     # Per-transaction breakdown
@@ -228,7 +334,10 @@ def parse_jtl(jtl_path: str | Path) -> dict:
 
 
 def compare_runs(jtl_path_1: str | Path, jtl_path_2: str | Path) -> dict:
-    """Compare statistics of two JTL files side by side."""
+    """Compare statistics of two JTL files side by side.
+
+    Returns overall diff and per-transaction breakdown matched by label.
+    """
     stats_a = parse_jtl(jtl_path_1)
     stats_b = parse_jtl(jtl_path_2)
 
@@ -246,8 +355,25 @@ def compare_runs(jtl_path_1: str | Path, jtl_path_2: str | Path) -> dict:
             pct_change = 0
         diff[key] = {"a": a_val, "b": b_val, "change_pct": pct_change}
 
+    # Per-transaction comparison — match by label
+    tx_a = {t["label"]: t for t in stats_a.get("transactions", [])}
+    tx_b = {t["label"]: t for t in stats_b.get("transactions", [])}
+    all_labels = sorted(set(tx_a.keys()) | set(tx_b.keys()))
+    tx_diff = []
+    compare_keys = ["avg", "median", "p90", "p95", "error_pct"]
+    for label in all_labels:
+        entry = {"label": label, "a": tx_a.get(label), "b": tx_b.get(label), "diff": {}}
+        if entry["a"] and entry["b"]:
+            for key in compare_keys:
+                av = entry["a"].get(key, 0)
+                bv = entry["b"].get(key, 0)
+                pct = round((bv - av) / av * 100, 1) if av != 0 else 0
+                entry["diff"][key] = {"a": av, "b": bv, "change_pct": pct}
+        tx_diff.append(entry)
+
     return {
         "run_a": stats_a,
         "run_b": stats_b,
         "diff": diff,
+        "transaction_diff": tx_diff,
     }

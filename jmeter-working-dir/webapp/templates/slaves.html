@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}Slave VMs{% endblock %}
-{% block page_title %}Slave VMs{% endblock %}
+{% block title %}Fleet Management{% endblock %}
+{% block page_title %}Fleet Management{% endblock %}
 
 {% block content %}
 <!-- Slave List -->
@@ -54,30 +54,6 @@
         </div>
         {% endif %}
         <div id="vmForm"></div>
-    </div>
-</div>
-<!-- JMeter Properties (F2/F3/F4) -->
-<div class="card" style="margin-top:24px;">
-    <div class="card-header" style="cursor:pointer;" onclick="document.getElementById('propsBody').style.display = document.getElementById('propsBody').style.display === 'none' ? '' : 'none'; this.querySelector('.collapse-icon').textContent = document.getElementById('propsBody').style.display === 'none' ? '\u25B6' : '\u25BC';">
-        <span class="card-title"><span class="collapse-icon">&#9654;</span> JMeter Properties</span>
-        <span class="text-light text-sm">Override properties &amp; backend listener settings</span>
-    </div>
-    <div id="propsBody" style="display:none;">
-        {% if access_level != 'viewer' %}
-        <div class="flex gap-8 mb-16" style="justify-content:space-between;align-items:center;">
-            <div class="flex gap-8">
-                <button class="btn btn-outline btn-sm" onclick="addProperty()">+ Add Property</button>
-                <span class="text-sm text-light" style="line-height:28px;">Presets:</span>
-                <button class="btn btn-outline btn-sm" onclick="addInfluxPreset()">InfluxDB Backend</button>
-            </div>
-            <div class="flex gap-8">
-                <button class="btn btn-outline btn-sm" onclick="pushProperties()" title="Push properties file to all slaves via SCP">Push to Slaves</button>
-                <button class="btn btn-primary btn-sm" onclick="saveProperties()">Save</button>
-            </div>
-        </div>
-        {% endif %}
-        <div id="propsForm"></div>
-        <div class="text-sm text-light" style="margin-top:8px;">These properties are passed as <code>-J</code> flags when running JMeter tests. Use "Push to Slaves" to upload as a properties file.</div>
     </div>
 </div>
 {% endblock %}
@@ -134,6 +110,7 @@ async function refreshStatus() {
                 s.error = st.error || null;
             }
         });
+        lastCheckedTs = data.checked_at ? new Date(data.checked_at * 1000) : new Date();
     } catch (e) {
         slaveData.forEach(s => { s.status = 'down'; });
         showToast('Failed to check status', 'error');
@@ -143,6 +120,19 @@ async function refreshStatus() {
     btn.disabled = false;
     btn.textContent = 'Check Status';
     checking = false;
+}
+
+let lastCheckedTs = null;
+
+function formatLastChecked() {
+    if (!lastCheckedTs) return '';
+    const now = new Date();
+    const diffMs = now - lastCheckedTs;
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return 'just now';
+    if (diffMin < 60) return `${diffMin}m ago`;
+    const diffH = Math.floor(diffMin / 60);
+    return `${diffH}h ago`;
 }
 
 // ===== Render =====
@@ -432,6 +422,8 @@ function updateSummary() {
     html += `<span class="badge badge-success">${enabled} Enabled</span> `;
     if (disabled > 0) html += `<span class="badge" style="background:var(--color-border);color:var(--color-text-light);">${disabled} Disabled</span> `;
     if (checked > 0) html += `<span class="badge" style="background:var(--color-border);color:var(--color-text-light);">${up}/${enabled} Online</span>`;
+    const lc = formatLastChecked();
+    if (lc) html += ` <span class="text-light text-sm">checked ${lc}</span>`;
     document.getElementById('slaveSummary').innerHTML = html;
 }
 
@@ -654,93 +646,8 @@ function toggleSlaveList() {
     icon.innerHTML = hidden ? '&#9660;' : '&#9654;';
 }
 
-// ===== JMeter Properties (F2/F3/F4) =====
-let jmeterProps = [];
-
-async function loadProperties() {
-    try {
-        const data = await api('/api/config/jmeter-properties');
-        jmeterProps = data.properties || [];
-    } catch(e) { jmeterProps = []; }
-    renderProperties();
-}
-
-function renderProperties() {
-    const container = document.getElementById('propsForm');
-    if (!jmeterProps.length) {
-        container.innerHTML = '<p class="text-light text-sm" style="text-align:center;padding:16px;">No properties defined. Click "+ Add Property" or use a preset.</p>';
-        return;
-    }
-    let html = '<div style="display:flex;flex-direction:column;gap:4px;">';
-    jmeterProps.forEach((p, i) => {
-        const en = p.enabled !== false;
-        html += `<div class="form-row" style="gap:8px;align-items:center;opacity:${en ? 1 : 0.5};">
-            <label class="toggle" style="flex-shrink:0;"><input type="checkbox" ${en ? 'checked' : ''} onchange="jmeterProps[${i}].enabled=this.checked;renderProperties()"><span class="toggle-track"></span></label>
-            <input class="form-input form-input-mono" value="${escAttr(p.key || '')}" placeholder="property.key" style="flex:1;min-width:150px;" onchange="jmeterProps[${i}].key=this.value">
-            <input class="form-input form-input-mono" value="${escAttr(p.value || '')}" placeholder="value" style="flex:2;min-width:200px;" onchange="jmeterProps[${i}].value=this.value">
-            <button class="del-btn" onclick="jmeterProps.splice(${i},1);renderProperties()" title="Remove">&times;</button>
-        </div>`;
-    });
-    html += '</div>';
-    container.innerHTML = html;
-}
-
-function addProperty(key, value) {
-    jmeterProps.push({ key: key || '', value: value || '', enabled: true });
-    renderProperties();
-    // Focus the last key input
-    setTimeout(() => {
-        const inputs = document.querySelectorAll('#propsForm input[placeholder="property.key"]');
-        if (inputs.length) inputs[inputs.length-1].focus();
-    }, 50);
-}
-
-function addInfluxPreset() {
-    const preset = [
-        { key: 'backend_influxdb.send_interval', value: '5', enabled: true },
-        { key: 'backend_influxdb.influxdbUrl', value: 'http://localhost:8086/write?db=jmeter', enabled: true },
-        { key: 'backend_influxdb.application', value: 'test', enabled: true },
-        { key: 'backend_influxdb.measurement', value: 'jmeter', enabled: true },
-        { key: 'backend_influxdb.summaryOnly', value: 'false', enabled: true },
-        { key: 'backend_influxdb.percentiles', value: '90;95;99', enabled: true },
-    ];
-    // Only add keys that don't already exist
-    const existingKeys = new Set(jmeterProps.map(p => p.key));
-    preset.forEach(p => { if (!existingKeys.has(p.key)) jmeterProps.push(p); });
-    renderProperties();
-    showToast('InfluxDB backend listener properties added', 'info');
-}
-
-async function saveProperties() {
-    await api('/api/config/jmeter-properties', { method: 'PUT', body: { properties: jmeterProps } });
-    showToast('JMeter properties saved', 'success');
-}
-
-async function pushProperties() {
-    if (!jmeterProps.filter(p => p.enabled !== false && p.key).length) {
-        showToast('No enabled properties to push', 'warning');
-        return;
-    }
-    if (!confirmAction('Push properties file to all enabled slave VMs?')) return;
-    showToast('Pushing properties...', 'info');
-    try {
-        // Save first
-        await api('/api/config/jmeter-properties', { method: 'PUT', body: { properties: jmeterProps } });
-        const data = await api('/api/config/push-properties', { method: 'POST' });
-        const results = data.results || [];
-        const ok = results.filter(r => r.ok).length;
-        showToast(`Pushed to ${ok}/${results.length} slave(s)`, ok === results.length ? 'success' : 'warning');
-    } catch(e) {
-        showToast('Push failed: ' + (e.message || 'Unknown error'), 'error');
-    }
-}
-
 // ===== Init =====
-loadSlaves().then(() => {
-    // Auto-check status on page load if there are slaves
-    if (slaveData.length > 0) refreshStatus();
-});
+loadSlaves();
 loadVmConfig();
-loadProperties();
 </script>
 {% endblock %}

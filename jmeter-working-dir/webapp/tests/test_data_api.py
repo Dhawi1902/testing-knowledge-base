@@ -209,3 +209,82 @@ class TestUploadCSV:
             files={"file": ("bad.txt", b"data", "text/plain")},
         )
         assert r.status_code == 400
+
+    def test_duplicate_returns_409(self, admin_client, bp, tmp_project_dir):
+        """Uploading a file that already exists without overwrite returns 409."""
+        data_dir = tmp_project_dir["project_root"] / "test_data"
+        make_csv(data_dir, "dup.csv")
+        r = admin_client.post(
+            f"{bp}/api/data/upload",
+            files={"file": ("dup.csv", b"col1\nval1\n", "text/csv")},
+        )
+        assert r.status_code == 409
+        assert "already exists" in r.json()["error"]
+        # Cleanup
+        (data_dir / "dup.csv").unlink(missing_ok=True)
+
+    def test_duplicate_overwrite(self, admin_client, bp, tmp_project_dir):
+        """Uploading with overwrite=true replaces the existing file."""
+        data_dir = tmp_project_dir["project_root"] / "test_data"
+        make_csv(data_dir, "dup2.csv")
+        r = admin_client.post(
+            f"{bp}/api/data/upload?overwrite=true",
+            files={"file": ("dup2.csv", b"new_col\nnew_val\n", "text/csv")},
+        )
+        assert r.status_code == 200
+        assert r.json()["ok"] is True
+        assert (data_dir / "dup2.csv").read_text() == "new_col\nnew_val\n"
+        # Cleanup
+        (data_dir / "dup2.csv").unlink(missing_ok=True)
+
+
+class TestCSVTemplates:
+    """Tests for server-side CSV builder template CRUD."""
+
+    def test_list_empty(self, admin_client, bp, tmp_project_dir):
+        # Ensure clean state
+        tpl_file = tmp_project_dir["webapp_dir"] / "csv_templates.json"
+        tpl_file.write_text("{}")
+        r = admin_client.get(f"{bp}/api/data/templates")
+        assert r.status_code == 200
+        assert r.json()["templates"] == {}
+
+    def test_save_and_list(self, admin_client, bp, tmp_project_dir):
+        r = admin_client.post(
+            f"{bp}/api/data/templates",
+            json={"name": "user_template", "columns": [{"name": "id", "type": "sequential"}]},
+        )
+        assert r.status_code == 200
+        assert r.json()["ok"] is True
+
+        r = admin_client.get(f"{bp}/api/data/templates")
+        data = r.json()["templates"]
+        assert "user_template" in data
+        assert data["user_template"][0]["name"] == "id"
+
+    def test_save_no_name(self, admin_client, bp):
+        r = admin_client.post(
+            f"{bp}/api/data/templates",
+            json={"name": "", "columns": []},
+        )
+        assert r.status_code == 400
+        assert "required" in r.json()["error"].lower()
+
+    def test_delete(self, admin_client, bp, tmp_project_dir):
+        # Ensure template exists
+        tpl_file = tmp_project_dir["webapp_dir"] / "csv_templates.json"
+        tpl_file.write_text('{"to_delete": [{"name": "col1"}]}')
+
+        r = admin_client.delete(f"{bp}/api/data/templates/to_delete")
+        assert r.status_code == 200
+        assert r.json()["ok"] is True
+
+        r = admin_client.get(f"{bp}/api/data/templates")
+        assert "to_delete" not in r.json()["templates"]
+
+    def test_delete_nonexistent(self, admin_client, bp, tmp_project_dir):
+        """Deleting a non-existent template should succeed silently."""
+        tpl_file = tmp_project_dir["webapp_dir"] / "csv_templates.json"
+        tpl_file.write_text("{}")
+        r = admin_client.delete(f"{bp}/api/data/templates/ghost")
+        assert r.status_code == 200

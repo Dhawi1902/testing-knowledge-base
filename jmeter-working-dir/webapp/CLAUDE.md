@@ -42,9 +42,12 @@ webapp/
 │   ├── slaves.py            # SSH operations (start/stop/status, file distribution, paramiko)
 │   ├── data.py              # CSV generation (5 column types), split, distribute
 │   ├── config_parser.py     # Read/write config.properties, vm_config, slaves (JSON format)
+│   ├── jmx_patcher.py       # JMX XML patching (Backend Listener, etc.)
 │   ├── jtl_parser.py        # Parse JTL files with JSON caching for summary stats
 │   ├── analysis.py          # Rule-based analysis + optional Ollama AI
+│   ├── report.py            # Async report regeneration (filter JTL + generate)
 │   ├── report_properties.py # Report graph configuration management
+│   ├── settings.py          # Settings service (load/save/validate settings.json)
 │   └── process_manager.py   # Subprocess runner with WebSocket output streaming
 ├── config/
 │   └── report.properties    # Default report generation properties
@@ -63,7 +66,7 @@ webapp/
 │   ├── settings.html        # 5 tabs: General, Project, Report, Integrations, System
 │   ├── setup.html           # First-run setup wizard
 │   └── token.html           # Token entry page for remote users
-├── tests/                   # pytest suite (165 tests, 53% code coverage)
+├── tests/                   # pytest suite (198 tests, 56% code coverage)
 │   ├── conftest.py          # Fixtures: temp dirs, admin/viewer clients, test data
 │   ├── test_auth.py         # Auth middleware, token verification, access levels
 │   ├── test_config_api.py   # VM config, slaves, project, properties, JMeter props
@@ -217,15 +220,16 @@ App-level configuration stored in `settings.json` (auto-created on first save):
 ```json
 {
   "server": {
-    "domain": "",
-    "host": "0.0.0.0",
+    "host": "127.0.0.1",
     "port": 8080,
-    "allow_external": true,
+    "allow_external": false,
     "base_path": ""
   },
   "theme": "dark",
   "sidebar_collapsed": false,
   "runner": { "auto_scroll": true, "max_log_lines": 1000, "confirm_before_stop": true },
+  "filter": { "sub_results": true, "label_pattern": "" },
+  "report": { "granularity": 60000, "graphs": { "responseTimePercentiles": true, "..." : "..." } },
   "results": { "sort_order": "newest" },
   "analysis": { "ollama_url": "http://localhost:11434", "ollama_model": "llama3.1:8b", "ollama_timeout": 120 },
   "auth": { "token": "", "cookie_name": "jmeter_token", "cookie_max_age": 86400 },
@@ -262,7 +266,7 @@ python -m pytest tests/ -v --tb=short \
 GitHub Actions workflow at `.github/workflows/webapp-tests.yml`:
 - Triggers on push/PR to `jmeter-working-dir/webapp/**`
 - Runs on Ubuntu with Python 3.13
-- Executes all 165 tests with coverage reporting
+- Executes all 198 tests with coverage reporting (minimum 55% enforced)
 - Uploads HTML coverage report as artifact
 
 ## Logging

@@ -30,6 +30,20 @@ class TestDashboardStats:
         assert "grafana_url" in data
         assert "influxdb_url" in data
 
+    def test_live_stats_field(self, admin_client, bp):
+        """Dashboard stats should include live_stats for running test."""
+        r = admin_client.get(f"{bp}/api/dashboard/stats")
+        data = r.json()
+        assert "live_stats" in data
+        assert isinstance(data["live_stats"], dict)
+
+    def test_post_processing_field(self, admin_client, bp):
+        """Dashboard stats should include runner_post_processing."""
+        r = admin_client.get(f"{bp}/api/dashboard/stats")
+        data = r.json()
+        assert "runner_post_processing" in data
+        assert data["runner_post_processing"] is False
+
 
 class TestLastRun:
     def test_no_results(self, admin_client, bp):
@@ -224,3 +238,31 @@ class TestSlaveHealth:
         # Cleanup
         slaves_path.write_text("[]")
         config_mod._last_slave_status = []
+        config_mod._last_slave_status_ts = 0
+
+    def test_checked_at_timestamp(self, admin_client, bp, monkeypatch, tmp_project_dir):
+        """Slave health should include checked_at timestamp after status check."""
+        import routers.config as config_mod
+
+        async def mock_check(ips, configs):
+            return [{"ip": ip, "status": "up", "error": None} for ip in ips]
+
+        monkeypatch.setattr("routers.config.check_all_slaves", mock_check)
+
+        slaves_path = tmp_project_dir["project_root"] / "slaves.txt"
+        slaves_path.write_text(json.dumps([{"ip": "10.0.0.2", "enabled": True}]))
+
+        # Status check should set checked_at
+        r = admin_client.get(f"{bp}/api/slaves/status")
+        assert "checked_at" in r.json()
+        assert r.json()["checked_at"] > 0
+
+        # Health endpoint should also return checked_at
+        r2 = admin_client.get(f"{bp}/api/dashboard/slave-health")
+        assert "checked_at" in r2.json()
+        assert r2.json()["checked_at"] > 0
+
+        # Cleanup
+        slaves_path.write_text("[]")
+        config_mod._last_slave_status = []
+        config_mod._last_slave_status_ts = 0

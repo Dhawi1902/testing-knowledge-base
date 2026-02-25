@@ -124,9 +124,14 @@ class TestExportSettings:
         r = admin_client.get(f"{bp}/api/settings/export")
         assert r.status_code == 200
         data = r.json()
+        # Should be a v1 bundle
+        assert data.get("_export_version") == 1
+        assert "settings" in data
+        assert "project" in data
+        assert "report" in data
         # Token should be redacted from export
-        assert "token" not in data.get("auth", {})
-        assert "theme" in data
+        assert "token" not in data["settings"].get("auth", {})
+        assert "theme" in data["settings"]
 
 
 class TestImportSettings:
@@ -157,7 +162,8 @@ class TestReportSettings:
         r = admin_client.get(f"{bp}/api/settings/report")
         assert r.status_code == 200
         data = r.json()
-        assert "settings" in data or "graphs" in data
+        assert "settings" in data
+        assert "graphs" in data
 
 
 class TestTokenVerify:

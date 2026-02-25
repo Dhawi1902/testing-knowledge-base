@@ -4,27 +4,8 @@
 {% block page_title %}Dashboard{% endblock %}
 
 {% block content %}
-<div class="card-grid mb-24">
-    <div class="stat-card">
-        <div class="stat-value" id="jmxCount">-</div>
-        <div class="stat-label">Test Plans</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value" id="resultsCount">-</div>
-        <div class="stat-label">Result Folders</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value" id="slavesCount">-</div>
-        <div class="stat-label">Slaves</div>
-    </div>
-    <div class="stat-card">
-        <div class="stat-value" id="modeLabel">-</div>
-        <div class="stat-label">Mode</div>
-    </div>
-</div>
-
-<!-- Row 2: Runner Status (1fr) + Last Test Run (2fr) -->
-<div class="dashboard-row mb-16" style="grid-template-columns:1fr 2fr;">
+<!-- Row 1: Runner Status + Alerts -->
+<div class="dashboard-row mb-16" style="grid-template-columns:1fr 1fr;">
     <div class="card">
         <div class="card-header">
             <span class="card-title">Runner Status</span>
@@ -34,7 +15,18 @@
             <p class="text-light">Loading...</p>
         </div>
     </div>
-    <div class="card">
+    <div class="card" id="alertsRow">
+        <div class="card-header">
+            <span class="card-title">Alerts</span>
+            <span class="badge" id="alertCount">0</span>
+        </div>
+        <div id="alertsList"><p class="text-light">No alerts</p></div>
+    </div>
+</div>
+
+<!-- Row 2: Last Test Run (full width) -->
+<div class="mb-16">
+    <div class="card" style="margin-bottom:0;">
         <div class="card-header">
             <span class="card-title">Last Test Run</span>
         </div>
@@ -44,33 +36,21 @@
     </div>
 </div>
 
-<!-- Row 3: Run History with Trend Chart (full width) -->
+<!-- Row 3: Run History (full width) -->
 <div class="mb-16">
     <div class="card" style="margin-bottom:0;">
         <div class="card-header">
             <span class="card-title">Run History</span>
             <span class="text-sm text-light">Last 10 runs</span>
         </div>
-        <div id="trendChart" style="display:none;margin-bottom:12px;"></div>
         <div id="runHistory">
             <p class="text-light">Loading...</p>
         </div>
     </div>
 </div>
 
-<!-- Row 4: Alerts (full width, hidden when empty) -->
-<div class="mb-16" id="alertsRow" style="display:none;">
-    <div class="card" style="margin-bottom:0;">
-        <div class="card-header">
-            <span class="card-title">Alerts</span>
-            <span class="badge" id="alertCount">0</span>
-        </div>
-        <div id="alertsList"></div>
-    </div>
-</div>
-
-<!-- Row 5: Quick Actions + Disk Usage + Monitoring (equal thirds) -->
-<div class="dashboard-row" style="grid-template-columns:repeat(3,1fr);">
+<!-- Row 4: Quick Actions + Stats + Disk -->
+<div class="dashboard-row mb-16" style="grid-template-columns:1fr 2fr 1fr;">
     <div class="card">
         <div class="card-header">
             <span class="card-title">Quick Actions</span>
@@ -84,13 +64,40 @@
     </div>
     <div class="card">
         <div class="card-header">
+            <span class="card-title">Stats</span>
+        </div>
+        <div class="card-grid" style="grid-template-columns:repeat(4,1fr);">
+            <div class="stat-card" style="padding:8px;">
+                <div class="stat-value" style="font-size:20px;" id="jmxCount">-</div>
+                <div class="stat-label" style="font-size:11px;">Test Plans</div>
+            </div>
+            <div class="stat-card" style="padding:8px;">
+                <div class="stat-value" style="font-size:20px;" id="resultsCount">-</div>
+                <div class="stat-label" style="font-size:11px;">Results</div>
+            </div>
+            <div class="stat-card" style="padding:8px;">
+                <div class="stat-value" style="font-size:20px;" id="slavesCount">-</div>
+                <div class="stat-label" style="font-size:11px;">Slaves</div>
+            </div>
+            <div class="stat-card" style="padding:8px;">
+                <div class="stat-value" style="font-size:20px;" id="modeLabel">-</div>
+                <div class="stat-label" style="font-size:11px;">Mode</div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header">
             <span class="card-title">Disk Usage</span>
         </div>
         <div id="diskUsage">
             <p class="text-light">Loading...</p>
         </div>
     </div>
-    <div class="card">
+</div>
+
+<!-- Row 5: Monitoring -->
+<div class="mb-16">
+    <div class="card" style="margin-bottom:0;">
         <div class="card-header">
             <span class="card-title">Monitoring</span>
         </div>
@@ -111,43 +118,6 @@ function trendArrow(current, previous, lowerIsBetter) {
     const arrow = diff > 0 ? '&#9650;' : '&#9660;';
     const color = better ? 'var(--color-success)' : 'var(--color-danger)';
     return `<span style="color:${color};font-size:11px;">${arrow}</span>`;
-}
-
-function renderTrendChart(runs) {
-    const data = runs.filter(r => r.stats).reverse(); // oldest first for chart
-    if (data.length < 2) return '';
-    const values = data.map(r => r.stats.avg);
-    const labels = data.map(r => r.name);
-    const w = 600, h = 80;
-    const pad = {t: 10, r: 20, b: 20, l: 50};
-    const cw = w - pad.l - pad.r, ch = h - pad.t - pad.b;
-    const mn = Math.min(...values) * 0.9, mx = Math.max(...values) * 1.1;
-    const rng = mx - mn || 1;
-    const pts = values.map((v, i) => {
-        const x = pad.l + (i / (values.length - 1)) * cw;
-        const y = pad.t + (1 - (v - mn) / rng) * ch;
-        return [x, y];
-    });
-    const line = pts.map(p => p.join(',')).join(' ');
-    // Gradient fill area
-    const area = `${pts[0][0]},${h - pad.b} ${line} ${pts[pts.length-1][0]},${h - pad.b}`;
-    let svg = `<svg width="100%" viewBox="0 0 ${w} ${h}" role="img" aria-label="Response time trend chart">
-        <defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="var(--color-primary)" stop-opacity="0.2"/>
-            <stop offset="100%" stop-color="var(--color-primary)" stop-opacity="0"/>
-        </linearGradient></defs>
-        <polygon points="${area}" fill="url(#tg)"/>
-        <polyline points="${line}" fill="none" stroke="var(--color-primary)" stroke-width="2" stroke-linejoin="round"/>`;
-    pts.forEach((p, i) => {
-        svg += `<circle cx="${p[0]}" cy="${p[1]}" r="3.5" fill="var(--color-surface)" stroke="var(--color-primary)" stroke-width="2">
-            <title>${escAttr(labels[i])}: ${values[i].toFixed(0)} ms</title></circle>`;
-    });
-    // Y-axis labels
-    svg += `<text x="${pad.l - 4}" y="${pad.t + 4}" text-anchor="end" fill="var(--color-text-light)" font-size="10">${Math.round(mx)}</text>`;
-    svg += `<text x="${pad.l - 4}" y="${h - pad.b}" text-anchor="end" fill="var(--color-text-light)" font-size="10">${Math.round(mn)}</text>`;
-    svg += `<text x="${w / 2}" y="${h - 2}" text-anchor="middle" fill="var(--color-text-light)" font-size="10">Avg Response Time (ms)</text>`;
-    svg += '</svg>';
-    return svg;
 }
 
 async function loadDashboard() {
@@ -187,15 +157,38 @@ async function loadDashboard() {
           }).join('')}</td></tr>`
         : '';
 
-    if (statsData.runner_active) {
-        badge.textContent = 'Running';
+    if (statsData.runner_active || statsData.runner_post_processing) {
+        badge.textContent = statsData.runner_post_processing ? 'Post-processing' : 'Running';
         badge.className = 'badge badge-warning';
+        // Live stats mini-cards
+        const ls = statsData.live_stats || {};
+        const hasLive = ls.total_samples > 0;
+        const liveHtml = hasLive ? `
+            <div class="card-grid" style="grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 6px; margin: 8px 0;">
+                <div class="stat-card" style="padding:6px;">
+                    <div class="stat-value" style="font-size:16px;">${(ls.total_samples || 0).toLocaleString()}</div>
+                    <div class="stat-label" style="font-size:10px;">Samples</div>
+                </div>
+                <div class="stat-card" style="padding:6px;">
+                    <div class="stat-value" style="font-size:16px;">${(ls.throughput || 0).toFixed(1)}/s</div>
+                    <div class="stat-label" style="font-size:10px;">Throughput</div>
+                </div>
+                <div class="stat-card" style="padding:6px;">
+                    <div class="stat-value" style="font-size:16px;">${ls.avg || 0} ms</div>
+                    <div class="stat-label" style="font-size:10px;">Avg RT</div>
+                </div>
+                <div class="stat-card" style="padding:6px;">
+                    <div class="stat-value" style="font-size:16px;${(ls.error_pct || 0) > 0 ? 'color:var(--color-danger);' : ''}">${(ls.error_pct || 0).toFixed(2)}%</div>
+                    <div class="stat-label" style="font-size:10px;">Errors</div>
+                </div>
+            </div>` : '';
         runnerInfo.innerHTML = `
             <table>
                 <tr><td class="text-light" style="width:100px;">Test Plan</td><td class="text-mono">${escAttr(statsData.runner_label || 'Unknown')}</td></tr>
                 <tr><td class="text-light">Slaves</td><td>${statsData.active_slaves_count} active</td></tr>
                 ${healthHtml}
             </table>
+            ${liveHtml}
             <div style="margin-top:12px;">
                 <a href="${BASE_PATH}/plans" class="btn btn-outline btn-sm">View Logs</a>
             </div>`;
@@ -218,6 +211,10 @@ async function loadDashboard() {
             const s = lr.stats;
             statsHtml = `
                 <div class="card-grid" style="grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; margin-bottom: 12px;">
+                    <div class="stat-card" style="padding:8px;">
+                        <div class="stat-value" style="font-size:18px;">${s.peak_vus ? s.peak_vus.toLocaleString() : '-'}</div>
+                        <div class="stat-label" style="font-size:11px;">Peak VUs</div>
+                    </div>
                     <div class="stat-card" style="padding:8px;">
                         <div class="stat-value" style="font-size:18px;">${s.avg.toFixed(0)} ms</div>
                         <div class="stat-label" style="font-size:11px;">Avg RT</div>
@@ -250,22 +247,15 @@ async function loadDashboard() {
             </div>`;
     }
 
-    // Run History + Trend Chart (E1)
+    // Run History
     const histEl = document.getElementById('runHistory');
-    const trendEl = document.getElementById('trendChart');
     const runs = recentData ? (recentData.runs || []) : [];
     if (runs.length === 0) {
         histEl.innerHTML = '<p class="text-light">No test runs yet.</p>';
     } else {
-        // Render trend chart if we have 2+ runs with stats
-        const chartSvg = renderTrendChart(runs);
-        if (chartSvg) {
-            trendEl.innerHTML = chartSvg;
-            trendEl.style.display = '';
-        }
         let html = `<div style="overflow-x:auto;"><table style="width:100%;">
             <thead><tr>
-                <th>Run</th><th>Date</th><th>Samples</th>
+                <th>Run</th><th>Date</th><th>VUs</th><th>Samples</th>
                 <th>Avg RT</th><th>P95</th><th>Error %</th><th>Throughput</th>
             </tr></thead><tbody>`;
         for (let i = 0; i < runs.length; i++) {
@@ -276,6 +266,7 @@ async function loadDashboard() {
                 html += `<tr>
                     <td class="text-mono">${escAttr(r.name)}</td>
                     <td>${new Date(r.date).toLocaleDateString()}</td>
+                    <td>${s.peak_vus ? s.peak_vus.toLocaleString() : '-'}</td>
                     <td>${s.total_samples.toLocaleString()}</td>
                     <td>${s.avg.toFixed(0)} ms ${trendArrow(s.avg, prev?.avg, true)}</td>
                     <td>${s.p95.toFixed(0)} ms ${trendArrow(s.p95, prev?.p95, true)}</td>
@@ -286,7 +277,7 @@ async function loadDashboard() {
                 html += `<tr>
                     <td class="text-mono">${escAttr(r.name)}</td>
                     <td>${new Date(r.date).toLocaleDateString()}</td>
-                    <td colspan="5" class="text-light">No JTL data</td>
+                    <td colspan="6" class="text-light">No JTL data</td>
                 </tr>`;
             }
         }
@@ -294,11 +285,9 @@ async function loadDashboard() {
         histEl.innerHTML = html;
     }
 
-    // Alerts (E3)
+    // Alerts (E3) — always visible, shows "No alerts" when empty
     const alertItems = alertsData ? (alertsData.alerts || []) : [];
-    const alertsRow = document.getElementById('alertsRow');
     if (alertItems.length > 0) {
-        alertsRow.style.display = '';
         const countBadge = document.getElementById('alertCount');
         const hasError = alertItems.some(a => a.level === 'danger');
         countBadge.textContent = alertItems.length;
@@ -315,6 +304,10 @@ async function loadDashboard() {
             </div>`;
         });
         document.getElementById('alertsList').innerHTML = aHtml;
+    } else {
+        document.getElementById('alertCount').textContent = '0';
+        document.getElementById('alertCount').className = 'badge badge-info';
+        document.getElementById('alertsList').innerHTML = '<p class="text-light">No alerts</p>';
     }
 
     // Disk Usage
@@ -351,5 +344,31 @@ async function loadDashboard() {
 }
 
 loadDashboard();
+
+// Auto-refresh runner status while a test is active
+let _dashPollTimer = null;
+async function pollRunnerStatus() {
+    try {
+        const data = await api('/api/runner/status');
+        if (!data) return;
+        const badge = document.getElementById('runnerBadge');
+        if (data.running || data.post_processing) {
+            // Re-fetch full dashboard to update live stats
+            loadDashboard();
+            if (!_dashPollTimer) _dashPollTimer = setInterval(pollRunnerStatus, 3000);
+        } else {
+            if (_dashPollTimer) { clearInterval(_dashPollTimer); _dashPollTimer = null; }
+            badge.textContent = 'Idle';
+            badge.className = 'badge badge-info';
+        }
+    } catch(e) { /* ignore */ }
+}
+// Start polling after initial load
+setTimeout(async () => {
+    const s = await api('/api/runner/status').catch(() => null);
+    if (s && (s.running || s.post_processing)) {
+        _dashPollTimer = setInterval(pollRunnerStatus, 3000);
+    }
+}, 2000);
 </script>
 {% endblock %}

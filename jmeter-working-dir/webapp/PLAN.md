@@ -1131,3 +1131,349 @@ All Phase 13 items completed. Additional improvements beyond Phase 13:
 - Phases A-G (security, code quality, inline styles, features, dashboard tier 2, future features, project-level)
 - CI/CD via GitHub Actions with 165 tests
 - See `PHASE_PLAN.md` for full status.
+
+---
+
+## Phase 14: Walkthrough Overhaul (2026-02-25)
+
+Comprehensive restructuring based on the page-by-page walkthrough documented in `EVALUATION.md`. This phase addresses architectural debt, config consolidation, data pipeline correctness, and new capabilities across all 6 pages.
+
+**Source:** All changes trace back to `EVALUATION.md` walkthrough findings (D1-D4, P1-P8, R1-R8, D1-D4, S1-S10, ST1-ST7).
+
+**Principles:**
+- Each sub-phase produces a working, testable increment — no big-bang rewrites
+- Tests updated alongside code (maintain 165+ tests, strengthen weak assertions)
+- Slave VMs page is implemented LAST (most complex, depends on other phases)
+
+---
+
+### 14.1 — Data Pipeline Foundation
+
+**Goal:** Fix the core data flow so stats are consistent, `filtered.jtl` is preserved, and `run_summary.json` becomes the single source of truth for run metadata + stats.
+
+**Why first:** Every other phase (dashboard, results, comparison) reads from this pipeline. Getting it right here eliminates cascading inconsistencies.
+
+| # | Change | Ref | Files |
+|---|--------|-----|-------|
+| 1 | **Stop deleting `filtered.jtl`** — remove `unlink()` at lines 126-131 in `process_manager.py` and lines 243-244 in `results.py` | P3, R2 | `process_manager.py`, `results.py` |
+| 2 | **`_find_jtl()` helper** — prefer `filtered.jtl` over `results.jtl`. Apply to stats, labels, compare, analyze endpoints | R1 | `results.py` (new helper, update 4 endpoints) |
+| 3 | **Post-processing state** — add `is_post_processing` property to `ProcessManager`. Set `True` after main process exits, `False` after post-commands complete. UI shows "Post-processing..." badge | P2 | `process_manager.py`, `test_plans.html`, `dashboard.html` |
+| 4 | **Fix async correctness** — replace `asyncio.get_event_loop()` with `asyncio.get_running_loop()`. Make `proc.wait()` non-blocking via `run_in_executor` | AC1, AC2 | `process_manager.py` |
+| 5 | **`run_summary.json` — pre-run phase** — write metadata (test plan, params, slaves, mode, filter config, start time) at `build_jmeter_command` time. Replaces `run_info.json` | P4 | `jmeter.py` |
+| 6 | **`run_summary.json` — lazy post-run stats** — on first access (dashboard, results), parse `filtered.jtl` (or `results.jtl`), append stats + transactions to existing `run_summary.json`. Legacy folders without summary get lazy generation too | P4 | `jtl_parser.py`, `dashboard.py` |
+| 7 | **Move `load_settings()` / `save_settings()` to `services/settings.py`** — breaks circular router-to-router imports (`dashboard.py` importing from `routers/settings.py`) | A1 | new `services/settings.py`, update all importers |
+| 8 | **Atomic JSON writes** — `atomic_write_json(path, data)` utility: write to temp file, then `os.replace()`. Apply to settings.json, project.json, presets.json, run_summary.json, all config writes | ST4, S4 | new utility in `services/settings.py`, update all callers |
+
+**Suggested improvement:** Item 7 should also move `DEFAULT_SETTINGS` and `_validate_settings()` to the service. The router becomes a thin handler layer — just receives HTTP, delegates to service, returns response. This is consistent with how `jmeter.py`, `jtl_parser.py`, and `data.py` already work.
+
+**Suggested improvement:** For item 6, add a `_ensure_summary(folder_path)` function that checks if `run_summary.json` exists and has `stats` key. If not, parse JTL and write it. This function gets called from dashboard recent-runs, results list, and stats endpoints — one place, consistent behavior.
+
+**Tests to add/update:**
+- Test that `filtered.jtl` survives post-run and regeneration
+- Test `_find_jtl()` preference logic
+- Test `is_post_processing` state transitions
+- Test `run_summary.json` schema (pre-run and post-run phases)
+- Test atomic write (crash simulation — verify temp file cleanup)
+
+**Deliverable:** After this phase, the data pipeline is sound. `filtered.jtl` persists, all stats come from filtered data, `run_summary.json` is the single metadata file, and JSON writes are atomic.
+
+---
+
+### 14.2 — Config Consolidation
+
+**Goal:** Eliminate the `config.properties` dependency from the webapp. One settings file (`settings.json`), one save API, one Save button.
+
+**Why second:** The Plans page, Settings page, and runner all reference `config.properties`. Cleaning this up before touching those UIs prevents doing the work twice.
+
+| # | Change | Ref | Files |
+|---|--------|-----|-------|
+| 1 | **Remove global properties modal from Plans page** — delete "Edit Global Properties" button, modal HTML, "Save to Defaults" button, and all `config.properties` read/write calls for parameter defaults. JMX `__P(name,default)` is the source of truth for parameter defaults | P6 | `test_plans.html`, `jmeter.py` |
+| 2 | **Add filter config to `settings.json`** — new `"filter"` section: `{"sub_results": true, "label_pattern": ""}`. Runner reads from here instead of `config.properties` | ST2 | `services/settings.py` (defaults), `jmeter.py` (read filter config), `test_plans.html` (bind to UI) |
+| 3 | **Remove "Config Properties File" field from Settings Project tab** | ST1 | `settings.html` |
+| 4 | **Remove `domain` field from Server section** — Cloudflare tunnel is external. Also remove `host`, `port`, `allow_external` from UI (keep as CLI args / env vars only). Keep `base_path` in Settings | ST7 | `settings.html`, `settings.py` (remove from defaults or keep but don't render) |
+| 5 | **Merge report settings into main save** — move graph toggles + granularity into `settings.json` under a `"report"` key. One Save button calls one API. Remove separate Report tab Save button and `PUT /api/settings/report` endpoint | ST3 | `settings.html`, `services/settings.py`, `services/report_properties.py` |
+| 6 | **Update `build_jmeter_command()`** — stop reading `config.properties` for parameter defaults. Read filter config from `settings.json`. Still accept `config.properties` path for `-q` flag if the file exists (legacy CLI compatibility) | P6 | `jmeter.py` |
+
+**Suggested improvement:** After this phase, `config.properties` is read-only from the webapp's perspective. Consider adding a one-line note in the Settings UI: "Legacy config.properties is not managed by the webapp. Use JMeter Properties Explorer (Phase 14.5) for property management." This prevents user confusion during the transition.
+
+**Suggested improvement:** For item 5, `report_properties.py` currently generates `config/report.properties` (a JMeter properties file for `-q`). That file generation should stay — it's consumed by JMeter, not the webapp. What changes is the *storage*: graph toggle states move from being decoded from `report.properties` to being stored in `settings.json`. The `save()` function reads from `settings.json` and writes `report.properties` as a derived artifact.
+
+**Migration path:**
+- On first load after upgrade, if `settings.json` has no `"filter"` key, auto-migrate values from `config.properties` (if it exists)
+- If `settings.json` has no `"report"` key, auto-migrate from current `report.properties` state
+- Log migration actions to `logs/app.log`
+
+**Tests to add/update:**
+- Test that Plans page works without `config.properties` existing
+- Test filter config round-trip through settings API
+- Test report settings merged into main save
+- Test migration from config.properties → settings.json
+- Test that removing domain/host/port from UI doesn't break server restart
+
+**Deliverable:** The webapp no longer reads or writes `config.properties`. Settings page has one Save button. Filter config lives in `settings.json`. Server section is simplified.
+
+---
+
+### 14.3 — Runner Pipeline Enhancements
+
+**Goal:** Backend-side live stats, stats that survive navigation, JMX patching for Backend Listener, and test data recording.
+
+**Why third:** Depends on the data pipeline (14.1) and config consolidation (14.2) being done.
+
+| # | Change | Ref | Files |
+|---|--------|-----|-------|
+| 1 | **Backend-side live stats parsing** — parse JMeter `summary +` / `summary =` lines in `_drain_output()`. Store latest values (throughput, avg RT, error rate, total samples, active VUs) in `ProcessManager._live_stats`. Expose via `GET /api/runner/status` | P5 | `process_manager.py`, `test_plans.py` |
+| 2 | **Dashboard shows live stats during run** — runner status card reads `_live_stats` from process manager. Shows real-time throughput, avg RT, errors while test is active | P5 | `dashboard.py`, `dashboard.html` |
+| 3 | **Live stats survive page navigation** — on WebSocket reconnect, replay buffered log lines through `parseLogLine()` to restore summary cards. Frontend-only change | P1 | `test_plans.html` |
+| 4 | **JMX patching at run time** — before launching JMeter, read JMX, find Backend Listener elements, patch values (run_id, influxdbUrl, application, etc.) from Properties Explorer overrides. Write patched JMX to result dir, run JMeter with patched copy. Original untouched | S5 | new `services/jmx_patcher.py`, `jmeter.py` |
+| 5 | **Record test data files in `run_summary.json`** — scan JMX for CSV Data Set Config elements, record referenced filenames + row counts + sizes | D4 | `jmeter.py` |
+
+**Suggested improvement:** For item 1, the regex parsing already exists in `test_plans.html` JavaScript (`parseLogLine`). Port the same regex to Python. Keep both — the backend version feeds the dashboard, the frontend version feeds the live stat cards on `/plans` (zero-latency, no extra API call).
+
+**Suggested improvement:** For item 4, create a clean `services/jmx_patcher.py` module:
+```python
+def patch_jmx(jmx_path: Path, patches: dict, output_path: Path) -> Path:
+    """Patch JMX XML elements and write to output_path."""
+    # Uses xml.etree.ElementTree
+    # Finds BackendListener, CSVDataSet, etc.
+    # Applies patches dict: {"runId": "20260225_1", "influxdbUrl": "..."}
+    # Returns output_path
+```
+This keeps `jmeter.py` focused on command building and avoids a 200-line function.
+
+**Tests to add/update:**
+- Test backend live stats parsing (feed sample JMeter log lines, verify parsed values)
+- Test that `_live_stats` appears in runner status API response
+- Test JMX patching (sample JMX with Backend Listener, verify patched output)
+- Test test data recording in run_summary.json
+
+**Deliverable:** Dashboard shows live performance during runs. Stats cards recover on page navigation. JMX is auto-patched for Backend Listener values. Run metadata includes test data context.
+
+---
+
+### 14.4 — Results Page Enhancements
+
+**Goal:** Better data visibility, non-blocking operations, pagination.
+
+| # | Change | Ref | Files |
+|---|--------|-----|-------|
+| 1 | **Show metrics in results table** — results list API returns key metrics (avg, p95, error%, throughput, peak VUs) from `run_summary.json`. Table shows compact metric badges per row | R4 | `results.py`, `results.html`, `jtl_parser.py` |
+| 2 | **Non-blocking regeneration** — replace `subprocess.run()` / `proc.communicate()` with `asyncio.create_subprocess_exec`. Event loop stays responsive during regeneration | R3 | `results.py` |
+| 3 | **Extract regeneration logic to service** — deduplicate `api_regenerate_report` and `api_bulk_regenerate` into `services/report.py` (or extend `services/jmeter.py`) | A2 | new `services/report.py` or extend `jmeter.py`, `results.py` |
+| 4 | **Per-transaction comparison** — add transaction-level breakdown to compare view. Match by label, show side-by-side with change percentages. Highlight regressions | R6 | `results.py`, `results.html`, `jtl_parser.py` |
+| 5 | **`ZIP_DEFLATED` for downloads** — change from `ZIP_STORED` to `ZIP_DEFLATED` for HTML report downloads. 5-10x smaller for text-heavy reports | R7 | `results.py` |
+| 6 | **Pagination** — `?page=1&per_page=25` on `GET /api/results/list`. Backend scans once, returns paginated slice. Frontend shows page controls | R8 | `results.py`, `results.html` |
+| 7 | **Bulk regen respects per-result settings** — use each result's saved filter settings from `regen_info.json` / `run_summary.json` instead of hardcoded defaults | R5 | `results.html` |
+
+**Suggested improvement:** For item 3, the regeneration function should follow this signature:
+```python
+async def regenerate_report(
+    folder_path: Path,
+    jmeter_path: str,
+    filter_sub_results: bool,
+    label_pattern: str,
+    report_properties_path: Path | None = None,
+) -> dict:
+    """Filter JTL + generate report. Returns {ok, message}."""
+```
+Both single and bulk regen call this. The bulk endpoint just loops with `asyncio.gather` or sequential calls.
+
+**Suggested improvement:** For item 6, consider server-side search as well. Currently search is client-side (filter rendered rows). With pagination, search must move to the backend — add `?q=search_term` that filters by folder name before pagination.
+
+**Tests to add/update:**
+- Test metrics in results list response
+- Test regeneration doesn't block other API calls (async correctness)
+- Test per-transaction comparison output
+- Test ZIP_DEFLATED produces smaller files
+- Test pagination edge cases (empty, last page, out of range)
+
+**Deliverable:** Results page shows performance at a glance, handles large result sets, and regeneration doesn't freeze the app.
+
+---
+
+### 14.5 — Dashboard & UX Polish
+
+**Goal:** Layout reorder, frontend consistency, UX improvements across pages.
+
+| # | Change | Ref | Files |
+|---|--------|-----|-------|
+| 1 | **Dashboard layout reorder** — priority-based: (1) Runner + Alerts, (2) Last Run, (3) Run History, (4) Quick Actions + Stats + Disk, (5) Monitoring | D-Layout | `dashboard.html` |
+| 2 | **Presets: plan-aware or warn on mismatch** — when applying a preset, check if parameter keys match current plan. Show warning for mismatched keys. Option: scope presets per-plan | P8 | `test_plans.html` |
+| 3 | **Server-side CSV templates** — move custom CSV builder templates from `localStorage` to server-side `csv_templates.json`. Add CRUD API endpoints | D1 | `test_data.py`, `test_data.html` |
+| 4 | **Upload duplicate check** — CSV upload checks `dest.exists()`, returns 409 if file exists. Add `?overwrite=true` param + confirmation dialog | D2 | `test_data.py`, `test_data.html` |
+| 5 | **Extend settings export/import** — bundle `settings.json` + `project.json` + report settings into single export. Import restores all | ST6 | `settings.py`, `settings.html` |
+| 6 | **Inline styles → CSS classes** — extract common patterns (`.form-row`, `.form-col`, `.surface-card`, `.section-title`) to `style.css`. Apply across all templates | CC4 | `style.css`, all templates |
+| 7 | **WSManager reconnection** — add exponential backoff retry to WebSocket connections in `app.js`. Currently a network hiccup silently kills the log stream | F1 | `app.js` |
+
+**Suggested improvement:** For item 6, don't do a mass find-replace. Instead, define the CSS classes first, then apply them page-by-page as each page is touched. This avoids a 500-line diff that's impossible to review. Start with `settings.html` (most inline styles) and `test_data.html` (second most).
+
+**Suggested improvement:** For item 7, the reconnection pattern should be:
+```javascript
+class WSManager {
+    connect(url, onMessage, options = {}) {
+        // ... existing code ...
+        ws.onclose = () => {
+            if (!this._intentionalClose) {
+                setTimeout(() => this.connect(url, onMessage, options),
+                    Math.min(1000 * 2 ** this._retryCount, 30000));
+                this._retryCount++;
+            }
+        };
+    }
+}
+```
+Cap at 30s, reset counter on successful connection.
+
+**Tests to add/update:**
+- Test CSV template CRUD API
+- Test upload duplicate returns 409
+- Test export bundles all config files
+- Test import restores all config files
+
+**Deliverable:** Dashboard is reordered by priority. UX inconsistencies resolved. Frontend is more resilient.
+
+---
+
+### 14.6 — Slave VMs / Fleet Management
+
+**Goal:** Complete overhaul of the Slaves page. Remove legacy properties section, add Properties Explorer, deployment workflow, Windows support.
+
+**Why last:** Most complex page. Depends on:
+- 14.1 (data pipeline) for run_summary integration
+- 14.2 (config consolidation) for property management approach
+- 14.3 (JMX patching) for Backend Listener values
+- Needs real SSH testing environment
+
+Split into sub-phases for manageability:
+
+#### 14.6a — Cleanup (no new features)
+
+| # | Change | Ref | Files |
+|---|--------|-----|-------|
+| 1 | **Remove auto-status on page load** — delete `refreshStatus()` call at `slaves.html:741`. Add "last checked" timestamp next to status badges | S1 | `slaves.html` |
+| 2 | **Remove JMeter Properties section** — delete entire collapsible section, InfluxDB preset, "Push to Slaves" button, `jmeter_properties.json`, and related API endpoints (`GET/PUT /api/config/jmeter-properties`, `POST /api/config/push-properties`) | S3 | `slaves.html`, `config.py` |
+| 3 | **Extract shared rendering logic** — create `renderSlaveActions(s)`, `renderConfigPanel(s)`, `renderStatusBadge(s)` helpers. `renderList()` and `renderGrid()` only handle layout | S7 | `slaves.html` |
+| 4 | **Status cache TTL** — add timestamp to `_last_slave_status`. Dashboard shows "checked 2h ago" if stale. No auto-refresh | S2 | `config.py`, `dashboard.py`, `dashboard.html` |
+| 5 | **Fix `tempfile.mktemp()`** — replace with `NamedTemporaryFile` | CQ1 | `config.py` |
+
+**Tests to update:**
+- Remove tests for deleted JMeter Properties endpoints
+- Test status cache TTL behavior
+- Test that page loads without triggering SSH
+
+#### 14.6b — JMeter Properties Explorer
+
+| # | Change | Ref | Files |
+|---|--------|-----|-------|
+| 1 | **Parse `jmeter.properties`** — read `<jmeter_home>/bin/jmeter.properties`, extract all properties with defaults, group by section comments (HTTP, Reporting, CSV, etc.) | S4 | new `services/jmeter_properties.py` |
+| 2 | **Properties Explorer UI** — searchable/filterable property list. Toggle on/off, override values. Only user-overridden properties saved (not the full file) | S4 | `slaves.html` or `settings.html` (placement per ST5) |
+| 3 | **Per-project property overrides** — saved in project config. Different projects can have different property profiles | S4 | `services/jmeter_properties.py`, `project.json` |
+| 4 | **Apply to master** — overridden properties passed as `-J` flags at run time | S4 | `jmeter.py` |
+| 5 | **Apply to slaves** — push overridden properties file to all slaves via SCP | S4 | `slaves.py` |
+
+**Suggested improvement:** The properties parser should handle JMeter's comment format:
+```properties
+#-------------------------------------------------------
+# HTTP defaults
+#-------------------------------------------------------
+#httpclient.timeout=0
+```
+Group properties by section header comments. Each property stores: `{key, default_value, section, comment, enabled, user_value}`. The UI groups by section with collapsible accordions.
+
+#### 14.6c — Fleet Operations
+
+| # | Change | Ref | Files |
+|---|--------|-----|-------|
+| 1 | **Prerequisite check** — SSH into slave, verify JMeter installed (`ls <path>/bin/jmeter`), Java accessible (`java -version`). Show results per-slave | S8 | `slaves.py`, `slaves.html` |
+| 2 | **Deploy start/stop scripts** — generate from VM config (JMeter path, OS, JVM args), push via SCP. Track deployment status + timestamp per slave | S8 | `slaves.py`, `config.py`, `slaves.html` |
+| 3 | **Start/stop progress streaming** — WebSocket or SSE for per-slave start/stop results. Each slave's badge updates as its SSH command completes | S6 | `config.py`, `slaves.html` |
+| 4 | **Distribution progress streaming** — same streaming pattern for test data distribution | D3 | `test_data.py`, `test_data.html` |
+
+**Suggested improvement:** Items 3 and 4 use the same streaming pattern. Build a reusable `SSHTaskStreamer` that:
+1. Takes a list of `(slave, command)` pairs
+2. Runs them in parallel via `ThreadPoolExecutor`
+3. Streams results via WebSocket as each completes
+4. Returns final summary
+
+Use this for: start all, stop all, distribute data, deploy scripts, prerequisite checks. One implementation, five consumers.
+
+#### 14.6d — Windows Slave Support
+
+| # | Change | Ref | Files |
+|---|--------|-----|-------|
+| 1 | **OS-aware command generation** — `_build_start_command(os_type)`, `_build_stop_command(os_type)`, `_build_mkdir_command(os_type, path)`. Generate correct commands for Linux and Windows | S9 | `slaves.py` |
+| 2 | **SCP path handling** — backslashes for Windows paths | S9 | `slaves.py` |
+| 3 | **Prerequisites for Windows** — document OpenSSH Server setup steps. Add prerequisite check for Windows (test with `dir` instead of `ls`) | S9 | `slaves.py`, docs |
+
+#### 14.6e — Final
+
+| # | Change | Ref | Files |
+|---|--------|-----|-------|
+| 1 | **Page rename** — decide and apply: "Slave VMs" → "Fleet" / "Fleet Management" / "Remote Servers". Update sidebar, breadcrumbs, API paths (with backward-compatible redirects) | S10 | `base.html`, `config.py`, `slaves.html` |
+
+---
+
+### 14.7 — Test Hardening
+
+**Goal:** Strengthen test suite alongside implementation. Not a separate phase — done incrementally with each sub-phase.
+
+| # | Change | Ref |
+|---|--------|-----|
+| 1 | **Fix weak assertions** — replace `assert X or Y` chains with exact value checks | T1-T3 |
+| 2 | **Add known-data assertions** — test fixtures use 2 JTL rows; verify exact parsed outputs | T4 |
+| 3 | **WebSocket integration tests** — test log streaming, reconnection, buffer replay | T5 |
+| 4 | **Target: maintain 165+ tests, increase coverage to 60%+** | — |
+
+---
+
+### Research Track (no code, parallel with implementation)
+
+| # | Topic | Ref | Notes |
+|---|-------|-----|-------|
+| 1 | **Distributed mode stop** — test shutdown port (UDP 4445), `-X` flag, graceful master stop | P7 | Needs real distributed JMeter environment |
+| 2 | **Windows SSH commands** — test `cmd /c start /b`, `taskkill`, path handling over OpenSSH on Windows 10+ | S9 | Needs Windows VM with OpenSSH Server |
+
+---
+
+### Implementation Order Summary
+
+```
+Phase    Dependencies   Scope          Risk
+──────── ────────────── ────────────── ──────
+14.1     none           8 changes      Medium (core pipeline)
+14.2     14.1           6 changes      Medium (config migration)
+14.3     14.1, 14.2     5 changes      Medium (new features)
+14.4     14.1           7 changes      Low (improvements)
+14.5     none           7 changes      Low (UX polish)
+14.6a    none           5 changes      Low (cleanup)
+14.6b    14.2           5 changes      Medium (new feature)
+14.6c    14.6a, 14.6b   4 changes      High (SSH, streaming)
+14.6d    14.6c          3 changes      Medium (needs testing)
+14.6e    14.6a-d        1 change       Low (rename)
+14.7     all            4 changes      Low (tests)
+```
+
+**Parallelism opportunities:**
+- 14.5 (UX polish) can run in parallel with 14.1-14.4
+- 14.6a (cleanup) can start alongside 14.2
+- Research track runs in parallel with everything
+
+**Estimated total:** ~50 discrete changes across ~25 files.
+
+---
+
+### Phase 14 Status
+
+| # | Item | Status |
+|---|------|--------|
+| 14.1 | Data Pipeline Foundation | Done |
+| 14.2 | Config Consolidation | Done |
+| 14.3 | Runner Pipeline Enhancements | Done |
+| 14.4 | Results Page Enhancements | Done |
+| 14.5 | Dashboard & UX Polish | Done (14.5.6 deferred) |
+| 14.6a | Fleet: Cleanup | Done |
+| 14.6b | Fleet: Properties Explorer | Deferred (needs real JMeter env) |
+| 14.6c | Fleet: Fleet Operations | Deferred (needs SSH testing env) |
+| 14.6d | Fleet: Windows Support | Deferred (needs Windows VM) |
+| 14.6e | Fleet: Page Rename | Done |
+| 14.7 | Test Hardening | Done (198 tests, 68% coverage) |

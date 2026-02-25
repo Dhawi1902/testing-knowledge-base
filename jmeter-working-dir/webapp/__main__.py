@@ -2,7 +2,7 @@
 import sys
 import uvicorn
 
-from routers.settings import load_settings
+from services.settings import load_settings
 
 if __name__ == "__main__":
     settings = load_settings()

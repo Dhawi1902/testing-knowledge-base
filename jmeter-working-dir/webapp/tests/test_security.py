@@ -169,15 +169,6 @@ class TestViewerDenied:
         r = viewer_client.post(f"{bp}/api/slaves/10.0.0.1/stop")
         assert r.status_code == 403
 
-    # -- F2/F3: JMeter properties --
-    def test_jmeter_properties_save(self, viewer_client, bp):
-        r = viewer_client.put(f"{bp}/api/config/jmeter-properties", json={"properties": []})
-        assert r.status_code == 403
-
-    def test_push_properties(self, viewer_client, bp):
-        r = viewer_client.post(f"{bp}/api/config/push-properties")
-        assert r.status_code == 403
-
     # -- F11: Bulk regenerate --
     def test_bulk_regenerate(self, viewer_client, bp):
         r = viewer_client.post(f"{bp}/api/results/bulk-regenerate", json={"folders": []})

@@ -46,8 +46,6 @@
         <div class="flex gap-8" style="align-items:center;">
             {% if access_level != 'viewer' %}
             <button class="btn btn-outline btn-sm" id="saveAsPresetBtn" onclick="quickSaveAsPreset()" style="display:none;" title="Save current values as a reusable preset">Save as Preset</button>
-            <button class="btn btn-outline btn-sm" id="saveToDefaultsBtn" onclick="saveToDefaults()" style="display:none;" title="Merge current values into global properties">Save to Defaults</button>
-            <button class="btn btn-outline btn-sm" onclick="toggleGlobalProps()">Edit Global Properties</button>
             {% endif %}
         </div>
     </div>
@@ -144,24 +142,6 @@
             </label>
         </div>
         <div class="log-output" id="logOutput" style="min-height:120px;display:none;"></div>
-    </div>
-</div>
-
-<!-- Global Properties Modal -->
-<div class="modal-overlay" id="globalPropsModal" role="dialog" aria-modal="true" aria-labelledby="globalPropsTitle">
-    <div class="modal">
-        <div class="modal-header">
-            <div>
-                <span class="modal-title" id="globalPropsTitle">Global Properties</span>
-                <p class="text-light text-sm" style="margin-top:4px;">Shared defaults applied to every test run (<code>-G</code> flags)</p>
-            </div>
-            <button class="modal-close" onclick="closeGlobalProps()" aria-label="Close">&times;</button>
-        </div>
-        <div class="flex gap-8 mb-16" style="justify-content:flex-end;">
-            <button class="btn btn-outline btn-sm" onclick="addPropertyRow()">+ Add Property</button>
-            <button class="btn btn-primary btn-sm" onclick="saveProperties()">Save</button>
-        </div>
-        <div id="propertiesForm"></div>
     </div>
 </div>
 
@@ -340,19 +320,30 @@ function applyPreset() {
         return;
     }
     const values = presets[name];
+
+    // Check for parameter key mismatch
+    const currentParams = new Set(Array.from(document.querySelectorAll('#paramForm [data-param]')).map(i => i.dataset.param));
+    const presetParams = Object.keys(values).filter(k => !k.startsWith('_'));
+    const missing = presetParams.filter(k => !currentParams.has(k));
+    const extra = [...currentParams].filter(k => !(k in values));
+    if (missing.length > 0 || extra.length > 0) {
+        let msg = `Preset "${name}" may not match this plan.`;
+        if (missing.length) msg += `\nPreset keys not in plan: ${missing.join(', ')}`;
+        if (extra.length) msg += `\nPlan keys not in preset: ${extra.join(', ')}`;
+        if (!confirmAction(msg + '\n\nApply anyway?')) return;
+    }
+
     let changed = 0;
     document.querySelectorAll('#paramForm [data-param]').forEach(input => {
         const newVal = values[input.dataset.param];
         if (newVal !== undefined && input.value !== newVal) {
             input.value = newVal;
             changed++;
-            // Flash highlight on changed fields
             input.style.transition = 'background 0.3s';
             input.style.background = 'var(--color-primary-bg, rgba(59,130,246,0.15))';
             setTimeout(() => { input.style.background = ''; }, 1500);
         }
     });
-    // Apply filter pattern if preset includes one
     if (values._filter_label_pattern) {
         labelPattern = values._filter_label_pattern;
         changed++;
@@ -666,11 +657,14 @@ function renderSlaveProgress() {
 // ===== Check initial status =====
 async function checkStatus() {
     const data = await api('/api/runner/status');
-    if (data.running) {
+    if (data.running || data.post_processing) {
         // Restore timer from backend timestamp
         const info = data.run_info || {};
         if (info.started_at) timerStart = info.started_at * 1000;
         setRunnerState(true);
+        if (data.post_processing) {
+            document.getElementById('runnerStatus').textContent = 'Post-processing';
+        }
         // Restore plan selection
         if (info.filename) {
             const sel = document.getElementById('selectedPlan');
@@ -703,85 +697,6 @@ async function checkMode() {
     } catch(e) {
         document.getElementById('modeIndicator').textContent = 'Unknown';
     }
-}
-
-// ===== Global Properties (config.properties) =====
-let currentProperties = {};
-
-async function loadProperties() {
-    const data = await api('/api/config/properties');
-    currentProperties = data.properties || {};
-    renderProperties();
-}
-
-function renderProperties() {
-    const container = document.getElementById('propertiesForm');
-    if (!Object.keys(currentProperties).length) {
-        container.innerHTML = '<p class="text-light text-sm">No properties. Click "+ Add" to add one.</p>';
-        return;
-    }
-    let html = '<table><thead><tr><th>Key</th><th>Value</th><th style="width:60px"></th></tr></thead><tbody>';
-    for (const [key, value] of Object.entries(currentProperties)) {
-        html += `<tr>
-            <td><input class="form-input form-input-mono" value="${escHtml(key)}" data-role="key" style="border:none;background:transparent;padding:4px;"></td>
-            <td><input class="form-input form-input-mono" value="${escHtml(value)}" data-role="value" style="border:none;background:transparent;padding:4px;"></td>
-            <td><button class="btn btn-sm btn-danger btn-icon" onclick="this.closest('tr').remove()" title="Remove">&times;</button></td>
-        </tr>`;
-    }
-    html += '</tbody></table>';
-    container.innerHTML = html;
-}
-
-function addPropertyRow() {
-    const container = document.getElementById('propertiesForm');
-    let tbody = container.querySelector('tbody');
-    if (!tbody) {
-        container.innerHTML = '<table><thead><tr><th>Key</th><th>Value</th><th style="width:60px"></th></tr></thead><tbody></tbody></table>';
-        tbody = container.querySelector('tbody');
-    }
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-        <td><input class="form-input form-input-mono" data-role="key" placeholder="key" style="border:none;background:transparent;padding:4px;"></td>
-        <td><input class="form-input form-input-mono" data-role="value" placeholder="value" style="border:none;background:transparent;padding:4px;"></td>
-        <td><button class="btn btn-sm btn-danger btn-icon" onclick="this.closest('tr').remove()" title="Remove">&times;</button></td>`;
-    tbody.appendChild(tr);
-    tr.querySelector('[data-role="key"]').focus();
-}
-
-async function saveProperties() {
-    const rows = document.querySelectorAll('#propertiesForm tbody tr');
-    const props = {};
-    for (const row of rows) {
-        const key = row.querySelector('[data-role="key"]').value.trim();
-        const value = row.querySelector('[data-role="value"]').value.trim();
-        if (key) props[key] = value;
-    }
-    await api('/api/config/properties', { method: 'PUT', body: { properties: props } });
-    currentProperties = props;
-    showToast('Properties saved', 'success');
-}
-
-// ===== Save to Defaults (merge into global properties) =====
-async function saveToDefaults() {
-    const overrides = getOverrides();
-    if (!Object.keys(overrides).length) {
-        showToast('No parameters to save', 'warning');
-        return;
-    }
-    // Merge: existing global props + current param values (additive, no removal)
-    const merged = { ...currentProperties, ...overrides };
-    await api('/api/config/properties', { method: 'PUT', body: { properties: merged } });
-    currentProperties = merged;
-    renderProperties();
-    showToast('Merged into global properties', 'success');
-}
-
-function toggleGlobalProps() {
-    document.getElementById('globalPropsModal').classList.add('active');
-}
-
-function closeGlobalProps() {
-    document.getElementById('globalPropsModal').classList.remove('active');
 }
 
 // ===== Raw Log Toggle =====
@@ -886,10 +801,9 @@ document.addEventListener('keydown', (e) => {
 (async function init() {
     await loadPlans();  // must complete before checkStatus can select a plan
     await loadPresets(); // must complete before user can apply a preset
-    await loadFilterConfig(); // load default filter checkbox + pattern from config.properties
+    await loadFilterConfig(); // load default filter settings from settings.json
     checkStatus();
     checkMode();
-    loadProperties();
     loadLastRun();
 })();
 </script>

@@ -37,7 +37,7 @@ async def api_dashboard_stats(request: Request):
     active_slaves = [s for s in all_slaves if s.get("enabled", True)]
 
     # Monitoring URLs from settings
-    from routers.settings import load_settings
+    from services.settings import load_settings
     settings = load_settings()
     monitoring = settings.get("monitoring", {})
 
@@ -48,7 +48,9 @@ async def api_dashboard_stats(request: Request):
         "active_slaves_count": len(active_slaves),
         "mode": "distributed" if active_slaves else "local",
         "runner_active": jmeter_process_manager.is_running,
+        "runner_post_processing": jmeter_process_manager.is_post_processing,
         "runner_label": jmeter_process_manager.active_label,
+        "live_stats": jmeter_process_manager.live_stats,
         "grafana_url": monitoring.get("grafana_url", ""),
         "influxdb_url": monitoring.get("influxdb_url", ""),
     }
@@ -90,6 +92,7 @@ async def api_recent_runs(request: Request):
                     "p95": stats["overall"]["p95"],
                     "error_pct": stats["overall"]["error_pct"],
                     "throughput": stats["overall"]["throughput"],
+                    "peak_vus": stats["overall"].get("peak_vus", 0),
                 }
         runs.append(run)
     return {"runs": runs}
@@ -168,7 +171,7 @@ async def api_alerts(request: Request):
 
     # Slave health from cached status
     from routers.config import get_cached_slave_status
-    slaves = get_cached_slave_status()
+    slaves, _ts = get_cached_slave_status()
     down = [s for s in slaves if s.get("status") == "down"]
     if down:
         ips = ", ".join(s["ip"] for s in down)
@@ -185,4 +188,5 @@ async def api_alerts(request: Request):
 async def api_slave_health(request: Request):
     """Return cached slave status from most recent check."""
     from routers.config import get_cached_slave_status
-    return {"slaves": get_cached_slave_status()}
+    slaves, checked_at = get_cached_slave_status()
+    return {"slaves": slaves, "checked_at": checked_at}

@@ -31,17 +31,10 @@
         <!-- Server -->
         <h3 class="text-sm mb-16 section-title">Server</h3>
         <div class="form-row mb-16">
-            <div class="form-group" style="min-width:250px;flex:2;">
-                <label class="form-label">Domain</label>
-                <input class="form-input form-input-mono" id="set_domain" placeholder="e.g. maya-perf.example.com">
-                <span class="text-light text-sm">Leave empty to access via IP. Requires DNS pointed to this server.</span>
-            </div>
             <div class="form-group" style="min-width:120px;">
                 <label class="form-label">Port</label>
                 <input class="form-input" id="set_port" type="number" min="1024" max="65535" value="8080">
             </div>
-        </div>
-        <div class="form-row mb-16">
             <div class="form-group" style="min-width:250px;flex:2;">
                 <label class="form-label">Base Path</label>
                 <input class="form-input form-input-mono" id="set_base_path" placeholder="e.g. /perftest" autocomplete="off">
@@ -113,6 +106,26 @@
 
         <hr class="hr-section">
 
+        <!-- Filter Defaults -->
+        <h3 class="text-sm mb-16 section-title">JTL Filter Defaults</h3>
+        <span class="text-light text-sm mb-8" style="display:block;">Default filter settings applied when starting a new test run.</span>
+        <div style="display:flex;flex-direction:column;gap:12px;" class="mb-16">
+            <label class="toggle">
+                <input type="checkbox" id="set_filter_sub_results" checked>
+                <span class="toggle-track"></span>
+                <span class="form-label" style="margin:0;">Filter sub-results</span>
+            </label>
+        </div>
+        <div class="form-row mb-16">
+            <div class="form-group" style="min-width:300px;flex:2;">
+                <label class="form-label">Label Pattern (regex)</label>
+                <input class="form-input form-input-mono" id="set_filter_label_pattern" placeholder="e.g. ^(?!Transaction).*">
+                <span class="text-light text-sm">Optional regex to filter JTL labels. Leave empty for no label filtering.</span>
+            </div>
+        </div>
+
+        <hr class="hr-section">
+
         <!-- Results -->
         <h3 class="text-sm mb-16 section-title">Results</h3>
         <div class="form-row mb-16">
@@ -178,10 +191,6 @@
             <div class="form-group" class="form-col">
                 <label class="form-label">Config Directory</label>
                 <input class="form-input form-input-mono" id="set_proj_config_dir">
-            </div>
-            <div class="form-group" class="form-col">
-                <label class="form-label">Config Properties File</label>
-                <input class="form-input form-input-mono" id="set_proj_config_props">
             </div>
         </div>
         <div class="form-row mb-16">
@@ -256,10 +265,6 @@
             <span class="text-light text-sm mb-8" style="display:block;">Aggregate statistics. Minimal impact on report size.</span>
             <div id="reportGraphsSummary" style="display:flex;flex-direction:column;gap:8px;"></div>
         </div>
-
-        {% if access_level != 'viewer' %}
-        <button class="btn btn-primary btn-sm" onclick="saveReportSettings()">Save Report Settings</button>
-        {% endif %}
     </div>
 
     <!-- ==================== Integrations Tab ==================== -->
@@ -330,7 +335,6 @@ function renderSettings() {
     const s = currentSettings;
 
     const server = s.server || {};
-    document.getElementById('set_domain').value = server.domain || '';
     document.getElementById('set_allow_external').checked = server.allow_external || false;
     document.getElementById('set_port').value = server.port || 8080;
     document.getElementById('set_base_path').value = server.base_path || '';
@@ -342,6 +346,11 @@ function renderSettings() {
     document.getElementById('set_auto_scroll').checked = runner.auto_scroll !== false;
     document.getElementById('set_max_log_lines').value = String(runner.max_log_lines || 1000);
     document.getElementById('set_confirm_stop').checked = runner.confirm_before_stop !== false;
+
+    // Filter defaults
+    const filter = s.filter || {};
+    document.getElementById('set_filter_sub_results').checked = filter.sub_results !== false;
+    document.getElementById('set_filter_label_pattern').value = filter.label_pattern || '';
 
     const results = s.results || {};
     document.getElementById('set_sort_order').value = results.sort_order || 'newest';
@@ -407,11 +416,26 @@ function previewTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
 }
 
+function collectReportSettings() {
+    const graphs = {};
+    for (const g of reportGraphs) {
+        const el = document.getElementById('rg_' + g.id);
+        graphs[g.id] = el ? el.checked : true;
+    }
+    return {
+        granularity: parseInt(document.getElementById('set_report_granularity').value) || 60000,
+        graphs,
+    };
+}
+
 async function saveAllSettings() {
     const basePath = document.getElementById('set_base_path').value.trim().replace(/\/+$/, '');
+
+    // Collect report settings from the Report tab
+    const reportCfg = collectReportSettings();
+
     const settings = {
         server: {
-            domain: document.getElementById('set_domain').value.trim(),
             host: document.getElementById('set_allow_external').checked ? '0.0.0.0' : '127.0.0.1',
             port: parseInt(document.getElementById('set_port').value) || 8080,
             allow_external: document.getElementById('set_allow_external').checked,
@@ -424,6 +448,11 @@ async function saveAllSettings() {
             max_log_lines: parseInt(document.getElementById('set_max_log_lines').value) || 1000,
             confirm_before_stop: document.getElementById('set_confirm_stop').checked,
         },
+        filter: {
+            sub_results: document.getElementById('set_filter_sub_results').checked,
+            label_pattern: document.getElementById('set_filter_label_pattern').value.trim(),
+        },
+        report: reportCfg,
         results: {
             sort_order: document.getElementById('set_sort_order').value,
         },
@@ -444,6 +473,9 @@ async function saveAllSettings() {
     };
     const oldServer = currentSettings.server || {};
     await api('/api/settings', { method: 'PUT', body: { settings } });
+
+    // Also regenerate report.properties from the new report settings
+    await api('/api/settings/report', { method: 'PUT', body: { settings: reportCfg } });
 
     // Check if server settings changed
     const serverChanged = (oldServer.allow_external !== settings.server.allow_external)
@@ -480,15 +512,8 @@ async function restartServer() {
     btn.textContent = 'Restarting...';
 
     const newPort = currentSettings.server.port || 8080;
-    const domain = (currentSettings.server.domain || '').trim();
-    // Use domain if set, otherwise fall back to IP/localhost
-    let connectHost;
-    if (domain) {
-        connectHost = domain;
-    } else {
-        const newHost = currentSettings.server.allow_external ? '0.0.0.0' : '127.0.0.1';
-        connectHost = (newHost === '0.0.0.0') ? window.location.hostname : '127.0.0.1';
-    }
+    const newHost = currentSettings.server.allow_external ? '0.0.0.0' : '127.0.0.1';
+    const connectHost = (newHost === '0.0.0.0') ? window.location.hostname : '127.0.0.1';
 
     try {
         await api('/api/server/restart', { method: 'POST' });
@@ -558,7 +583,6 @@ function renderProjectConfig() {
     document.getElementById('set_proj_jmeter').value = projectConfig.jmeter_path || '';
     document.getElementById('set_proj_jmx_dir').value = paths.jmx_dir || '';
     document.getElementById('set_proj_config_dir').value = paths.config_dir || '';
-    document.getElementById('set_proj_config_props').value = paths.config_properties || '';
     document.getElementById('set_proj_results_dir').value = paths.results_dir || '';
     document.getElementById('set_proj_data_dir').value = paths.test_data_dir || '';
     document.getElementById('set_proj_slaves_file').value = paths.slaves_file || '';
@@ -571,9 +595,9 @@ function collectProjectConfig() {
         name: document.getElementById('set_proj_name').value,
         jmeter_path: document.getElementById('set_proj_jmeter').value,
         paths: {
+            ...projectConfig.paths,
             jmx_dir: document.getElementById('set_proj_jmx_dir').value,
             config_dir: document.getElementById('set_proj_config_dir').value,
-            config_properties: document.getElementById('set_proj_config_props').value,
             results_dir: document.getElementById('set_proj_results_dir').value,
             test_data_dir: document.getElementById('set_proj_data_dir').value,
             slaves_file: document.getElementById('set_proj_slaves_file').value,
@@ -592,7 +616,7 @@ async function detectJmeter() {
     }
 }
 
-// ===== Report settings (report.properties) =====
+// ===== Report settings (graph metadata from server) =====
 let reportGraphs = [];
 let reportSettings = {};
 
@@ -640,21 +664,6 @@ function reportPreset(preset) {
             el.checked = g.default_enabled;
         }
     }
-}
-
-async function saveReportSettings() {
-    const graphs = {};
-    for (const g of reportGraphs) {
-        const el = document.getElementById('rg_' + g.id);
-        graphs[g.id] = el ? el.checked : true;
-    }
-    const settings = {
-        granularity: parseInt(document.getElementById('set_report_granularity').value) || 60000,
-        graphs,
-    };
-    await api('/api/settings/report', { method: 'PUT', body: { settings } });
-    reportSettings = settings;
-    showToast('Report settings saved', 'success');
 }
 
 // ===== Export/Import =====

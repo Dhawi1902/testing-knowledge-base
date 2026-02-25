@@ -63,26 +63,6 @@ class TestProperties:
         assert isinstance(data["properties"], dict)
 
 
-class TestJmeterProperties:
-    def test_get_empty(self, admin_client, bp):
-        r = admin_client.get(f"{bp}/api/config/jmeter-properties")
-        assert r.status_code == 200
-        assert isinstance(r.json()["properties"], list)
-
-    def test_put_and_get(self, admin_client, bp):
-        props = [{"key": "server.rmi.ssl.disable", "value": "true", "enabled": True}]
-        r = admin_client.put(f"{bp}/api/config/jmeter-properties", json={"properties": props})
-        assert r.status_code == 200
-        assert r.json()["ok"] is True
-        # Verify
-        r2 = admin_client.get(f"{bp}/api/config/jmeter-properties")
-        saved = r2.json()["properties"]
-        assert len(saved) == 1
-        assert saved[0]["key"] == "server.rmi.ssl.disable"
-        # Cleanup
-        admin_client.put(f"{bp}/api/config/jmeter-properties", json={"properties": []})
-
-
 class TestDetectJmeter:
     def test_not_found(self, admin_client, bp, monkeypatch):
         monkeypatch.setattr(

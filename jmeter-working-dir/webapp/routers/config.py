@@ -28,14 +28,21 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 router = APIRouter()
 
 
-@router.get("/slaves")
-async def slaves_page(request: Request):
+@router.get("/fleet")
+async def fleet_page(request: Request):
     project = request.app.state.project
     return templates.TemplateResponse("slaves.html", {
         "request": request,
         "project_name": project.get("name", "JMeter Dashboard"),
         "active_page": "slaves",
     })
+
+
+@router.get("/slaves")
+async def slaves_page_redirect():
+    """Backward-compatible redirect from /slaves to /fleet."""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse(url="fleet", status_code=301)
 
 
 # --- config.properties ---
@@ -145,11 +152,12 @@ from services.slaves import (  # noqa: E402
 
 # Cache last slave status check for dashboard health dots (E2)
 _last_slave_status: list[dict] = []
+_last_slave_status_ts: float = 0  # Unix timestamp of last check
 
 
-def get_cached_slave_status() -> list[dict]:
-    """Return results from the most recent slave status check."""
-    return list(_last_slave_status)
+def get_cached_slave_status() -> tuple[list[dict], float]:
+    """Return (results, timestamp) from the most recent slave status check."""
+    return list(_last_slave_status), _last_slave_status_ts
 
 
 def _get_slaves(project: dict) -> tuple[list[dict], list[str], dict[str, dict]]:
@@ -189,9 +197,11 @@ async def api_slave_status(request: Request):
         else:
             merged.append({"ip": s["ip"], "status": "disabled", "enabled": s.get("enabled", True)})
     # Cache for dashboard health dots
-    global _last_slave_status
+    import time as _time
+    global _last_slave_status, _last_slave_status_ts
     _last_slave_status = merged
-    return {"slaves": merged}
+    _last_slave_status_ts = _time.time()
+    return {"slaves": merged, "checked_at": _last_slave_status_ts}
 
 
 @router.post("/api/slaves/start")
@@ -246,78 +256,3 @@ async def api_stop_single_slave(request: Request, ip: str):
         return JSONResponse(status_code=404, content={"error": f"Slave {ip} not found"})
     result = await stop_jmeter_server(ip, ssh_configs[ip])
     return {"result": result}
-
-
-# --- JMeter Properties Management (F2/F3/F4) ---
-
-from services.slaves import distribute_files  # noqa: E402
-
-PROPS_FILE = Path(__file__).resolve().parent.parent / "jmeter_properties.json"
-
-
-def _read_jmeter_properties() -> list[dict]:
-    """Read user-defined JMeter properties from jmeter_properties.json."""
-    if not PROPS_FILE.exists():
-        return []
-    try:
-        import json as _json
-        return _json.loads(PROPS_FILE.read_text(encoding="utf-8"))
-    except Exception:
-        return []
-
-
-def _write_jmeter_properties(props: list[dict]) -> None:
-    import json as _json
-    PROPS_FILE.write_text(_json.dumps(props, indent=2, ensure_ascii=False), encoding="utf-8")
-
-
-@router.get("/api/config/jmeter-properties")
-async def api_get_jmeter_properties(request: Request):
-    """Return user-defined JMeter properties (F2)."""
-    return {"properties": _read_jmeter_properties()}
-
-
-@router.put("/api/config/jmeter-properties")
-async def api_save_jmeter_properties(request: Request):
-    """Save user-defined JMeter properties (F2)."""
-    denied = _check_access(request)
-    if denied:
-        return denied
-    body = await request.json()
-    props = body.get("properties", [])
-    _write_jmeter_properties(props)
-    return {"ok": True}
-
-
-@router.post("/api/config/push-properties")
-async def api_push_properties(request: Request):
-    """Generate jmeter.properties from defined properties and push to all slaves via SCP (F3)."""
-    denied = _check_access(request)
-    if denied:
-        return denied
-    project = request.app.state.project
-    slaves, active_ips, ssh_configs = _get_slaves(project)
-    if not active_ips:
-        return {"results": [], "error": "No active slaves"}
-
-    # Generate properties file content
-    props = _read_jmeter_properties()
-    if not props:
-        return {"results": [], "error": "No properties defined"}
-
-    # Write temp properties file
-    import tempfile
-    content = "# Auto-generated JMeter properties\n"
-    for p in props:
-        if p.get("key") and p.get("enabled", True):
-            content += f"{p['key']}={p.get('value', '')}\n"
-
-    tmp = Path(tempfile.mktemp(suffix=".properties"))
-    tmp.write_text(content, encoding="utf-8")
-
-    try:
-        items = [{"file_path": tmp, "mode": "copy"}]
-        results = await distribute_files(active_ips, ssh_configs, items, tmp.parent)
-        return {"results": results}
-    finally:
-        tmp.unlink(missing_ok=True)
