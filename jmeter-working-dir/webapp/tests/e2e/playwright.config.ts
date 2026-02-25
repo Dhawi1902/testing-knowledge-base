@@ -1,7 +1,7 @@
 import { defineConfig } from '@playwright/test';
 
 const PORT = process.env.WEBAPP_PORT || '9090';
-const BASE_URL = `http://127.0.0.1:${PORT}/perftest`;
+const BASE_URL = `http://127.0.0.1:${PORT}/perftest/`;
 
 export default defineConfig({
   testDir: './tests',
