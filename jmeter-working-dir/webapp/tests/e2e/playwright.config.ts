@@ -1,12 +1,14 @@
 import { defineConfig } from '@playwright/test';
 
 const PORT = process.env.WEBAPP_PORT || '9090';
-const BASE_URL = `http://127.0.0.1:${PORT}/perftest/`;
+const BP = process.env.WEBAPP_BASE_PATH ?? '';
+const BASE_URL = `http://127.0.0.1:${PORT}${BP}/`;
 
 export default defineConfig({
   testDir: './tests',
   timeout: 30_000,
   retries: 1,
+  workers: 1,
   use: {
     baseURL: BASE_URL,
     screenshot: 'only-on-failure',

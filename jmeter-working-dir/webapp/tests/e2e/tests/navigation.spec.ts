@@ -16,12 +16,12 @@ test.describe('Navigation', () => {
   test('sidebar links navigate to correct pages', async ({ page }) => {
     await page.goto('');
     const links = [
-      { text: 'Dashboard', url: /\/perftest\/$/ },
-      { text: 'Test Plans & Runner', url: /\/perftest\/plans$/ },
-      { text: 'Results', url: /\/perftest\/results$/ },
-      { text: 'Test Data', url: /\/perftest\/data$/ },
-      { text: 'Fleet', url: /\/perftest\/fleet$/ },
-      { text: 'Settings', url: /\/perftest\/settings$/ },
+      { text: 'Dashboard', url: /\/$/ },
+      { text: 'Test Plans & Runner', url: /\/plans$/ },
+      { text: 'Results', url: /\/results$/ },
+      { text: 'Test Data', url: /\/data$/ },
+      { text: 'Fleet', url: /\/fleet$/ },
+      { text: 'Settings', url: /\/settings$/ },
     ];
     for (const link of links) {
       await page.locator('.sidebar-nav .nav-item', { hasText: link.text }).click();
