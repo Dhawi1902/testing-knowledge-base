@@ -1,0 +1,13 @@
+{
+  "name": "webapp-e2e",
+  "private": true,
+  "scripts": {
+    "test": "npx playwright test",
+    "test:headed": "npx playwright test --headed",
+    "test:live": "npx playwright test --config playwright.live.config.ts",
+    "report": "npx playwright show-report test-results/html"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0"
+  }
+}
