@@ -19,6 +19,7 @@ from services.config_parser import (
     write_slaves,
     get_active_slaves,
     detect_jmeter_path,
+    parse_jmeter_properties_catalog,
 )
 
 TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
@@ -67,6 +68,85 @@ async def save_properties(request: Request, data: PropertiesUpdate):
     project = request.app.state.project
     props_path = resolve_path(project, "config_properties")
     write_config_properties(props_path, data.properties)
+    return {"ok": True}
+
+
+# --- JMeter Properties (user.properties) ---
+
+def _get_jmeter_bin_dir(project: dict) -> Path | None:
+    """Derive JMeter bin directory from jmeter_path in project config."""
+    jmeter_path = project.get("jmeter_path", "")
+    if not jmeter_path:
+        return None
+    p = Path(jmeter_path)
+    # jmeter_path points to jmeter.bat or jmeter — bin dir is its parent
+    if p.exists():
+        return p.parent
+    # Even if the file doesn't exist, try the parent dir
+    return p.parent if p.parent.exists() else None
+
+
+@router.get("/api/config/jmeter-properties/catalog")
+async def get_jmeter_properties_catalog(request: Request):
+    """Parse jmeter.properties to return the full property catalog."""
+    project = request.app.state.project
+    bin_dir = _get_jmeter_bin_dir(project)
+    if not bin_dir:
+        return {"catalog": []}
+    jmeter_props = bin_dir / "jmeter.properties"
+    catalog = parse_jmeter_properties_catalog(jmeter_props)
+    return {"catalog": catalog}
+
+
+@router.get("/api/config/jmeter-properties/master")
+async def get_jmeter_user_properties(request: Request):
+    """Read user.properties from JMeter bin directory (master overrides)."""
+    project = request.app.state.project
+    bin_dir = _get_jmeter_bin_dir(project)
+    if not bin_dir:
+        return {"properties": {}, "path": ""}
+    user_props_path = bin_dir / "user.properties"
+    props = read_config_properties(user_props_path)
+    return {"properties": props, "path": str(user_props_path)}
+
+
+@router.put("/api/config/jmeter-properties/master")
+async def save_jmeter_user_properties(request: Request, data: PropertiesUpdate):
+    """Write user.properties to JMeter bin directory (master overrides)."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    project = request.app.state.project
+    bin_dir = _get_jmeter_bin_dir(project)
+    if not bin_dir:
+        return JSONResponse(status_code=400, content={"error": "JMeter path not configured"})
+    user_props_path = bin_dir / "user.properties"
+    write_config_properties(user_props_path, data.properties,
+                            comments=["JMeter user.properties — managed by JMeter Dashboard webapp"])
+    return {"ok": True}
+
+
+@router.get("/api/config/jmeter-properties/slave")
+async def get_slave_user_properties(request: Request):
+    """Read slave-user.properties from config directory."""
+    project = request.app.state.project
+    config_dir = resolve_path(project, "config_dir")
+    slave_props_path = config_dir / "slave-user.properties"
+    props = read_config_properties(slave_props_path)
+    return {"properties": props, "path": str(slave_props_path)}
+
+
+@router.put("/api/config/jmeter-properties/slave")
+async def save_slave_user_properties(request: Request, data: PropertiesUpdate):
+    """Write slave-user.properties to config directory."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    project = request.app.state.project
+    config_dir = resolve_path(project, "config_dir")
+    slave_props_path = config_dir / "slave-user.properties"
+    write_config_properties(slave_props_path, data.properties,
+                            comments=["Slave user.properties — pushed to slaves during provisioning"])
     return {"ok": True}
 
 

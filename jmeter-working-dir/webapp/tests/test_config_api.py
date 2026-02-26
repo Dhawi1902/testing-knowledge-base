@@ -613,6 +613,142 @@ class TestJmeterPropertiesCatalog:
         assert catalog[0]["description"] == "Direct description"
 
 
+class TestJmeterPropertiesMasterEndpoint:
+    """API tests for /api/config/jmeter-properties/master."""
+
+    def test_get(self, admin_client, bp, tmp_project_dir):
+        """GET returns current user.properties overrides."""
+        # Create a mock user.properties in a fake jmeter bin dir
+        jmeter_bin = tmp_project_dir["project_root"] / "fake_jmeter_bin"
+        jmeter_bin.mkdir(exist_ok=True)
+        (jmeter_bin / "user.properties").write_text("server.rmi.ssl.disable=true\n")
+        (jmeter_bin / "jmeter.bat").write_text("")
+        # Point project config to fake jmeter
+        import json
+        pj = tmp_project_dir["project_json_path"]
+        project = json.loads(pj.read_text())
+        old_path = project["jmeter_path"]
+        project["jmeter_path"] = str(jmeter_bin / "jmeter.bat").replace("\\", "/")
+        pj.write_text(json.dumps(project, indent=2))
+        # Reload project
+        from main import app
+        from services.config_parser import load_project_config
+        app.state.project = load_project_config(pj)
+
+        try:
+            r = admin_client.get(f"{bp}/api/config/jmeter-properties/master")
+            assert r.status_code == 200
+            data = r.json()
+            assert "properties" in data
+            assert data["properties"].get("server.rmi.ssl.disable") == "true"
+        finally:
+            # Cleanup
+            project["jmeter_path"] = old_path
+            pj.write_text(json.dumps(project, indent=2))
+            app.state.project = load_project_config(pj)
+
+    def test_put(self, admin_client, bp, tmp_project_dir):
+        """PUT saves user.properties overrides."""
+        jmeter_bin = tmp_project_dir["project_root"] / "fake_jmeter_bin"
+        jmeter_bin.mkdir(exist_ok=True)
+        (jmeter_bin / "user.properties").write_text("")
+        (jmeter_bin / "jmeter.bat").write_text("")
+        import json
+        pj = tmp_project_dir["project_json_path"]
+        project = json.loads(pj.read_text())
+        old_path = project["jmeter_path"]
+        project["jmeter_path"] = str(jmeter_bin / "jmeter.bat").replace("\\", "/")
+        pj.write_text(json.dumps(project, indent=2))
+        from main import app
+        from services.config_parser import load_project_config
+        app.state.project = load_project_config(pj)
+
+        try:
+            new_props = {"server.rmi.ssl.disable": "true", "remote_hosts": "10.0.0.1,10.0.0.2"}
+            r = admin_client.put(f"{bp}/api/config/jmeter-properties/master", json={"properties": new_props})
+            assert r.status_code == 200
+            assert r.json()["ok"] is True
+            # Verify persisted
+            r2 = admin_client.get(f"{bp}/api/config/jmeter-properties/master")
+            saved = r2.json()["properties"]
+            assert saved["server.rmi.ssl.disable"] == "true"
+            assert saved["remote_hosts"] == "10.0.0.1,10.0.0.2"
+        finally:
+            # Cleanup
+            project["jmeter_path"] = old_path
+            pj.write_text(json.dumps(project, indent=2))
+            app.state.project = load_project_config(pj)
+
+
+class TestJmeterPropertiesSlaveEndpoint:
+    """API tests for /api/config/jmeter-properties/slave."""
+
+    def test_get_empty(self, admin_client, bp):
+        """GET returns empty when no slave-user.properties exists."""
+        r = admin_client.get(f"{bp}/api/config/jmeter-properties/slave")
+        assert r.status_code == 200
+        assert isinstance(r.json()["properties"], dict)
+
+    def test_put_and_get(self, admin_client, bp):
+        """PUT saves, GET reads back."""
+        props = {"server.rmi.localport": "50000", "server.rmi.ssl.disable": "true"}
+        r = admin_client.put(f"{bp}/api/config/jmeter-properties/slave", json={"properties": props})
+        assert r.status_code == 200
+        assert r.json()["ok"] is True
+        r2 = admin_client.get(f"{bp}/api/config/jmeter-properties/slave")
+        assert r2.json()["properties"]["server.rmi.localport"] == "50000"
+        # Cleanup
+        admin_client.put(f"{bp}/api/config/jmeter-properties/slave", json={"properties": {}})
+
+
+class TestJmeterPropertiesCatalogEndpoint:
+    """API tests for /api/config/jmeter-properties/catalog."""
+
+    def test_catalog_returns_list(self, admin_client, bp, tmp_project_dir):
+        """GET catalog returns list of property entries (may be empty if jmeter not installed)."""
+        r = admin_client.get(f"{bp}/api/config/jmeter-properties/catalog")
+        assert r.status_code == 200
+        data = r.json()
+        assert "catalog" in data
+        assert isinstance(data["catalog"], list)
+
+    def test_catalog_with_mock_jmeter(self, admin_client, bp, tmp_project_dir):
+        """GET catalog with a mock jmeter.properties returns parsed entries."""
+        jmeter_bin = tmp_project_dir["project_root"] / "fake_jmeter_bin"
+        jmeter_bin.mkdir(exist_ok=True)
+        (jmeter_bin / "jmeter.properties").write_text(
+            "#---------------------------------------------------------------------------\n"
+            "# Test Section\n"
+            "#---------------------------------------------------------------------------\n"
+            "# A test property\n"
+            "#test.prop=default_val\n",
+            encoding="utf-8",
+        )
+        (jmeter_bin / "jmeter.bat").write_text("")
+        import json
+        pj = tmp_project_dir["project_json_path"]
+        project = json.loads(pj.read_text())
+        old_path = project["jmeter_path"]
+        project["jmeter_path"] = str(jmeter_bin / "jmeter.bat").replace("\\", "/")
+        pj.write_text(json.dumps(project, indent=2))
+        from main import app
+        from services.config_parser import load_project_config
+        app.state.project = load_project_config(pj)
+
+        try:
+            r = admin_client.get(f"{bp}/api/config/jmeter-properties/catalog")
+            assert r.status_code == 200
+            catalog = r.json()["catalog"]
+            assert len(catalog) >= 1
+            assert catalog[0]["key"] == "test.prop"
+            assert catalog[0]["default"] == "default_val"
+        finally:
+            # Cleanup
+            project["jmeter_path"] = old_path
+            pj.write_text(json.dumps(project, indent=2))
+            app.state.project = load_project_config(pj)
+
+
 class TestResourceMonitoringEndpoint:
     """API tests for resource monitoring endpoint (#30)."""
 
