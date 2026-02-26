@@ -301,6 +301,16 @@ class WSManager {
     }
 }
 
+/* ===== Monitoring Links (global, cached via localStorage) ===== */
+(function initMonitoringLinks() {
+    const grafana = localStorage.getItem('monitoring_grafana');
+    const influxdb = localStorage.getItem('monitoring_influxdb');
+    const grafanaEl = document.getElementById('grafanaLink');
+    const influxdbEl = document.getElementById('influxdbLink');
+    if (grafana && grafanaEl) { grafanaEl.href = grafana; grafanaEl.classList.remove('hidden'); }
+    if (influxdb && influxdbEl) { influxdbEl.href = influxdb; influxdbEl.classList.remove('hidden'); }
+})();
+
 /* ===== Shared Utilities ===== */
 function formatSize(bytes) {
     if (bytes < 1024) return bytes + ' B';
