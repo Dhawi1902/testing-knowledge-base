@@ -5,8 +5,8 @@
 
 {% block content %}
 <!-- Row 1: Runner Status + Alerts -->
-<div class="dashboard-row mb-16" style="grid-template-columns:1fr 1fr;">
-    <div class="card">
+<div class="grid grid-2 mb-16">
+    <div class="card" style="border-top: 3px solid var(--color-primary);">
         <div class="card-header">
             <span class="card-title">Runner Status</span>
             <span class="badge" id="runnerBadge">-</span>
@@ -26,7 +26,7 @@
 
 <!-- Row 2: Last Test Run (full width) -->
 <div class="mb-16">
-    <div class="card" style="margin-bottom:0;">
+    <div class="card mb-0">
         <div class="card-header">
             <span class="card-title">Last Test Run</span>
         </div>
@@ -38,7 +38,7 @@
 
 <!-- Row 3: Run History (full width) -->
 <div class="mb-16">
-    <div class="card" style="margin-bottom:0;">
+    <div class="card mb-0">
         <div class="card-header">
             <span class="card-title">Run History</span>
             <span class="text-sm text-light">Last 10 runs</span>
@@ -56,38 +56,38 @@
 </div>
 
 <!-- Row 4: Quick Actions + Stats + Disk -->
-<div class="dashboard-row mb-16" style="grid-template-columns:1fr 2fr 1fr;">
+<div class="grid grid-1-2-1 mb-16">
     <div class="card">
         <div class="card-header">
             <span class="card-title">Quick Actions</span>
         </div>
         <div class="flex gap-8" style="flex-wrap: wrap;">
-            <a href="{{ bp }}/plans" class="btn btn-primary">Run Test</a>
-            <a href="{{ bp }}/results" class="btn btn-outline">View Results</a>
-            <a href="{{ bp }}/settings" class="btn btn-outline">Edit Config</a>
-            <a href="{{ bp }}/data" class="btn btn-outline">Test Data</a>
+            <a href="{{ bp }}/plans" class="btn btn-primary">{{ icon('play', 14) }} Run Test</a>
+            <a href="{{ bp }}/results" class="btn btn-outline">{{ icon('bar-chart-3', 14) }} View Results</a>
+            <a href="{{ bp }}/settings" class="btn btn-outline">{{ icon('settings', 14) }} Edit Config</a>
+            <a href="{{ bp }}/data" class="btn btn-outline">{{ icon('database', 14) }} Test Data</a>
         </div>
     </div>
     <div class="card">
         <div class="card-header">
             <span class="card-title">Stats</span>
         </div>
-        <div class="card-grid" style="grid-template-columns:repeat(4,1fr);">
-            <div class="stat-card" style="padding:8px;">
-                <div class="stat-value" style="font-size:20px;" id="jmxCount">-</div>
-                <div class="stat-label" style="font-size:11px;">Test Plans</div>
+        <div class="grid grid-4 gap-8">
+            <div class="stat-card p-8">
+                <div class="stat-value text-lg" id="jmxCount">-</div>
+                <div class="stat-label text-xs">Test Plans</div>
             </div>
-            <div class="stat-card" style="padding:8px;">
-                <div class="stat-value" style="font-size:20px;" id="resultsCount">-</div>
-                <div class="stat-label" style="font-size:11px;">Results</div>
+            <div class="stat-card p-8">
+                <div class="stat-value text-lg" id="resultsCount">-</div>
+                <div class="stat-label text-xs">Results</div>
             </div>
-            <div class="stat-card" style="padding:8px;">
-                <div class="stat-value" style="font-size:20px;" id="slavesCount">-</div>
-                <div class="stat-label" style="font-size:11px;">Slaves</div>
+            <div class="stat-card p-8">
+                <div class="stat-value text-lg" id="slavesCount">-</div>
+                <div class="stat-label text-xs">Slaves</div>
             </div>
-            <div class="stat-card" style="padding:8px;">
-                <div class="stat-value" style="font-size:20px;" id="modeLabel">-</div>
-                <div class="stat-label" style="font-size:11px;">Mode</div>
+            <div class="stat-card p-8">
+                <div class="stat-value text-lg" id="modeLabel">-</div>
+                <div class="stat-label text-xs">Mode</div>
             </div>
         </div>
     </div>
@@ -103,7 +103,7 @@
 
 <!-- Row 5: Monitoring -->
 <div class="mb-16">
-    <div class="card" style="margin-bottom:0;">
+    <div class="card mb-0">
         <div class="card-header">
             <span class="card-title">Monitoring</span>
         </div>
@@ -116,6 +116,9 @@
 
 {% block scripts %}
 <script>
+const ICON_ALERT = `{{ icon('alert-triangle', 16) }}`;
+const ICON_INFO = `{{ icon('info', 16) }}`;
+
 function trendArrow(current, previous, lowerIsBetter) {
     if (previous === null || previous === undefined) return '';
     const diff = current - previous;
@@ -171,21 +174,21 @@ async function loadDashboard() {
         const hasLive = ls.total_samples > 0;
         const liveHtml = hasLive ? `
             <div class="card-grid" style="grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: 6px; margin: 8px 0;">
-                <div class="stat-card" style="padding:6px;">
-                    <div class="stat-value" style="font-size:16px;">${(ls.total_samples || 0).toLocaleString()}</div>
-                    <div class="stat-label" style="font-size:10px;">Samples</div>
+                <div class="stat-card p-4">
+                    <div class="stat-value text-base">${(ls.total_samples || 0).toLocaleString()}</div>
+                    <div class="stat-label text-xs">Samples</div>
                 </div>
-                <div class="stat-card" style="padding:6px;">
-                    <div class="stat-value" style="font-size:16px;">${(ls.throughput || 0).toFixed(1)}/s</div>
-                    <div class="stat-label" style="font-size:10px;">Throughput</div>
+                <div class="stat-card p-4">
+                    <div class="stat-value text-base">${(ls.throughput || 0).toFixed(1)}/s</div>
+                    <div class="stat-label text-xs">Throughput</div>
                 </div>
-                <div class="stat-card" style="padding:6px;">
-                    <div class="stat-value" style="font-size:16px;">${ls.avg || 0} ms</div>
-                    <div class="stat-label" style="font-size:10px;">Avg RT</div>
+                <div class="stat-card p-4">
+                    <div class="stat-value text-base">${ls.avg || 0} ms</div>
+                    <div class="stat-label text-xs">Avg RT</div>
                 </div>
-                <div class="stat-card" style="padding:6px;">
-                    <div class="stat-value" style="font-size:16px;${(ls.error_pct || 0) > 0 ? 'color:var(--color-danger);' : ''}">${(ls.error_pct || 0).toFixed(2)}%</div>
-                    <div class="stat-label" style="font-size:10px;">Errors</div>
+                <div class="stat-card p-4">
+                    <div class="stat-value text-base"${(ls.error_pct || 0) > 0 ? ' style="color:var(--color-danger);"' : ''}>${(ls.error_pct || 0).toFixed(2)}%</div>
+                    <div class="stat-label text-xs">Errors</div>
                 </div>
             </div>` : '';
         runnerInfo.innerHTML = `
@@ -195,7 +198,7 @@ async function loadDashboard() {
                 ${healthHtml}
             </table>
             ${liveHtml}
-            <div style="margin-top:12px;">
+            <div class="mt-12">
                 <a href="${BASE_PATH}/plans" class="btn btn-outline btn-sm">View Logs</a>
             </div>`;
     } else {
@@ -203,7 +206,7 @@ async function loadDashboard() {
         badge.className = 'badge badge-info';
         runnerInfo.innerHTML = `<p class="text-light">No test currently running.</p>
             ${healthHtml ? `<table style="margin:8px 0;">${healthHtml}</table>` : ''}
-            <a href="${BASE_PATH}/plans" class="btn btn-primary btn-sm" style="margin-top:8px;">Start a Test</a>`;
+            <a href="${BASE_PATH}/plans" class="btn btn-primary btn-sm mt-8">Start a Test</a>`;
     }
 
     // Last run — now with performance stats
@@ -216,26 +219,26 @@ async function loadDashboard() {
         if (lr.stats) {
             const s = lr.stats;
             statsHtml = `
-                <div class="card-grid" style="grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; margin-bottom: 12px;">
-                    <div class="stat-card" style="padding:8px;">
-                        <div class="stat-value" style="font-size:18px;">${s.peak_vus ? s.peak_vus.toLocaleString() : '-'}</div>
-                        <div class="stat-label" style="font-size:11px;">Peak VUs</div>
+                <div class="card-grid mb-12" style="grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px;">
+                    <div class="stat-card p-8">
+                        <div class="stat-value text-lg">${s.peak_vus ? s.peak_vus.toLocaleString() : '-'}</div>
+                        <div class="stat-label text-xs">Peak VUs</div>
                     </div>
-                    <div class="stat-card" style="padding:8px;">
-                        <div class="stat-value" style="font-size:18px;">${s.avg.toFixed(0)} ms</div>
-                        <div class="stat-label" style="font-size:11px;">Avg RT</div>
+                    <div class="stat-card p-8">
+                        <div class="stat-value text-lg">${s.avg.toFixed(0)} ms</div>
+                        <div class="stat-label text-xs">Avg RT</div>
                     </div>
-                    <div class="stat-card" style="padding:8px;">
-                        <div class="stat-value" style="font-size:18px;">${s.p95.toFixed(0)} ms</div>
-                        <div class="stat-label" style="font-size:11px;">P95</div>
+                    <div class="stat-card p-8">
+                        <div class="stat-value text-lg">${s.p95.toFixed(0)} ms</div>
+                        <div class="stat-label text-xs">P95</div>
                     </div>
-                    <div class="stat-card" style="padding:8px;">
-                        <div class="stat-value" style="font-size:18px;${s.error_pct > 0 ? 'color:var(--color-danger);' : ''}">${s.error_pct}%</div>
-                        <div class="stat-label" style="font-size:11px;">Errors</div>
+                    <div class="stat-card p-8">
+                        <div class="stat-value text-lg"${s.error_pct > 0 ? ' style="color:var(--color-danger);"' : ''}>${s.error_pct}%</div>
+                        <div class="stat-label text-xs">Errors</div>
                     </div>
-                    <div class="stat-card" style="padding:8px;">
-                        <div class="stat-value" style="font-size:18px;">${s.throughput.toFixed(1)}/s</div>
-                        <div class="stat-label" style="font-size:11px;">Throughput</div>
+                    <div class="stat-card p-8">
+                        <div class="stat-value text-lg">${s.throughput.toFixed(1)}/s</div>
+                        <div class="stat-label text-xs">Throughput</div>
                     </div>
                 </div>`;
         }
@@ -247,7 +250,7 @@ async function loadDashboard() {
                 <tr><td class="text-light">Size</td><td>${formatSize(lr.size)}</td></tr>
                 <tr><td class="text-light">Report</td><td>${lr.has_report ? '<span class="badge badge-success">Available</span>' : '<span class="badge badge-danger">N/A</span>'}</td></tr>
             </table>
-            <div class="flex gap-8" style="margin-top:12px;">
+            <div class="flex gap-8 mt-12">
                 ${lr.has_report ? `<a href="${BASE_PATH}/results" class="btn btn-outline btn-sm">View Report</a>` : ''}
                 ${lr.has_jtl ? `<a href="${BASE_PATH}/results" class="btn btn-outline btn-sm">View Stats</a>` : ''}
             </div>`;
@@ -291,7 +294,7 @@ async function loadDashboard() {
             }
         }
         html += '</tbody></table></div>';
-        html += `<div style="text-align:center;margin-top:12px;"><a href="${BASE_PATH}/results" class="btn btn-outline btn-sm">View All Results</a></div>`;
+        html += `<div class="mt-12" style="text-align:center;"><a href="${BASE_PATH}/results" class="btn btn-outline btn-sm">View All Results</a></div>`;
         histEl.innerHTML = html;
     }
 
@@ -304,12 +307,12 @@ async function loadDashboard() {
         countBadge.className = `badge badge-${hasError ? 'danger' : 'warning'}`;
         let aHtml = '';
         alertItems.forEach(a => {
-            const icon = a.level === 'danger' ? '&#9888;' : a.level === 'warning' ? '&#9888;' : '&#8505;';
+            const alertIcon = (a.level === 'danger' || a.level === 'warning') ? ICON_ALERT : ICON_INFO;
             const linkHref = a.link ? `${BASE_PATH}${a.link}` : '';
             const tag = linkHref ? 'a' : 'div';
             const linkAttrs = linkHref ? ` href="${escAttr(linkHref)}" style="text-decoration:none;color:inherit;"` : '';
             aHtml += `<${tag} class="alert-item alert-${a.level}"${linkAttrs}>
-                <span class="alert-icon">${icon}</span>
+                <span class="alert-icon">${alertIcon}</span>
                 <div>
                     <div class="alert-msg">${escAttr(a.message)}</div>
                     ${a.detail ? `<div class="alert-detail text-sm text-light">${escAttr(a.detail)}</div>` : ''}
@@ -328,13 +331,13 @@ async function loadDashboard() {
     if (diskData) {
         const isWarning = diskData.total_bytes > 1024 * 1024 * 1024; // > 1 GB
         diskEl.innerHTML = `
-            <div style="text-align:center;padding:8px 0;">
-                <div style="font-size:24px;font-weight:700;${isWarning ? 'color:var(--color-warning);' : ''}">${formatSize(diskData.total_bytes)}</div>
-                <div class="text-sm text-light" style="margin-top:4px;">
+            <div class="py-8" style="text-align:center;">
+                <div class="text-2xl"${isWarning ? ' style="color:var(--color-warning);"' : ''}>${formatSize(diskData.total_bytes)}</div>
+                <div class="text-sm text-light mt-4">
                     ${diskData.folder_count} result${diskData.folder_count !== 1 ? 's' : ''} &middot;
                     ${diskData.file_count.toLocaleString()} files
                 </div>
-                ${isWarning ? '<div class="text-sm" style="color:var(--color-warning);margin-top:8px;">Results directory exceeds 1 GB</div>' : ''}
+                ${isWarning ? '<div class="text-sm mt-8" style="color:var(--color-warning);">Results directory exceeds 1 GB</div>' : ''}
             </div>`;
     } else {
         diskEl.innerHTML = '<p class="text-light">Could not load disk usage.</p>';
@@ -346,12 +349,12 @@ async function loadDashboard() {
     const influxdb = statsData.influxdb_url;
     let monHtml = '';
     const settingsIntegrationsUrl = BASE_PATH + '/settings#tab-integrations';
-    monHtml += `<div style="flex:1;min-width:140px;padding:12px;border:1px solid var(--color-border);border-radius:8px;${grafana ? '' : 'opacity:0.5;'}">
-        <div class="text-sm" style="font-weight:600;">Grafana</div>
+    monHtml += `<div class="surface-card p-12" style="flex:1;min-width:140px;${grafana ? '' : 'opacity:0.5;'}">
+        <div class="text-sm text-bold">Grafana</div>
         ${grafana ? `<a href="${escAttr(grafana)}" target="_blank" class="text-sm" style="color:var(--color-primary);">Open Dashboard</a>` : `<span class="text-sm text-light">Not configured</span> <a href="${settingsIntegrationsUrl}" class="text-sm" style="color:var(--color-primary);">Configure</a>`}
     </div>`;
-    monHtml += `<div style="flex:1;min-width:140px;padding:12px;border:1px solid var(--color-border);border-radius:8px;${influxdb ? '' : 'opacity:0.5;'}">
-        <div class="text-sm" style="font-weight:600;">InfluxDB</div>
+    monHtml += `<div class="surface-card p-12" style="flex:1;min-width:140px;${influxdb ? '' : 'opacity:0.5;'}">
+        <div class="text-sm text-bold">InfluxDB</div>
         ${influxdb ? `<a href="${escAttr(influxdb)}" target="_blank" class="text-sm" style="color:var(--color-primary);">Open UI</a>` : `<span class="text-sm text-light">Not configured</span> <a href="${settingsIntegrationsUrl}" class="text-sm" style="color:var(--color-primary);">Configure</a>`}
     </div>`;
     mc.innerHTML = monHtml;

@@ -270,7 +270,8 @@ body.sidebar-collapsed .menu-btn { display: block; }
 
 /* Remove double spacing when card is inside a grid */
 .card-grid > .card,
-.dashboard-row > .card { margin-bottom: 0; }
+.dashboard-row > .card,
+.grid > .card { margin-bottom: 0; }
 
 .dashboard-row {
     display: grid;
