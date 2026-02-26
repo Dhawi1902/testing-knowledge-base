@@ -6,6 +6,8 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 from services.auth import check_access as _check_access
+import json as _json
+
 from services.config_parser import (
     load_project_config,
     save_project_config,
@@ -19,7 +21,6 @@ from services.config_parser import (
     write_slaves,
     get_active_slaves,
     detect_jmeter_path,
-    parse_jmeter_properties_catalog,
 )
 
 TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
@@ -86,16 +87,18 @@ def _get_jmeter_bin_dir(project: dict) -> Path | None:
     return p.parent if p.parent.exists() else None
 
 
+_CATALOG_CACHE: list[dict] | None = None
+
+
 @router.get("/api/config/jmeter-properties/catalog")
 async def get_jmeter_properties_catalog(request: Request):
-    """Parse jmeter.properties to return the full property catalog."""
-    project = request.app.state.project
-    bin_dir = _get_jmeter_bin_dir(project)
-    if not bin_dir:
-        return {"catalog": []}
-    jmeter_props = bin_dir / "jmeter.properties"
-    catalog = parse_jmeter_properties_catalog(jmeter_props)
-    return {"catalog": catalog}
+    """Return the static JMeter property catalog (from official docs)."""
+    global _CATALOG_CACHE
+    if _CATALOG_CACHE is None:
+        catalog_path = Path(__file__).resolve().parent.parent / "static" / "data" / "jmeter_properties_catalog.json"
+        with open(catalog_path, "r", encoding="utf-8") as f:
+            _CATALOG_CACHE = _json.load(f)
+    return {"catalog": _CATALOG_CACHE}
 
 
 @router.get("/api/config/jmeter-properties/master")

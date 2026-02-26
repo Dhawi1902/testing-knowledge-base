@@ -1,6 +1,7 @@
 """Tests for config management API — VM config, slaves, project, properties."""
 
 import json
+from pathlib import Path
 
 import pytest
 
@@ -538,79 +539,48 @@ class TestHealthHistoryEndpoint:
 
 
 class TestJmeterPropertiesCatalog:
-    """Unit tests for parse_jmeter_properties_catalog()."""
+    """Tests for the static JMeter properties catalog JSON."""
 
-    def test_parse_catalog_from_sample(self, tmp_path):
-        """Parse a sample jmeter.properties file and extract catalog entries."""
-        from services.config_parser import parse_jmeter_properties_catalog
+    def test_catalog_json_loads(self):
+        """Static catalog JSON file loads and contains entries."""
+        import json
+        catalog_path = Path(__file__).resolve().parent.parent / "static" / "data" / "jmeter_properties_catalog.json"
+        with open(catalog_path, "r", encoding="utf-8") as f:
+            catalog = json.load(f)
+        assert isinstance(catalog, list)
+        assert len(catalog) > 200  # official docs have ~260 properties
 
-        sample = tmp_path / "jmeter.properties"
-        sample.write_text(
-            "#---------------------------------------------------------------------------\n"
-            "# Distributed Testing\n"
-            "#---------------------------------------------------------------------------\n"
-            "\n"
-            "# Set this if you don't want to use SSL for RMI\n"
-            "#server.rmi.ssl.disable=false\n"
-            "\n"
-            "# Comma-separated list of remote servers\n"
-            "remote_hosts=127.0.0.1\n"
-            "\n"
-            "#---------------------------------------------------------------------------\n"
-            "# HTTP\n"
-            "#---------------------------------------------------------------------------\n"
-            "\n"
-            "# Number of retries for HTTP\n"
-            "#httpclient4.retrycount=0\n",
-            encoding="utf-8",
-        )
-        catalog = parse_jmeter_properties_catalog(sample)
-        assert len(catalog) >= 3
-        # Check a commented-out property
-        ssl_entry = next(e for e in catalog if e["key"] == "server.rmi.ssl.disable")
-        assert ssl_entry["default"] == "false"
-        assert "SSL" in ssl_entry["description"] or "ssl" in ssl_entry["description"].lower()
-        assert ssl_entry["category"] == "Distributed Testing"
-        # Check an active property
-        hosts_entry = next(e for e in catalog if e["key"] == "remote_hosts")
-        assert hosts_entry["default"] == "127.0.0.1"
-        assert hosts_entry["category"] == "Distributed Testing"
-        # Check category change
-        http_entry = next(e for e in catalog if e["key"] == "httpclient4.retrycount")
-        assert http_entry["category"] == "HTTP"
-        assert http_entry["default"] == "0"
+    def test_catalog_entry_structure(self):
+        """Each catalog entry has required keys."""
+        import json
+        catalog_path = Path(__file__).resolve().parent.parent / "static" / "data" / "jmeter_properties_catalog.json"
+        with open(catalog_path, "r", encoding="utf-8") as f:
+            catalog = json.load(f)
+        for entry in catalog:
+            assert "key" in entry
+            assert "default" in entry
+            assert "description" in entry
+            assert "category" in entry
 
-    def test_parse_catalog_no_properties(self, tmp_path):
-        """File with only comments returns empty catalog."""
-        from services.config_parser import parse_jmeter_properties_catalog
+    def test_catalog_has_known_properties(self):
+        """Catalog contains well-known JMeter properties."""
+        import json
+        catalog_path = Path(__file__).resolve().parent.parent / "static" / "data" / "jmeter_properties_catalog.json"
+        with open(catalog_path, "r", encoding="utf-8") as f:
+            catalog = json.load(f)
+        keys = {e["key"] for e in catalog}
+        assert "remote_hosts" in keys
+        assert "server.rmi.ssl.disable" in keys
+        assert "jmeter.save.saveservice.output_format" in keys
 
-        sample = tmp_path / "jmeter.properties"
-        sample.write_text("# Just comments\n", encoding="utf-8")
-        catalog = parse_jmeter_properties_catalog(sample)
-        assert catalog == []
-
-    def test_parse_catalog_missing_file(self, tmp_path):
-        """Missing file returns empty catalog."""
-        from services.config_parser import parse_jmeter_properties_catalog
-
-        catalog = parse_jmeter_properties_catalog(tmp_path / "nope.properties")
-        assert catalog == []
-
-    def test_description_does_not_bleed_across_blank_lines(self, tmp_path):
-        """Comments separated by a blank line are not merged into one description."""
-        from services.config_parser import parse_jmeter_properties_catalog
-
-        sample = tmp_path / "jmeter.properties"
-        sample.write_text(
-            "# Unrelated comment\n"
-            "\n"
-            "# Direct description\n"
-            "#test.key=val\n",
-            encoding="utf-8",
-        )
-        catalog = parse_jmeter_properties_catalog(sample)
-        assert len(catalog) == 1
-        assert catalog[0]["description"] == "Direct description"
+    def test_catalog_no_duplicates(self):
+        """Catalog has no duplicate keys."""
+        import json
+        catalog_path = Path(__file__).resolve().parent.parent / "static" / "data" / "jmeter_properties_catalog.json"
+        with open(catalog_path, "r", encoding="utf-8") as f:
+            catalog = json.load(f)
+        keys = [e["key"] for e in catalog]
+        assert len(keys) == len(set(keys))
 
 
 class TestJmeterPropertiesMasterEndpoint:
@@ -704,49 +674,24 @@ class TestJmeterPropertiesSlaveEndpoint:
 class TestJmeterPropertiesCatalogEndpoint:
     """API tests for /api/config/jmeter-properties/catalog."""
 
-    def test_catalog_returns_list(self, admin_client, bp, tmp_project_dir):
-        """GET catalog returns list of property entries (may be empty if jmeter not installed)."""
+    def test_catalog_returns_list(self, admin_client, bp):
+        """GET catalog returns the static property catalog."""
         r = admin_client.get(f"{bp}/api/config/jmeter-properties/catalog")
         assert r.status_code == 200
         data = r.json()
         assert "catalog" in data
         assert isinstance(data["catalog"], list)
+        assert len(data["catalog"]) > 200
 
-    def test_catalog_with_mock_jmeter(self, admin_client, bp, tmp_project_dir):
-        """GET catalog with a mock jmeter.properties returns parsed entries."""
-        jmeter_bin = tmp_project_dir["project_root"] / "fake_jmeter_bin"
-        jmeter_bin.mkdir(exist_ok=True)
-        (jmeter_bin / "jmeter.properties").write_text(
-            "#---------------------------------------------------------------------------\n"
-            "# Test Section\n"
-            "#---------------------------------------------------------------------------\n"
-            "# A test property\n"
-            "#test.prop=default_val\n",
-            encoding="utf-8",
-        )
-        (jmeter_bin / "jmeter.bat").write_text("")
-        import json
-        pj = tmp_project_dir["project_json_path"]
-        project = json.loads(pj.read_text())
-        old_path = project["jmeter_path"]
-        project["jmeter_path"] = str(jmeter_bin / "jmeter.bat").replace("\\", "/")
-        pj.write_text(json.dumps(project, indent=2))
-        from main import app
-        from services.config_parser import load_project_config
-        app.state.project = load_project_config(pj)
-
-        try:
-            r = admin_client.get(f"{bp}/api/config/jmeter-properties/catalog")
-            assert r.status_code == 200
-            catalog = r.json()["catalog"]
-            assert len(catalog) >= 1
-            assert catalog[0]["key"] == "test.prop"
-            assert catalog[0]["default"] == "default_val"
-        finally:
-            # Cleanup
-            project["jmeter_path"] = old_path
-            pj.write_text(json.dumps(project, indent=2))
-            app.state.project = load_project_config(pj)
+    def test_catalog_has_expected_keys(self, admin_client, bp):
+        """Catalog entries have correct structure."""
+        r = admin_client.get(f"{bp}/api/config/jmeter-properties/catalog")
+        catalog = r.json()["catalog"]
+        entry = catalog[0]
+        assert "key" in entry
+        assert "default" in entry
+        assert "description" in entry
+        assert "category" in entry
 
 
 class TestResourceMonitoringEndpoint:
