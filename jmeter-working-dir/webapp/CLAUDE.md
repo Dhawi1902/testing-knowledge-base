@@ -54,10 +54,11 @@ webapp/
 ├── prompts/
 │   └── analysis.txt         # Ollama prompt template
 ├── static/
-│   ├── css/style.css        # Design system (light/dark themes, responsive, a11y)
-│   └── js/app.js            # Core utilities (API, theme, sidebar, tabs, modals, toasts)
+│   ├── css/style.css        # Design system (tokens, utilities, components, light/dark themes)
+│   └── js/app.js            # Core utilities (API, theme, sidebar, tabs, modals, toasts, dropdowns)
 ├── templates/
-│   ├── base.html            # Layout: sidebar nav, topbar, mobile bottom nav, theme toggle
+│   ├── icons.html           # Lucide SVG icon macros (39 icons)
+│   ├── base.html            # Layout: sidebar nav, topbar, theme toggle, confirm/prompt modals
 │   ├── dashboard.html       # Stats, trend chart, alerts, slave health, disk usage
 │   ├── test_plans.html      # JMX selector, params, presets, execution, live summary, logs
 │   ├── results.html         # Results table, compare, download, sortable columns
@@ -66,7 +67,7 @@ webapp/
 │   ├── settings.html        # 5 tabs: General, Project, Report, Integrations, System
 │   ├── setup.html           # First-run setup wizard
 │   └── token.html           # Token entry page for remote users
-├── tests/                   # pytest suite (198 tests, 56% code coverage)
+├── tests/                   # pytest suite (303 tests, 56% code coverage)
 │   ├── conftest.py          # Fixtures: temp dirs, admin/viewer clients, test data
 │   ├── test_auth.py         # Auth middleware, token verification, access levels
 │   ├── test_config_api.py   # VM config, slaves, project, properties, JMeter props
@@ -266,7 +267,7 @@ python -m pytest tests/ -v --tb=short \
 GitHub Actions workflow at `.github/workflows/webapp-tests.yml`:
 - Triggers on push/PR to `jmeter-working-dir/webapp/**`
 - Runs on Ubuntu with Python 3.13
-- Executes all 198 tests with coverage reporting (minimum 55% enforced)
+- Executes all 303 tests with coverage reporting (minimum 55% enforced)
 - Uploads HTML coverage report as artifact
 
 ## Logging
@@ -290,6 +291,61 @@ API requests logged to `logs/app.log` via `RotatingFileHandler` (5MB max, 3 back
 - **httpx** — async HTTP client for Ollama API
 - **paramiko** + **scp** — SSH to slave VMs
 
+## Design System (UI/UX)
+
+CSS-first design system in `style.css` targeting a "Linear meets Vercel" aesthetic.
+
+### CSS Tokens (Custom Properties)
+
+- **Colors**: `--color-primary`, `--color-danger`, `--color-success`, `--color-warning` + `-hover` and `-subtle` variants
+- **Text**: `--color-text`, `--color-text-secondary`, `--color-text-tertiary` (`--color-text-light` is a deprecated alias for `-secondary`)
+- **Surfaces**: `--color-bg`, `--color-surface`, `--color-surface-alt`, `--color-surface-hover`
+- **Radius**: `--radius-sm` (4px), `--radius` (6px), `--radius-lg` (8px), `--radius-xl` (12px)
+- **Shadows**: `--shadow`, `--shadow-md`, `--shadow-lg`
+- **Typography**: `--font-sans`, `--font-mono`
+
+### Icon System
+
+Lucide SVG icons via Jinja2 macros in `templates/icons.html`:
+
+```jinja2
+{% from 'icons.html' import icon %}
+{{ icon('play', 18) }}                {# name, size in px #}
+{{ icon('loader-2', 14, 'icon-spin') }} {# with CSS class #}
+```
+
+For JS-generated HTML, use template-time constants:
+```javascript
+const ICON_TRASH = `{{ icon('trash-2', 14) }}`;
+```
+
+### Utility Classes
+
+- **Typography**: `.text-2xl`, `.text-xl`, `.text-lg`, `.text-base`, `.text-sm`, `.text-xs`, `.text-mono`, `.text-secondary`, `.text-tertiary`
+- **Spacing** (4px grid): `.m-{0,4,8,12,16,24,32}`, `.mt-*`, `.mb-*`, `.ml-*`, `.mr-*`, `.p-*`, `.pt-*`, `.pb-*`, `.pl-*`, `.pr-*`, `.px-*`, `.py-*`, `.gap-*`
+- **Flex**: `.flex`, `.flex-col`, `.flex-wrap`, `.flex-between`, `.items-center`, `.justify-end`
+- **Grid**: `.grid`, `.grid-2`, `.grid-3`, `.grid-4`, `.grid-1-2`, `.grid-2-1`, `.grid-1-2-1`
+
+### Interactive Components
+
+- **Confirm modal**: `await confirmAction('message', { title, detail, danger })` — returns `true`/`false`
+- **Prompt modal**: `await promptAction('title', { placeholder, defaultValue, description, validate })` — returns string or `null`
+- **Dropdown menu**: `toggleDropdown(btn)` with `.dropdown` > `.dropdown-menu` > `.dropdown-item`
+- **Tooltips**: `data-tooltip="text"` attribute (CSS-only)
+- **Loading skeletons**: `.skeleton`, `.skeleton-text`, `.skeleton-card`, `.skeleton-row`
+- **Empty states**: `.empty-state` > `.empty-state-title` + `.empty-state-desc`
+
+### Modal Sizes
+
+- `.modal-sm` — 420px (confirm/prompt dialogs)
+- `.modal-md` — 480px (regen modal)
+- `.modal` — 600px (default)
+- `.modal-lg` — 900px (large content)
+
+### Theme
+
+Theme toggle in topbar (sun/moon icon). Stored in `localStorage('theme')`. CSS uses `[data-theme="dark"]` selectors for dark overrides.
+
 ## Coding Conventions
 
 - Use async/await for all route handlers
@@ -301,4 +357,6 @@ API requests logged to `logs/app.log` via `RotatingFileHandler` (5MB max, 3 back
 - Localhost check: `getattr(request.state, "is_localhost", False)`
 - Frontend uses vanilla JS (no framework) — keep it simple
 - CSS uses a single stylesheet with CSS variables for theming (light/dark)
+- Icons use Lucide SVG via Jinja2 macros — never add Unicode/emoji icons
+- `confirmAction()` and `promptAction()` are async — always use `await`
 - Mobile responsive: bottom nav bar, hamburger menu, action bar for touch

@@ -106,11 +106,12 @@ Pages affected: settings.html, test_data.html, slaves.html, test_plans.html, res
 | Phase G (Project-level) | DONE | 137 passing |
 | CI/CD + Test Coverage Expansion | DONE | 165 passing (53% code coverage) |
 | Phase 14: Webapp improvements + distributed testing | DONE | 198 passing (56% code coverage) |
+| UI/UX Redesign (Linear meets Vercel) | DONE | 303 passing |
 
 ## CI/CD
 
 - **GitHub Actions**: `.github/workflows/webapp-tests.yml` triggers on push/PR to `jmeter-working-dir/webapp/**`
-- **Test suite**: 198 pytest tests across 8 test files
+- **Test suite**: 303 pytest tests across 8 test files
 - **Coverage**: 56% code coverage (routers + services + main), minimum 55% enforced
 - **Artifact**: HTML coverage report uploaded as GitHub Actions artifact
 - **Security bug found during testing**: `PUT /api/config/properties` was missing `_check_access()` — fixed
@@ -135,3 +136,27 @@ Pages affected: settings.html, test_data.html, slaves.html, test_plans.html, res
 - New: `jmeter/docs/15-oci-linux-slave-setup.md` (full OCI slave setup guide)
 - Updated: `jmeter/docs/12-distributed-testing.md` (practical lessons learned)
 - Updated: `jmeter/README.md` (added doc 15 entry)
+
+## UI/UX Redesign (2026-02-26)
+
+"Linear meets Vercel" aesthetic — CSS-first redesign, no framework changes.
+
+### Design System
+- CSS custom properties for colors, typography, radius, shadows (light + dark)
+- Lucide SVG icon system via Jinja2 macros (`templates/icons.html`, 39 icons)
+- Utility classes: typography scale, spacing (4px grid), flex, grid
+- Components: loading skeletons, empty states, dropdown menus, tooltips
+
+### Interaction Components
+- `confirmAction()` — async Promise-based, replaces `window.confirm()` across all pages
+- `promptAction()` — async with validation support, replaces `window.prompt()`
+- Dropdown menus with outside-click dismissal
+- CSS-only tooltips via `data-tooltip` attribute
+
+### Page Polish (all 6 pages)
+- Removed all inline `style=""` where utility classes exist
+- Replaced Unicode icons with Lucide SVGs throughout
+- Fixed `.btn-close` → `.modal-close`, duplicate `class` attributes
+- Added `.modal-sm/.modal-md` size classes
+- Consistent empty states, loading skeletons, stat card color tints
+- Theme toggle moved from Settings to topbar (always accessible)
