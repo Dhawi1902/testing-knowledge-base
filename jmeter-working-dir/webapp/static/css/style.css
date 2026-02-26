@@ -228,6 +228,10 @@ body.sidebar-collapsed .main-content { margin-left: 0; }
 body.sidebar-collapsed .menu-btn { display: block; }
 
 .page-title { font-size: 1.25rem; font-weight: 600; }
+.topbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+#themeToggle .icon:last-child { display: none; }
+[data-theme="dark"] #themeToggle .icon:first-child { display: none; }
+[data-theme="dark"] #themeToggle .icon:last-child { display: inline-block; }
 
 .content { padding: 24px; }
 

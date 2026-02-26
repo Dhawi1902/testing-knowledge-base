@@ -60,15 +60,6 @@
 
         <!-- Appearance -->
         <h3 class="text-sm mb-16 section-title">Appearance</h3>
-        <div class="form-row mb-16">
-            <div class="form-group" style="min-width:180px;">
-                <label class="form-label">Theme</label>
-                <select class="form-select" id="set_theme" onchange="previewTheme(this.value)">
-                    <option value="light">Light</option>
-                    <option value="dark">Dark</option>
-                </select>
-            </div>
-        </div>
         <div class="mb-16">
             <label class="toggle">
                 <input type="checkbox" id="set_sidebar_collapsed">
@@ -386,7 +377,6 @@ function renderSettings() {
     document.getElementById('set_port').value = server.port || 8080;
     document.getElementById('set_base_path').value = server.base_path || '';
 
-    document.getElementById('set_theme').value = s.theme || 'light';
     document.getElementById('set_sidebar_collapsed').checked = s.sidebar_collapsed || false;
 
     const runner = s.runner || {};
@@ -488,7 +478,7 @@ async function saveAllSettings() {
             allow_external: document.getElementById('set_allow_external').checked,
             base_path: basePath,
         },
-        theme: document.getElementById('set_theme').value,
+        theme: localStorage.getItem('theme') || 'light',
         sidebar_collapsed: document.getElementById('set_sidebar_collapsed').checked,
         runner: {
             auto_scroll: document.getElementById('set_auto_scroll').checked,

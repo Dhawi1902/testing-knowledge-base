@@ -50,6 +50,12 @@
         <header class="topbar">
             <button class="menu-btn" id="menuBtn" title="Open menu" aria-label="Open menu">{{ icon('layers', 20) }}</button>
             <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
+            <div class="topbar-actions">
+                <button class="btn-icon" id="themeToggle" onclick="toggleTheme()" data-tooltip="Toggle theme">
+                    {{ icon('sun', 18) }}
+                    {{ icon('moon', 18) }}
+                </button>
+            </div>
         </header>
         <div class="content">
             {% block content %}{% endblock %}
