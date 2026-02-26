@@ -12,6 +12,7 @@
             <button class="btn btn-outline btn-sm" id="downloadBundleBtn" onclick="downloadBundle()" disabled>Download Selected</button>
             <button class="btn btn-outline btn-sm" id="bulkRegenBtn" onclick="bulkRegenerate()" disabled style="display:none;">Regenerate Selected</button>
             <button class="btn btn-outline btn-sm" id="compareBtn" onclick="compareSelected()" disabled>Compare Selected</button>
+            <button class="btn btn-outline btn-sm" id="bulkDeleteBtn" onclick="bulkDelete()" disabled style="display:none;color:var(--color-danger);border-color:var(--color-danger);">Delete Selected</button>
             <button class="btn btn-outline btn-sm" onclick="loadResults()">Refresh</button>
         </div>
     </div>
@@ -179,9 +180,12 @@ function updateSelectionBtns() {
     document.getElementById('compareBtn').disabled = count !== 2;
     document.getElementById('downloadBundleBtn').disabled = count === 0;
     const bulkBtn = document.getElementById('bulkRegenBtn');
+    const delBtn = document.getElementById('bulkDeleteBtn');
     if (isAdmin) {
         bulkBtn.style.display = count > 0 ? '' : 'none';
         bulkBtn.disabled = count === 0;
+        delBtn.style.display = count > 0 ? '' : 'none';
+        delBtn.disabled = count === 0;
     }
 }
 
@@ -449,6 +453,33 @@ function buildPatternFromPicker() {
     if (!checked.length) return;
     const pattern = '^(' + checked.map(cb => cb.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')$';
     document.getElementById('regen_label_pattern').value = pattern;
+}
+
+// ===== Bulk Delete (#10) =====
+async function bulkDelete() {
+    const checked = Array.from(document.querySelectorAll('.result-check:checked'));
+    if (!checked.length) return;
+    const folders = checked.map(cb => cb.value);
+    if (!confirmAction(`Delete ${folders.length} result(s)? This cannot be undone.`)) return;
+    const btn = document.getElementById('bulkDeleteBtn');
+    btn.disabled = true;
+    btn.textContent = 'Deleting...';
+    try {
+        const data = await api('/api/results/bulk-delete', {
+            method: 'POST',
+            body: { folders },
+        });
+        const results = data.results || [];
+        const ok = results.filter(r => r.ok).length;
+        const fail = results.length - ok;
+        showToast(`Deleted ${ok}/${results.length}${fail ? ` (${fail} failed)` : ''}`, fail ? 'warning' : 'success');
+        loadResults();
+    } catch(e) {
+        showToast('Bulk delete failed', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Delete Selected';
+    }
 }
 
 loadResults();

@@ -200,6 +200,35 @@ async def api_delete_result(request: Request, folder: str):
         return JSONResponse(status_code=500, content={"error": "Failed to delete result folder"})
 
 
+@router.post("/api/results/bulk-delete")
+async def api_bulk_delete(request: Request):
+    """Delete multiple result folders at once."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    body = await request.json()
+    folders = body.get("folders", [])
+    if not folders:
+        return JSONResponse(status_code=400, content={"error": "No folders specified"})
+
+    project = request.app.state.project
+    results_dir = resolve_path(project, "results_dir")
+    results = []
+
+    for folder_name in folders:
+        folder_path = find_result_folder(results_dir, folder_name)
+        if not folder_path:
+            results.append({"folder": folder_name, "ok": False, "error": "Not found"})
+            continue
+        try:
+            shutil.rmtree(str(folder_path))
+            results.append({"folder": folder_name, "ok": True})
+        except Exception as e:
+            results.append({"folder": folder_name, "ok": False, "error": str(e)})
+
+    return {"results": results}
+
+
 @router.post("/api/results/{folder}/regenerate")
 async def api_regenerate_report(request: Request, folder: str):
     """Regenerate HTML report using async service (non-blocking)."""

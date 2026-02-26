@@ -66,6 +66,37 @@ class TestListResults:
         assert data["folders"] == []
 
 
+class TestBulkDelete:
+    def test_bulk_delete(self, admin_client, bp, tmp_project_dir):
+        results_dir = tmp_project_dir["project_root"] / "results"
+        f1 = make_result_folder(results_dir, "20260224_del1")
+        f2 = make_result_folder(results_dir, "20260224_del2")
+        r = admin_client.post(
+            f"{bp}/api/results/bulk-delete",
+            json={"folders": ["20260224_del1", "20260224_del2"]},
+        )
+        assert r.status_code == 200
+        data = r.json()
+        assert len(data["results"]) == 2
+        assert all(item["ok"] for item in data["results"])
+        assert not f1.exists()
+        assert not f2.exists()
+
+    def test_bulk_delete_empty(self, admin_client, bp):
+        r = admin_client.post(f"{bp}/api/results/bulk-delete", json={"folders": []})
+        assert r.status_code == 400
+
+    def test_bulk_delete_not_found(self, admin_client, bp):
+        r = admin_client.post(
+            f"{bp}/api/results/bulk-delete",
+            json={"folders": ["nonexistent_folder"]},
+        )
+        assert r.status_code == 200
+        data = r.json()
+        assert data["results"][0]["ok"] is False
+        assert "Not found" in data["results"][0]["error"]
+
+
 class TestResultStats:
     def test_stats(self, admin_client, bp, sample_result):
         r = admin_client.get(f"{bp}/api/results/20260224_1/stats")

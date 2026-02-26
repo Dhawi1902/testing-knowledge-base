@@ -105,6 +105,10 @@ class TestViewerDenied:
         r = viewer_client.post(f"{bp}/api/runner/stop")
         assert r.status_code == 403
 
+    def test_runner_dry_run(self, viewer_client, bp):
+        r = viewer_client.post(f"{bp}/api/runner/dry-run", json={"filename": "test.jmx"})
+        assert r.status_code == 403
+
     def test_presets_save(self, viewer_client, bp):
         r = viewer_client.post(
             f"{bp}/api/runner/presets",
@@ -172,6 +176,11 @@ class TestViewerDenied:
     # -- F11: Bulk regenerate --
     def test_bulk_regenerate(self, viewer_client, bp):
         r = viewer_client.post(f"{bp}/api/results/bulk-regenerate", json={"folders": []})
+        assert r.status_code == 403
+
+    # -- #10: Bulk delete --
+    def test_bulk_delete(self, viewer_client, bp):
+        r = viewer_client.post(f"{bp}/api/results/bulk-delete", json={"folders": ["test"]})
         assert r.status_code == 403
 
     # -- Config properties --
