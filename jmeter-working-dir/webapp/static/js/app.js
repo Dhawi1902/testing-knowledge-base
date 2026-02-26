@@ -208,7 +208,7 @@ function promptAction(title, { placeholder = '', defaultValue = '', description 
         const input = document.getElementById('promptInput');
         input.placeholder = placeholder;
         input.value = defaultValue;
-        document.getElementById('promptError').style.display = 'none';
+        document.getElementById('promptError').classList.remove('active');
         openModal('promptModal');
         input.focus();
         input.select();
@@ -221,7 +221,7 @@ function submitPromptModal() {
         if (err) {
             const errEl = document.getElementById('promptError');
             errEl.textContent = err;
-            errEl.style.display = 'block';
+            errEl.classList.add('active');
             return;
         }
     }

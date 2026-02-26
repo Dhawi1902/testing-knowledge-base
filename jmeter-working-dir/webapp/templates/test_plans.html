@@ -468,7 +468,7 @@ function renderPresetList() {
         return `<div style="margin-bottom:10px;padding:12px;border-radius:6px;border:1px solid var(--color-border);">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
                 <div class="text-sm" style="font-weight:600;">${escHtml(name)}</div>
-                <div style="display:flex;gap:16px;flex-shrink:0;">
+                <div class="flex gap-16">
                     <button class="btn btn-primary btn-sm" onclick="applyPresetByName('${escAttr(name)}')">Apply</button>
                     <button class="btn btn-sm btn-outline" onclick="deletePresetByName('${escAttr(name)}')" style="color:var(--color-danger);border-color:var(--color-danger);">Delete</button>
                 </div>
@@ -610,7 +610,7 @@ function renderFilterPresetList() {
                     <div class="text-sm" style="font-weight:600;">${escHtml(name)}</div>
                     <code style="font-size:11px;background:var(--color-primary-bg,rgba(59,130,246,0.1));padding:2px 6px;border-radius:4px;">${escHtml(pattern)}</code>
                 </div>
-                <div style="display:flex;gap:16px;flex-shrink:0;">
+                <div class="flex gap-16">
                     <button class="btn btn-primary btn-sm" onclick="applyFilterPresetByName('${escAttr(name)}')">Apply</button>
                     <button class="btn btn-sm btn-outline" onclick="deleteFilterPresetByName('${escAttr(name)}')" style="color:var(--color-danger);border-color:var(--color-danger);">Delete</button>
                 </div>

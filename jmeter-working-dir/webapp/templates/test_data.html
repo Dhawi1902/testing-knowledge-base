@@ -217,7 +217,7 @@ function renderTypeBody(body, type, def = {}) {
 
     } else if (type === 'sequence') {
         body.innerHTML = `
-            <span style="display:inline-flex;gap:6px;align-items:center;">
+            <span class="flex items-center gap-4">
                 <span class="text-light text-sm">Start</span>
                 <input type="number" class="form-input seq-num-start" value="${def.start ?? 1}" style="width:70px;">
                 <span class="text-light text-sm">Step</span>

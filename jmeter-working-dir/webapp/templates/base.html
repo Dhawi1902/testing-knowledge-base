@@ -36,7 +36,7 @@
                 <span class="nav-icon">{{ icon('server', 18) }}</span>
                 <span class="nav-label">Fleet</span>
             </a>
-            <a href="{{ bp }}/settings" class="nav-item {% if active_page == 'settings' %}active{% endif %}" style="margin-top:auto;">
+            <a href="{{ bp }}/settings" class="nav-item nav-item-end {% if active_page == 'settings' %}active{% endif %}">
                 <span class="nav-icon">{{ icon('settings', 18) }}</span>
                 <span class="nav-label">Settings</span>
             </a>
@@ -88,7 +88,7 @@
 
     <!-- Confirm Modal -->
     <div class="modal-overlay" id="confirmModal">
-        <div class="modal" style="max-width:420px">
+        <div class="modal modal-sm">
             <div class="modal-header">
                 <h3 class="modal-title" id="confirmTitle">Confirm</h3>
                 <button class="modal-close" onclick="closeConfirmModal(false)">&times;</button>
@@ -106,7 +106,7 @@
 
     <!-- Prompt Modal -->
     <div class="modal-overlay" id="promptModal">
-        <div class="modal" style="max-width:420px">
+        <div class="modal modal-sm">
             <div class="modal-header">
                 <h3 class="modal-title" id="promptTitle">Input</h3>
                 <button class="modal-close" onclick="closePromptModal(null)">&times;</button>
@@ -114,7 +114,7 @@
             <div class="modal-body">
                 <p class="text-sm text-secondary mb-8" id="promptDesc"></p>
                 <input type="text" class="form-input" id="promptInput" placeholder="">
-                <p class="text-xs text-secondary mt-4" id="promptError" style="color:var(--color-danger);display:none"></p>
+                <p class="text-xs text-secondary mt-4 modal-error" id="promptError"></p>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-outline" onclick="closePromptModal(null)">Cancel</button>

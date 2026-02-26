@@ -53,14 +53,14 @@
 </div>
 
 <!-- VM Configuration -->
-<div class="card" style="margin-top:24px;">
+<div class="card mt-24">
     <div class="card-header" style="cursor:pointer;" onclick="document.getElementById('vmBody').style.display = document.getElementById('vmBody').style.display === 'none' ? '' : 'none'; this.querySelector('.collapse-icon').textContent = document.getElementById('vmBody').style.display === 'none' ? '\u25B6' : '\u25BC';">
         <span class="card-title"><span class="collapse-icon">&#9654;</span> VM Configuration</span>
         <span class="text-light text-sm">SSH defaults &amp; JMeter scripts</span>
     </div>
     <div id="vmBody" style="display:none;">
         {% if access_level != 'viewer' %}
-        <div class="flex gap-8 mb-16" style="justify-content:flex-end;">
+        <div class="flex gap-8 mb-16 justify-end">
             <button class="btn btn-primary btn-sm" onclick="saveVmConfig()">Save</button>
         </div>
         {% endif %}
@@ -128,7 +128,7 @@
 {% endif %}
 
 <!-- Slave JMeter Properties (#26) -->
-<div class="card" style="margin-top:24px;">
+<div class="card mt-24">
     <div class="card-header" style="cursor:pointer;" onclick="toggleJmeterProps()">
         <span class="card-title"><span class="collapse-icon" id="jpropsIcon">&#9654;</span> Slave Properties</span>
         <span class="text-light text-sm">slave-user.properties overrides <span id="jpropsCount"></span></span>

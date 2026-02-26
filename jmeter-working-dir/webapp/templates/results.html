@@ -58,22 +58,22 @@
 
 <!-- Regenerate Modal -->
 <div class="modal-overlay" id="regenModal" role="dialog" aria-modal="true" aria-labelledby="regenModalTitle">
-    <div class="modal" style="max-width:480px;">
+    <div class="modal modal-md">
         <div class="modal-header">
             <span class="modal-title" id="regenModalTitle">Regenerate Report</span>
-            <button onclick="closeModal('regenModal')" class="btn-close" aria-label="Close">&times;</button>
+            <button onclick="closeModal('regenModal')" class="modal-close" aria-label="Close">&times;</button>
         </div>
         <div class="modal-body">
             <div class="text-sm mb-16" id="regenModalInfo"></div>
 
             <h4 class="text-sm mb-8 section-title">Filtering</h4>
-            <div class="flex mb-16" style="flex-direction:column;gap:10px;">
+            <div class="flex-col gap-12 mb-16">
                 <label class="toggle">
                     <input type="checkbox" id="regen_filter_sub" checked>
                     <span class="toggle-track"></span>
-                    <span class="form-label" style="margin:0;">Remove sub-results (transaction children)</span>
+                    <span class="form-label m-0">Remove sub-results (transaction children)</span>
                 </label>
-                <div class="form-group" style="margin:0;">
+                <div class="form-group m-0">
                     <label class="form-label">Label pattern (regex, optional)</label>
                     <input class="form-input form-input-mono" id="regen_label_pattern" placeholder="e.g. ^(A|B|C) -.*">
                     <span class="text-light text-sm">Only keep labels matching this pattern. Leave empty for no filter.</span>

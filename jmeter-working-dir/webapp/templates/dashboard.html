@@ -6,7 +6,7 @@
 {% block content %}
 <!-- Row 1: Runner Status + Alerts -->
 <div class="grid grid-2 mb-16">
-    <div class="card" style="border-top: 3px solid var(--color-primary);">
+    <div class="card card-accent">
         <div class="card-header">
             <span class="card-title">Runner Status</span>
             <span class="badge" id="runnerBadge">-</span>
@@ -46,7 +46,7 @@
         <div id="runHistory">
             <p class="text-light">Loading...</p>
         </div>
-        <div class="empty-state" id="runsEmpty" style="display:none">
+        <div class="empty-state hidden" id="runsEmpty">
             {{ icon('play', 48) }}
             <div class="empty-state-title">No test runs yet</div>
             <div class="empty-state-desc">Run your first test to see history here.</div>
@@ -61,7 +61,7 @@
         <div class="card-header">
             <span class="card-title">Quick Actions</span>
         </div>
-        <div class="flex gap-8" style="flex-wrap: wrap;">
+        <div class="flex flex-wrap gap-8">
             <a href="{{ bp }}/plans" class="btn btn-primary">{{ icon('play', 14) }} Run Test</a>
             <a href="{{ bp }}/results" class="btn btn-outline">{{ icon('bar-chart-3', 14) }} View Results</a>
             <a href="{{ bp }}/settings" class="btn btn-outline">{{ icon('settings', 14) }} Edit Config</a>
@@ -107,7 +107,7 @@
         <div class="card-header">
             <span class="card-title">Monitoring</span>
         </div>
-        <div class="flex gap-8" style="flex-wrap:wrap;" id="monitoringCards">
+        <div class="flex flex-wrap gap-8" id="monitoringCards">
             <p class="text-light">Loading...</p>
         </div>
     </div>
@@ -262,9 +262,9 @@ async function loadDashboard() {
     const runs = recentData ? (recentData.runs || []) : [];
     if (runs.length === 0) {
         histEl.innerHTML = '';
-        runsEmptyEl.style.display = '';
+        runsEmptyEl.classList.remove('hidden');
     } else {
-        runsEmptyEl.style.display = 'none';
+        runsEmptyEl.classList.add('hidden');
         let html = `<div style="overflow-x:auto;"><table style="width:100%;">
             <thead><tr>
                 <th>Run</th><th>Date</th><th>VUs</th><th>Samples</th>
