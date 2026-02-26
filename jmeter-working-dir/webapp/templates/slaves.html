@@ -29,6 +29,7 @@
             <span class="text-sm" id="bulkCount" style="font-weight:600;">0 selected</span>
             <button class="btn btn-outline btn-sm" onclick="bulkEnable(true)">Enable</button>
             <button class="btn btn-outline btn-sm" onclick="bulkEnable(false)">Disable</button>
+            <button class="btn btn-outline btn-sm" onclick="bulkProvision()">Provision</button>
             <button class="btn btn-sm" onclick="bulkRemove()" style="color:var(--color-danger);border:1px solid var(--color-danger);background:transparent;">Remove</button>
             <button class="btn btn-outline btn-sm" onclick="clearSelection()">Clear</button>
         </div>
@@ -56,6 +57,24 @@
         <div id="vmForm"></div>
     </div>
 </div>
+<!-- Provision Log Modal -->
+{% if access_level != 'viewer' %}
+<div class="modal-overlay" id="provisionModal" style="display:none;">
+    <div class="modal" style="max-width:700px;width:95vw;">
+        <div class="modal-header">
+            <h3 class="modal-title" id="provisionModalTitle">Provisioning...</h3>
+            <button class="modal-close" onclick="closeProvisionModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="provisionLog" style="background:var(--color-bg);border:1px solid var(--color-border);border-radius:6px;padding:12px;font-family:var(--font-mono);font-size:12px;max-height:400px;overflow-y:auto;white-space:pre-wrap;line-height:1.6;"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline btn-sm" onclick="closeProvisionModal()">Close</button>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <!-- Config Properties Editor -->
 <div class="card" style="margin-top:24px;">
     <div class="card-header" style="cursor:pointer;" onclick="document.getElementById('propsBody').style.display = document.getElementById('propsBody').style.display === 'none' ? '' : 'none'; this.querySelector('.collapse-icon').textContent = document.getElementById('propsBody').style.display === 'none' ? '\u25B6' : '\u25BC';">
@@ -206,6 +225,10 @@ function renderList() {
                 <span class="slave-meta">VM #${i + 1}${hasOverrides ? ' <span class="badge" style="font-size:10px;background:var(--color-border);color:var(--color-text-light);">custom</span>' : ''}${s.error ? ' &mdash; <span style="color:var(--color-danger);">' + escHtml(s.error) + '</span>' : ''}</span>
                 <div class="slave-actions">
                     ${statusBadge(s)}
+                    ${provisionBadges(s)}
+                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="testSsh('${aIp}')" title="Test SSH connection">SSH</button>` : ''}
+                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="testRmi('${aIp}')" title="Test RMI port 1099">RMI</button>` : ''}
+                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="provisionSingle('${aIp}')" title="Provision slave">Provision</button>` : ''}
                     ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="startSingle('${aIp}')" title="Start JMeter server">&#9654;</button>` : ''}
                     ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;color:var(--color-danger);border-color:var(--color-danger);" onclick="stopSingle('${aIp}')" title="Stop JMeter server">&#9632;</button>` : ''}
                     ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="restartSingle('${aIp}')" title="Restart JMeter server">&#8635;</button>` : ''}
@@ -247,6 +270,10 @@ function renderGrid() {
                 </div>
                 <div class="flex gap-8" style="align-items:center;">
                     ${statusBadge(s)}
+                    ${provisionBadges(s)}
+                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="testSsh('${aIp}')" title="Test SSH">SSH</button>` : ''}
+                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="testRmi('${aIp}')" title="Test RMI">RMI</button>` : ''}
+                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="provisionSingle('${aIp}')" title="Provision">Provision</button>` : ''}
                     ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="startSingle('${aIp}')" title="Start">&#9654;</button>` : ''}
                     ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;color:var(--color-danger);border-color:var(--color-danger);" onclick="stopSingle('${aIp}')" title="Stop">&#9632;</button>` : ''}
                     ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="restartSingle('${aIp}')" title="Restart">&#8635;</button>` : ''}
@@ -701,6 +728,120 @@ async function restartSingle(ip) {
         showToast(`Failed to restart on ${ip}`, 'error');
     }
     setTimeout(() => refreshStatus(), 3000);
+}
+
+// ===== Test SSH (#27) =====
+async function testSsh(ip) {
+    showToast(`Testing SSH to ${ip}...`, 'info');
+    try {
+        const data = await api(`/api/slaves/${encodeURIComponent(ip)}/test-ssh`, { method: 'POST' });
+        const r = data.result;
+        showToast(r.ok ? `SSH OK: ${ip}` : `SSH failed: ${ip} — ${r.message}`, r.ok ? 'success' : 'error');
+    } catch (e) {
+        showToast(`SSH test failed for ${ip}`, 'error');
+    }
+}
+
+// ===== Test RMI Port (#28) =====
+async function testRmi(ip) {
+    showToast(`Testing RMI port on ${ip}...`, 'info');
+    try {
+        const data = await api(`/api/slaves/${encodeURIComponent(ip)}/test-rmi`, { method: 'POST' });
+        const r = data.result;
+        showToast(r.ok ? `RMI port open: ${ip}` : `RMI port closed: ${ip} — ${r.message}`, r.ok ? 'success' : 'error');
+    } catch (e) {
+        showToast(`RMI test failed for ${ip}`, 'error');
+    }
+}
+
+// ===== Provision (#17, #18, #19, #20) =====
+let provisionStatus = {}; // ip -> {java, jmeter, scripts, firewall}
+
+function provisionBadges(s) {
+    const ps = provisionStatus[s.ip];
+    if (!ps) return '';
+    const items = [
+        { key: 'java', label: 'Java' },
+        { key: 'jmeter', label: 'JMeter' },
+        { key: 'scripts', label: 'Scripts' },
+        { key: 'firewall', label: 'FW' },
+    ];
+    return items.map(it => {
+        const val = ps[it.key];
+        if (val === undefined) return '';
+        const cls = val ? 'badge-success' : 'badge-danger';
+        return `<span class="badge ${cls}" style="font-size:9px;">${it.label}</span>`;
+    }).join('');
+}
+
+async function provisionSingle(ip) {
+    openProvisionModal([ip]);
+}
+
+async function bulkProvision() {
+    const ips = [...selected].filter(ip => {
+        const s = slaveData.find(sl => sl.ip === ip);
+        return s && s.enabled !== false;
+    });
+    if (!ips.length) { showToast('No enabled slaves selected', 'warning'); return; }
+    openProvisionModal(ips);
+}
+
+function openProvisionModal(ips) {
+    const modal = document.getElementById('provisionModal');
+    const log = document.getElementById('provisionLog');
+    const title = document.getElementById('provisionModalTitle');
+    title.textContent = ips.length === 1 ? `Provisioning ${ips[0]}` : `Provisioning ${ips.length} slaves`;
+    log.innerHTML = '';
+    modal.style.display = 'flex';
+    runProvision(ips, log);
+}
+
+function closeProvisionModal() {
+    document.getElementById('provisionModal').style.display = 'none';
+}
+
+function appendLog(logEl, text, cls) {
+    const line = document.createElement('div');
+    line.textContent = text;
+    if (cls) line.className = cls;
+    logEl.appendChild(line);
+    logEl.scrollTop = logEl.scrollHeight;
+}
+
+async function runProvision(ips, logEl) {
+    for (const ip of ips) {
+        appendLog(logEl, `\n=== Provisioning ${ip} ===`, 'text-light');
+        try {
+            const data = await api(`/api/slaves/${encodeURIComponent(ip)}/provision`, { method: 'POST' });
+            const r = data.result;
+            if (r.steps) {
+                r.steps.forEach(step => {
+                    const icon = step.ok ? '\u2713' : '\u2717';
+                    appendLog(logEl, `  ${icon} ${step.name}: ${step.detail || (step.ok ? 'OK' : 'FAILED')}`);
+                });
+            }
+            if (r.status) {
+                provisionStatus[ip] = r.status;
+            }
+            appendLog(logEl, r.ok ? `  => ${ip} provisioned successfully` : `  => ${ip} provisioning had errors`, '');
+        } catch (e) {
+            appendLog(logEl, `  ERROR: Failed to provision ${ip} — ${e.message || 'network error'}`, '');
+        }
+    }
+    appendLog(logEl, '\nDone.', 'text-light');
+    document.getElementById('provisionModalTitle').textContent = 'Provisioning Complete';
+    render(); // refresh badges
+}
+
+async function checkProvisionStatus(ip) {
+    try {
+        const data = await api(`/api/slaves/${encodeURIComponent(ip)}/provision-status`, { method: 'POST' });
+        if (data.result && data.result.status) {
+            provisionStatus[ip] = data.result.status;
+            render();
+        }
+    } catch (e) { /* ignore */ }
 }
 
 // ===== Collapse =====

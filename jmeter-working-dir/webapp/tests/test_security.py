@@ -188,6 +188,26 @@ class TestViewerDenied:
         r = viewer_client.post(f"{bp}/api/slaves/10.0.0.1/restart")
         assert r.status_code == 403
 
+    # -- #27: Test SSH --
+    def test_slave_test_ssh(self, viewer_client, bp):
+        r = viewer_client.post(f"{bp}/api/slaves/10.0.0.1/test-ssh")
+        assert r.status_code == 403
+
+    # -- #28: Test RMI --
+    def test_slave_test_rmi(self, viewer_client, bp):
+        r = viewer_client.post(f"{bp}/api/slaves/10.0.0.1/test-rmi")
+        assert r.status_code == 403
+
+    # -- #17: Provision --
+    def test_slave_provision(self, viewer_client, bp):
+        r = viewer_client.post(f"{bp}/api/slaves/10.0.0.1/provision")
+        assert r.status_code == 403
+
+    # -- #18: Provision status --
+    def test_slave_provision_status(self, viewer_client, bp):
+        r = viewer_client.post(f"{bp}/api/slaves/10.0.0.1/provision-status")
+        assert r.status_code == 403
+
     # -- F11: Bulk regenerate --
     def test_bulk_regenerate(self, viewer_client, bp):
         r = viewer_client.post(f"{bp}/api/results/bulk-regenerate", json={"folders": []})

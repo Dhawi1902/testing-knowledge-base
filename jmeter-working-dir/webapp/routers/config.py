@@ -148,6 +148,8 @@ async def detect_jmeter(request: Request):
 from services.slaves import (  # noqa: E402
     check_all_slaves, start_all_servers, stop_all_servers,
     start_jmeter_server, stop_jmeter_server, build_ssh_configs,
+    test_ssh_connection, test_rmi_port,
+    provision_slave, check_provision_status,
 )
 
 # Cache last slave status check for dashboard health dots (E2)
@@ -271,3 +273,55 @@ async def api_restart_single_slave(request: Request, ip: str):
     stop_result = await stop_jmeter_server(ip, ssh_configs[ip])
     start_result = await start_jmeter_server(ip, ssh_configs[ip])
     return {"stop_result": stop_result, "start_result": start_result}
+
+
+@router.post("/api/slaves/{ip}/test-ssh")
+async def api_test_ssh(request: Request, ip: str):
+    """Test SSH connection to a single slave (#27)."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    project = request.app.state.project
+    slaves, active_ips, ssh_configs = _get_slaves(project)
+    if ip not in ssh_configs:
+        return JSONResponse(status_code=404, content={"error": f"Slave {ip} not found"})
+    result = await test_ssh_connection(ip, ssh_configs[ip])
+    return {"result": result}
+
+
+@router.post("/api/slaves/{ip}/test-rmi")
+async def api_test_rmi(request: Request, ip: str):
+    """Test RMI port reachability on a slave (#28)."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    result = await test_rmi_port(ip)
+    return {"result": result}
+
+
+@router.post("/api/slaves/{ip}/provision")
+async def api_provision_slave(request: Request, ip: str):
+    """Provision a single slave: Java, JMeter, dirs, scripts, firewall (#17)."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    project = request.app.state.project
+    slaves, active_ips, ssh_configs = _get_slaves(project)
+    if ip not in ssh_configs:
+        return JSONResponse(status_code=404, content={"error": f"Slave {ip} not found"})
+    result = await provision_slave(ip, ssh_configs[ip])
+    return {"result": result}
+
+
+@router.post("/api/slaves/{ip}/provision-status")
+async def api_provision_status(request: Request, ip: str):
+    """Check provision status on a slave: Java, JMeter, scripts, firewall (#18)."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    project = request.app.state.project
+    slaves, active_ips, ssh_configs = _get_slaves(project)
+    if ip not in ssh_configs:
+        return JSONResponse(status_code=404, content={"error": f"Slave {ip} not found"})
+    result = await check_provision_status(ip, ssh_configs[ip])
+    return {"result": result}

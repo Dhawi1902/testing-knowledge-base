@@ -164,3 +164,139 @@ class TestBuildSshConfigs:
         configs = build_ssh_configs(slaves, vm_config)
         assert configs["10.0.0.1"]["jmeter_heap"]["xms"] == "512m"
         assert configs["10.0.0.1"]["jmeter_heap"]["xmx"] == "4g"
+
+
+class TestGenerateScripts:
+    """Unit tests for script generation (#20)."""
+
+    def test_start_script_default_heap(self):
+        from services.slaves import generate_start_script
+        ssh_config = {"slave_dir": "~/jmeter-slave"}
+        script = generate_start_script(ssh_config)
+        assert "#!/bin/bash" in script
+        assert "JMETER_HOME=" in script
+        assert "-Xms512m" in script
+        assert "-Xmx1g" in script
+        assert "~/jmeter-slave/jmeter-slave.log" in script
+        assert "jmeter-server" in script
+
+    def test_start_script_custom_heap(self):
+        from services.slaves import generate_start_script
+        ssh_config = {
+            "slave_dir": "~/custom-dir",
+            "jmeter_heap": {"xms": "1g", "xmx": "4g", "gc_algo": "-XX:+UseZGC"},
+        }
+        script = generate_start_script(ssh_config)
+        assert "-Xms1g" in script
+        assert "-Xmx4g" in script
+        assert "-XX:+UseZGC" in script
+        assert "~/custom-dir/jmeter-slave.log" in script
+
+    def test_stop_script(self):
+        from services.slaves import generate_stop_script
+        script = generate_stop_script()
+        assert "#!/bin/bash" in script
+        assert "pkill -f" in script
+        assert "jmeter-server" in script
+
+
+class TestTestSshEndpoint:
+    """API tests for test-ssh endpoint (#27)."""
+
+    def test_not_found(self, admin_client, bp):
+        r = admin_client.post(f"{bp}/api/slaves/10.99.99.99/test-ssh")
+        assert r.status_code == 404
+
+    def test_with_slave(self, admin_client, bp, monkeypatch):
+        """Mock SSH test to verify endpoint wiring."""
+        import asyncio
+        from unittest.mock import AsyncMock
+        monkeypatch.setattr(
+            "routers.config.test_ssh_connection",
+            AsyncMock(return_value={"ip": "10.0.0.1", "ok": True, "message": "SSH connection successful"}),
+        )
+        # Add a slave first
+        admin_client.put(f"{bp}/api/config/slaves", json={"slaves": [{"ip": "10.0.0.1", "enabled": True}]})
+        r = admin_client.post(f"{bp}/api/slaves/10.0.0.1/test-ssh")
+        assert r.status_code == 200
+        assert r.json()["result"]["ok"] is True
+        # Cleanup
+        admin_client.put(f"{bp}/api/config/slaves", json={"slaves": []})
+
+
+class TestTestRmiEndpoint:
+    """API tests for test-rmi endpoint (#28)."""
+
+    def test_rmi_mock(self, admin_client, bp, monkeypatch):
+        """Mock RMI port test to verify endpoint wiring."""
+        from unittest.mock import AsyncMock
+        monkeypatch.setattr(
+            "routers.config.test_rmi_port",
+            AsyncMock(return_value={"ip": "10.0.0.1", "ok": True, "message": "Port 1099 is open"}),
+        )
+        r = admin_client.post(f"{bp}/api/slaves/10.0.0.1/test-rmi")
+        assert r.status_code == 200
+        assert r.json()["result"]["ok"] is True
+
+
+class TestRmiPortUnit:
+    """Unit test for _test_rmi_port function (#28)."""
+
+    def test_closed_port(self):
+        from services.slaves import _test_rmi_port
+        # 10.255.255.1 is non-routable, so port should be unreachable
+        result = _test_rmi_port("10.255.255.1", 1099, timeout=1)
+        assert result["ok"] is False
+        assert result["ip"] == "10.255.255.1"
+
+
+class TestProvisionEndpoint:
+    """API tests for provision endpoint (#17)."""
+
+    def test_not_found(self, admin_client, bp):
+        r = admin_client.post(f"{bp}/api/slaves/10.99.99.99/provision")
+        assert r.status_code == 404
+
+    def test_with_slave_mock(self, admin_client, bp, monkeypatch):
+        from unittest.mock import AsyncMock
+        mock_result = {
+            "ip": "10.0.0.1", "ok": True,
+            "steps": [{"name": "Java 17", "ok": True, "detail": "Already installed"}],
+            "status": {"java": True, "jmeter": True, "scripts": True, "firewall": True},
+        }
+        monkeypatch.setattr(
+            "routers.config.provision_slave",
+            AsyncMock(return_value=mock_result),
+        )
+        admin_client.put(f"{bp}/api/config/slaves", json={"slaves": [{"ip": "10.0.0.1", "enabled": True}]})
+        r = admin_client.post(f"{bp}/api/slaves/10.0.0.1/provision")
+        assert r.status_code == 200
+        assert r.json()["result"]["ok"] is True
+        assert r.json()["result"]["status"]["java"] is True
+        admin_client.put(f"{bp}/api/config/slaves", json={"slaves": []})
+
+
+class TestProvisionStatusEndpoint:
+    """API tests for provision-status endpoint (#18)."""
+
+    def test_not_found(self, admin_client, bp):
+        r = admin_client.post(f"{bp}/api/slaves/10.99.99.99/provision-status")
+        assert r.status_code == 404
+
+    def test_with_slave_mock(self, admin_client, bp, monkeypatch):
+        from unittest.mock import AsyncMock
+        mock_result = {
+            "ip": "10.0.0.1", "ok": True,
+            "status": {"java": True, "jmeter": False, "scripts": False, "firewall": True},
+        }
+        monkeypatch.setattr(
+            "routers.config.check_provision_status",
+            AsyncMock(return_value=mock_result),
+        )
+        admin_client.put(f"{bp}/api/config/slaves", json={"slaves": [{"ip": "10.0.0.1", "enabled": True}]})
+        r = admin_client.post(f"{bp}/api/slaves/10.0.0.1/provision-status")
+        assert r.status_code == 200
+        status = r.json()["result"]["status"]
+        assert status["java"] is True
+        assert status["jmeter"] is False
+        admin_client.put(f"{bp}/api/config/slaves", json={"slaves": []})
