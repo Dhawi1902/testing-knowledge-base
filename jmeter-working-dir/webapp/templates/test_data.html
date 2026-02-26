@@ -10,7 +10,7 @@
         <span class="card-title">CSV Files</span>
         <button class="btn btn-outline btn-sm" onclick="loadFiles()">Refresh</button>
     </div>
-    <div class="table-wrapper">
+    <div class="table-wrapper" id="csvFilesTable">
         <table>
             <thead>
                 <tr>
@@ -25,6 +25,11 @@
                 <tr><td colspan="5" class="text-light">Loading...</td></tr>
             </tbody>
         </table>
+    </div>
+    <div class="empty-state" id="dataEmpty" style="display:none">
+        {{ icon('database', 48) }}
+        <div class="empty-state-title">No CSV files yet</div>
+        <div class="empty-state-desc">Upload a CSV file or use the builder to create test data.</div>
     </div>
 </div>
 
@@ -847,11 +852,16 @@ async function loadFiles() {
         const files = data.files || [];
         updateDistPicker(files);
         const tbody = document.getElementById('csvFilesList');
+        const tableEl = document.getElementById('csvFilesTable');
+        const dataEmptyEl = document.getElementById('dataEmpty');
         const mainFiles = files.filter(f => !f.filename.includes('/'));
         if (!mainFiles.length) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-light">No CSV files found.</td></tr>';
+            tableEl.style.display = 'none';
+            dataEmptyEl.style.display = '';
             return;
         }
+        tableEl.style.display = '';
+        dataEmptyEl.style.display = 'none';
         const colColors = ['#3b82f6','#8b5cf6','#06b6d4','#f59e0b','#ef4444','#10b981','#ec4899','#6366f1'];
         const canEdit = ACCESS_LEVEL !== 'viewer';
         tbody.innerHTML = mainFiles.map(f => {

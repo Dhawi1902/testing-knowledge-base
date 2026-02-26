@@ -545,6 +545,24 @@ th.sort-desc::after { content: ' \25BC'; font-size: 0.7em; }
 .modal-body { padding: 16px 20px; }
 .modal-footer { display: flex; gap: 8px; justify-content: flex-end; padding: 12px 20px; border-top: 1px solid var(--color-border); }
 
+/* ===== Loading Skeletons ===== */
+.skeleton { background: var(--color-surface-alt); border-radius: var(--radius-sm); animation: shimmer 1.5s infinite; }
+.skeleton-text { height: 14px; margin-bottom: 8px; border-radius: var(--radius-sm); }
+.skeleton-text:last-child { width: 60%; }
+.skeleton-card { height: 120px; border-radius: var(--radius-lg); }
+.skeleton-row { height: 44px; border-radius: var(--radius-sm); margin-bottom: 4px; }
+@keyframes shimmer {
+    0% { opacity: 0.6; }
+    50% { opacity: 0.3; }
+    100% { opacity: 0.6; }
+}
+
+/* ===== Empty States ===== */
+.empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 24px; text-align: center; }
+.empty-state .icon { color: var(--color-text-tertiary); margin-bottom: 16px; }
+.empty-state-title { font-size: 1.1rem; font-weight: 600; color: var(--color-text); margin-bottom: 8px; }
+.empty-state-desc { font-size: 0.875rem; color: var(--color-text-secondary); margin-bottom: 20px; max-width: 320px; }
+
 /* ===== Log Output ===== */
 .log-output {
     background: #0f172a;

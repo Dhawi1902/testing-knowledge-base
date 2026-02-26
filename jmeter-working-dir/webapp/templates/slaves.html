@@ -43,6 +43,12 @@
         <div id="slaveContainer">
             <div class="text-light" style="text-align:center;padding:32px;">Loading...</div>
         </div>
+        <div class="empty-state" id="slavesEmpty" style="display:none">
+            {{ icon('server', 48) }}
+            <div class="empty-state-title">No slave VMs configured</div>
+            <div class="empty-state-desc">Add a slave VM to start distributed testing.</div>
+            <button class="btn btn-primary" onclick="addSlave()">Add Slave</button>
+        </div>
     </div>
 </div>
 
@@ -246,6 +252,15 @@ function formatLastChecked() {
 
 // ===== Render =====
 function render() {
+    const emptyEl = document.getElementById('slavesEmpty');
+    const containerEl = document.getElementById('slaveContainer');
+    if (!slaveData.length) {
+        emptyEl.style.display = '';
+        containerEl.style.display = 'none';
+    } else {
+        emptyEl.style.display = 'none';
+        containerEl.style.display = '';
+    }
     if (currentView === 'grid') renderGrid();
     else renderList();
 }
@@ -265,10 +280,7 @@ function statusDot(s) {
 
 function renderList() {
     const container = document.getElementById('slaveContainer');
-    if (!slaveData.length) {
-        container.innerHTML = '<div class="text-light" style="text-align:center;padding:32px;">No slave VMs configured.' + (isAdmin ? ' Click "+ Add" to add one.' : '') + '</div>';
-        return;
-    }
+    if (!slaveData.length) { container.innerHTML = ''; return; }
     const allSelected = slaveData.length > 0 && slaveData.every(s => selected.has(s.ip));
     let html = '<div class="slave-list">';
     if (isAdmin) {
@@ -324,10 +336,7 @@ function renderList() {
 
 function renderGrid() {
     const container = document.getElementById('slaveContainer');
-    if (!slaveData.length) {
-        container.innerHTML = '<div class="text-light" style="text-align:center;padding:32px;">No slave VMs configured.' + (isAdmin ? ' Click "+ Add" to add one.' : '') + '</div>';
-        return;
-    }
+    if (!slaveData.length) { container.innerHTML = ''; return; }
     let html = '<div class="slave-grid">';
     slaveData.forEach((s, i) => {
         const enabled = s.enabled !== false;

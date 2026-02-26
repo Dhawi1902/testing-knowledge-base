@@ -46,6 +46,12 @@
         <div id="runHistory">
             <p class="text-light">Loading...</p>
         </div>
+        <div class="empty-state" id="runsEmpty" style="display:none">
+            {{ icon('play', 48) }}
+            <div class="empty-state-title">No test runs yet</div>
+            <div class="empty-state-desc">Run your first test to see history here.</div>
+            <a href="{{ base_path }}/plans" class="btn btn-primary">Go to Test Plans</a>
+        </div>
     </div>
 </div>
 
@@ -249,10 +255,13 @@ async function loadDashboard() {
 
     // Run History
     const histEl = document.getElementById('runHistory');
+    const runsEmptyEl = document.getElementById('runsEmpty');
     const runs = recentData ? (recentData.runs || []) : [];
     if (runs.length === 0) {
-        histEl.innerHTML = '<p class="text-light">No test runs yet.</p>';
+        histEl.innerHTML = '';
+        runsEmptyEl.style.display = '';
     } else {
+        runsEmptyEl.style.display = 'none';
         let html = `<div style="overflow-x:auto;"><table style="width:100%;">
             <thead><tr>
                 <th>Run</th><th>Date</th><th>VUs</th><th>Samples</th>
