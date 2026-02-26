@@ -435,7 +435,7 @@ async function bulkEnable(enabled) {
 }
 
 async function bulkRemove() {
-    if (!confirmAction(`Remove ${selected.size} slave(s)?`)) return;
+    if (!await confirmAction(`Remove ${selected.size} slave(s)?`, { danger: true })) return;
     slaveData = slaveData.filter(s => !selected.has(s.ip));
     await saveSlaves();
     showToast(`Removed ${selected.size} slave(s)`, 'info');
@@ -515,7 +515,7 @@ async function addSlave() {
 }
 
 async function removeSlave(ip) {
-    if (!confirmAction(`Remove slave ${ip}?`)) return;
+    if (!await confirmAction(`Remove slave ${ip}?`, { danger: true })) return;
     slaveData = slaveData.filter(s => s.ip !== ip);
     selected.delete(ip);
     await saveSlaves();
@@ -620,7 +620,7 @@ async function updateOverride(ip, field, value) {
 
 // ===== Start/Stop All =====
 async function startAll() {
-    if (!confirmAction('Start JMeter servers on all enabled slave VMs?')) return;
+    if (!await confirmAction('Start JMeter servers on all enabled slave VMs?')) return;
     const btn = document.getElementById('startAllBtn');
     btn.disabled = true;
     btn.textContent = 'Starting...';
@@ -639,7 +639,7 @@ async function startAll() {
 }
 
 async function stopAll() {
-    if (!confirmAction('Stop JMeter servers on all slave VMs?')) return;
+    if (!await confirmAction('Stop JMeter servers on all slave VMs?', { danger: true })) return;
     const btn = document.getElementById('stopAllBtn');
     btn.disabled = true;
     btn.textContent = 'Stopping...';

@@ -420,7 +420,7 @@ async function uploadCsv(overwrite = false) {
         const data = await resp.json();
         if (resp.status === 409) {
             // File exists — ask user to confirm overwrite
-            if (confirmAction(`"${file.name}" already exists. Overwrite it?`)) {
+            if (await confirmAction(`"${file.name}" already exists. Overwrite it?`)) {
                 await uploadCsv(true);
             } else {
                 input.value = '';

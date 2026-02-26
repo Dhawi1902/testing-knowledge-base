@@ -542,6 +542,8 @@ th.sort-desc::after { content: ' \25BC'; font-size: 0.7em; }
     color: var(--color-text-light);
     line-height: 1;
 }
+.modal-body { padding: 16px 20px; }
+.modal-footer { display: flex; gap: 8px; justify-content: flex-end; padding: 12px 20px; border-top: 1px solid var(--color-border); }
 
 /* ===== Log Output ===== */
 .log-output {

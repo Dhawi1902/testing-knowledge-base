@@ -357,7 +357,7 @@ function stopRegenerate() {
 }
 
 async function deleteResult(folder) {
-    if (!confirmAction('Delete result folder "' + folder + '"? This cannot be undone.')) return;
+    if (!await confirmAction('Delete result folder "' + folder + '"?', { title: 'Delete Result', detail: folder, danger: true })) return;
     try {
         await api(`/api/results/${encodeURIComponent(folder)}`, { method: 'DELETE' });
         showToast('Result deleted', 'success');
@@ -454,7 +454,7 @@ async function bulkRegenerate() {
     const checked = Array.from(document.querySelectorAll('.result-check:checked'));
     if (!checked.length) return;
     const folders = checked.map(cb => cb.value);
-    if (!confirmAction(`Regenerate reports for ${folders.length} result(s)? This may take a while.`)) return;
+    if (!await confirmAction(`Regenerate reports for ${folders.length} result(s)? This may take a while.`, { title: 'Regenerate Reports' })) return;
     const btn = document.getElementById('bulkRegenBtn');
     btn.disabled = true;
     btn.textContent = `Regenerating 0/${folders.length}...`;
@@ -528,7 +528,7 @@ async function bulkDelete() {
     const checked = Array.from(document.querySelectorAll('.result-check:checked'));
     if (!checked.length) return;
     const folders = checked.map(cb => cb.value);
-    if (!confirmAction(`Delete ${folders.length} result(s)? This cannot be undone.`)) return;
+    if (!await confirmAction(`Delete ${folders.length} result(s)? This cannot be undone.`, { title: 'Delete Results', danger: true })) return;
     const btn = document.getElementById('bulkDeleteBtn');
     btn.disabled = true;
     btn.textContent = 'Deleting...';

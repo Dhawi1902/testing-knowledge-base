@@ -543,7 +543,7 @@ async function saveAllSettings() {
 }
 
 async function restartServer() {
-    if (!confirmAction('Restart the server? The page will reload on the new address.')) return;
+    if (!await confirmAction('Restart the server? The page will reload on the new address.', { title: 'Restart Server' })) return;
     const btn = document.getElementById('restartBtn');
     btn.disabled = true;
     btn.textContent = 'Restarting...';

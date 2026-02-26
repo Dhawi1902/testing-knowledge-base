@@ -73,7 +73,7 @@ async function runScript(path) {
 }
 
 async function stopScript() {
-    if (!confirmAction('Stop the running script?')) return;
+    if (!await confirmAction('Stop the running script?', { danger: true })) return;
     await api('/api/scripts/stop', { method: 'POST' });
     setScriptState(false);
     showToast('Script stopped', 'warning');

@@ -380,7 +380,7 @@ function renderPresetSelect() {
     }
 }
 
-function applyPreset() {
+async function applyPreset() {
     const name = document.getElementById('presetSelect').value;
     if (!name) return;
     if (!presets[name]) {
@@ -398,7 +398,7 @@ function applyPreset() {
         let msg = `Preset "${name}" may not match this plan.`;
         if (missing.length) msg += `\nPreset keys not in plan: ${missing.join(', ')}`;
         if (extra.length) msg += `\nPlan keys not in preset: ${extra.join(', ')}`;
-        if (!confirmAction(msg + '\n\nApply anyway?')) return;
+        if (!await confirmAction(msg + '\n\nApply anyway?')) return;
     }
 
     let changed = 0;
@@ -484,7 +484,7 @@ function applyPresetByName(name) {
 }
 
 async function deletePresetByName(name) {
-    if (!confirmAction(`Delete preset "${name}"?`)) return;
+    if (!await confirmAction(`Delete preset "${name}"?`, { danger: true })) return;
     await api(`/api/runner/presets/${encodeURIComponent(name)}`, { method: 'DELETE' });
     delete presets[name];
     renderPresetSelect();
@@ -625,7 +625,7 @@ function applyFilterPresetByName(name) {
 }
 
 async function deleteFilterPresetByName(name) {
-    if (!confirmAction(`Delete filter preset "${name}"?`)) return;
+    if (!await confirmAction(`Delete filter preset "${name}"?`, { danger: true })) return;
     await api(`/api/runner/filter-presets/${encodeURIComponent(name)}`, { method: 'DELETE' });
     delete filterPresets[name];
     renderFilterPresetSelect();
@@ -689,7 +689,7 @@ async function startTest() {
     const filename = document.getElementById('selectedPlan').value;
     if (!filename) return;
     if (jmeterGuiOpened) {
-        if (!confirmAction('JMeter GUI may still be open. Running a test while the GUI is active will compete for Java resources.\n\nClose JMeter GUI first, or continue anyway?')) return;
+        if (!await confirmAction('JMeter GUI may still be open. Running a test while the GUI is active will compete for Java resources.', { title: 'JMeter GUI Warning', detail: 'Close JMeter GUI first, or continue anyway?' })) return;
     }
     document.getElementById('logOutput').innerHTML = '';
     // Request notification permission for completion alert
@@ -708,7 +708,7 @@ async function startTest() {
 }
 
 async function stopTest() {
-    if (!confirmAction('Stop the running test?')) return;
+    if (!await confirmAction('Stop the running test?', { title: 'Stop Test', danger: true })) return;
     await api('/api/runner/stop', { method: 'POST' });
     setRunnerState(false);
     showToast('Test stopped', 'warning');
@@ -1006,7 +1006,7 @@ async function downloadPlan() {
 async function deletePlan() {
     const filename = document.getElementById('selectedPlan').value;
     if (!filename) return;
-    if (!confirmAction(`Delete test plan "${filename}"? This cannot be undone.`)) return;
+    if (!await confirmAction(`Delete test plan "${filename}"? This cannot be undone.`, { title: 'Delete Test Plan', danger: true })) return;
     try {
         await api(`/api/plans/${encodeURIComponent(filename)}`, { method: 'DELETE' });
         showToast(`Deleted ${filename}`, 'success');

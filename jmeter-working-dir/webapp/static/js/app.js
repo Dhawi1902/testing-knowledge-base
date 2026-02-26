@@ -166,9 +166,34 @@ document.addEventListener('click', (e) => {
 });
 
 /* ===== Confirm Dialog ===== */
-function confirmAction(message) {
-    return window.confirm(message);
+let _confirmResolve = null;
+function confirmAction(message, { title = 'Confirm', detail = '', danger = false } = {}) {
+    return new Promise(resolve => {
+        _confirmResolve = resolve;
+        document.getElementById('confirmTitle').textContent = title;
+        document.getElementById('confirmMessage').textContent = message;
+        const detailEl = document.getElementById('confirmDetail');
+        detailEl.textContent = detail;
+        detailEl.style.display = detail ? 'block' : 'none';
+        const btn = document.getElementById('confirmBtn');
+        btn.className = danger ? 'btn btn-danger' : 'btn btn-primary';
+        btn.textContent = danger ? 'Delete' : 'Confirm';
+        openModal('confirmModal');
+        btn.focus();
+    });
 }
+function closeConfirmModal(result) {
+    closeModal('confirmModal');
+    if (_confirmResolve) { _confirmResolve(result); _confirmResolve = null; }
+}
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && document.getElementById('confirmModal').classList.contains('active')) {
+        closeConfirmModal(false);
+    }
+    if (e.key === 'Enter' && document.getElementById('confirmModal').classList.contains('active')) {
+        closeConfirmModal(true);
+    }
+});
 
 /* ===== WebSocket Manager ===== */
 class WSManager {
