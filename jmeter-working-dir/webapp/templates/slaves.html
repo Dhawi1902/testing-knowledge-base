@@ -6,28 +6,28 @@
 {% block content %}
 <!-- Slave List -->
 <div class="card">
-    <div class="card-header" style="flex-wrap:wrap;gap:8px;">
-        <div class="flex gap-16" style="align-items:center;">
+    <div class="card-header flex-wrap gap-8">
+        <div class="flex gap-16 items-center">
             <span class="card-title" style="cursor:pointer;" onclick="toggleSlaveList()"><span class="collapse-icon" id="slaveCollapseIcon">&#9660;</span> Slave List</span>
-            <span class="text-sm" id="slaveSummary" style="display:flex;gap:4px;">Loading...</span>
+            <span class="text-sm flex gap-4" id="slaveSummary">Loading...</span>
         </div>
         <!-- Default actions (shown when nothing selected) -->
-        <div class="flex gap-8" style="align-items:center;" id="defaultActions">
-            {% if access_level != 'viewer' %}<button class="btn btn-outline btn-sm" onclick="addSlave()">+ Add</button>{% endif %}
+        <div class="flex gap-8 items-center" id="defaultActions">
+            {% if access_level != 'viewer' %}<button class="btn btn-outline btn-sm" onclick="addSlave()">{{ icon('plus', 14) }} Add</button>{% endif %}
             <button class="btn btn-outline btn-sm" onclick="refreshStatus()" id="refreshBtn" title="Check online status of all slaves">Check Status</button>
             <button class="btn btn-outline btn-sm" onclick="refreshResources()" id="resourcesBtn" title="Check CPU/RAM on all slaves">Resources</button>
             {% if access_level != 'viewer' %}
-            <button class="btn btn-primary btn-sm" onclick="startAll()" id="startAllBtn">Start All</button>
-            <button class="btn btn-outline btn-sm" onclick="stopAll()" id="stopAllBtn" style="color:var(--color-danger);border-color:var(--color-danger);">Stop All</button>
+            <button class="btn btn-primary btn-sm" onclick="startAll()" id="startAllBtn">{{ icon('power', 14) }} Start All</button>
+            <button class="btn btn-outline btn-sm" onclick="stopAll()" id="stopAllBtn" style="color:var(--color-danger);border-color:var(--color-danger);">{{ icon('stop-circle', 14) }} Stop All</button>
             <button class="btn btn-outline btn-sm" onclick="syncData()" title="Distribute test data to all active slaves">Sync Data</button>
             {% endif %}
-            <span style="width:1px;height:24px;background:var(--color-border);margin:0 4px;"></span>
-            <button class="btn btn-outline btn-sm view-toggle" id="viewListBtn" onclick="setView('list')" title="List view">&#9776;</button>
-            <button class="btn btn-outline btn-sm view-toggle" id="viewGridBtn" onclick="setView('grid')" title="Grid view">&#9638;</button>
+            <span class="divider-v"></span>
+            <button class="btn btn-outline btn-sm view-toggle" id="viewListBtn" onclick="setView('list')" title="List view">{{ icon('layers', 14) }}</button>
+            <button class="btn btn-outline btn-sm view-toggle" id="viewGridBtn" onclick="setView('grid')" title="Grid view">{{ icon('hard-drive', 14) }}</button>
         </div>
         {% if access_level != 'viewer' %}
         <!-- Bulk actions (shown when slaves selected) -->
-        <div class="flex gap-8" style="align-items:center;display:none;" id="bulkActions">
+        <div class="flex gap-8 bulk-bar-sticky" style="display:none;" id="bulkActions">
             <span class="text-sm" id="bulkCount" style="font-weight:600;">0 selected</span>
             <button class="btn btn-outline btn-sm" onclick="bulkEnable(true)">Enable</button>
             <button class="btn btn-outline btn-sm" onclick="bulkEnable(false)">Disable</button>
@@ -275,7 +275,8 @@ function statusBadge(s) {
 function statusDot(s) {
     if (s.status === null) return '<span class="status-dot unknown"></span>';
     const cls = s.enabled === false ? 'unknown' : (s.status || 'down');
-    return `<span class="status-dot ${cls}"></span>`;
+    const label = s.enabled === false ? 'Disabled' : s.status === 'up' ? 'Online' : s.status === 'checking' ? 'Checking' : 'Offline';
+    return `<span class="status-dot ${cls}"></span><span class="text-xs text-secondary">${label}</span>`;
 }
 
 function renderList() {
@@ -319,7 +320,7 @@ function renderList() {
                     ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="viewLog('${aIp}')" title="View slave log">Log</button>` : ''}
                     ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="confirmCleanData('${aIp}')" title="Clean test data">Clean</button>` : ''}
                     ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="confirmCleanLog('${aIp}')" title="Clean log file">ClnLog</button>` : ''}
-                    ${isAdmin ? `<button class="gear-btn${expanded ? ' active' : ''}" onclick="toggleConfig('${aIp}')" title="SSH overrides">&#9881;</button>` : ''}
+                    ${isAdmin ? `<button class="gear-btn${expanded ? ' active' : ''}" onclick="toggleConfig('${aIp}')" title="SSH overrides"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>${expanded ? '<svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>' : '<svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>'}</button>` : ''}
                     ${isAdmin ? `<button class="del-btn" onclick="removeSlave('${aIp}')" title="Remove">&times;</button>` : ''}
                     ${isAdmin ? `<label class="toggle" title="${enabled ? 'Disable' : 'Enable'}">
                         <input type="checkbox" ${enabled ? 'checked' : ''} onchange="toggleSlave('${aIp}', this.checked)">
@@ -346,13 +347,13 @@ function renderGrid() {
         const aIp = escAttr(s.ip);
         const ipClick = isAdmin ? `onclick="editSlaveIp('${aIp}', this)" title="Click to edit"` : '';
         html += `<div class="vm-card${enabled ? '' : ' disabled'}${sel ? ' selected' : ''}">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-                <div class="flex gap-8" style="align-items:center;">
+            <div class="flex-between gap-8">
+                <div class="flex gap-8 items-center">
                     ${isAdmin ? `<label class="check"><input type="checkbox" class="select-cb" ${sel ? 'checked' : ''} onchange="toggleSelect('${aIp}', this.checked)"><span class="check-box"></span></label>` : ''}
                     <span class="vm-ip" ${ipClick}>${escHtml(s.ip)}</span>
                     ${hasOverrides ? '<span class="badge" style="font-size:10px;background:var(--color-border);color:var(--color-text-light);">custom</span>' : ''}
                 </div>
-                <div class="flex gap-8" style="align-items:center;">
+                <div class="flex gap-8 items-center">
                     ${statusBadge(s)}
                     ${provisionBadges(s)}
                     ${resourceBadges(s)}
@@ -365,7 +366,7 @@ function renderGrid() {
                     ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="viewLog('${aIp}')" title="Log">Log</button>` : ''}
                     ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="confirmCleanData('${aIp}')" title="Clean data">Clean</button>` : ''}
                     ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="confirmCleanLog('${aIp}')" title="Clean log">ClnLog</button>` : ''}
-                    ${isAdmin ? `<button class="gear-btn${expanded ? ' active' : ''}" onclick="toggleConfig('${aIp}')" title="SSH overrides">&#9881;</button>` : ''}
+                    ${isAdmin ? `<button class="gear-btn${expanded ? ' active' : ''}" onclick="toggleConfig('${aIp}')" title="SSH overrides"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>${expanded ? '<svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>' : '<svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>'}</button>` : ''}
                     ${isAdmin ? `<button class="del-btn" onclick="removeSlave('${aIp}')" title="Remove">&times;</button>` : ''}
                     ${isAdmin ? `<label class="toggle" title="${enabled ? 'Disable' : 'Enable'}">
                         <input type="checkbox" ${enabled ? 'checked' : ''} onchange="toggleSlave('${aIp}', this.checked)">
