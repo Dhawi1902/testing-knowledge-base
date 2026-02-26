@@ -41,6 +41,11 @@ The JMeter Test Dashboard (`jmeter-working-dir/webapp/`) is a FastAPI web app fo
 - **Distributed testing**: Supports OCI Linux slaves + local slaves (see docs 12 & 15)
 - Run with: `cd jmeter-working-dir/webapp && pip install -r requirements.txt && python -m webapp`
 
+## File Placement Rules
+
+- **Never save screenshots or images to the repository root.** Use the appropriate subdirectory (e.g., `jmeter/docs/images/`, `jmeter-working-dir/webapp/tests/e2e/screenshots/`).
+- Temporary screenshots from Playwright/browser tools should go in `jmeter-working-dir/webapp/tests/e2e/screenshots/`.
+
 ## Content Conventions (All Topics)
 
 - Each doc file has a **Table of Contents** at the top using anchor links
