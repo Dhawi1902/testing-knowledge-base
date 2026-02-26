@@ -237,6 +237,19 @@ document.getElementById('promptInput').addEventListener('keydown', e => {
     if (e.key === 'Escape') closePromptModal(null);
 });
 
+/* ===== Dropdown Menu ===== */
+function toggleDropdown(btn) {
+    const menu = btn.nextElementSibling;
+    const wasOpen = menu.classList.contains('open');
+    document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+    if (!wasOpen) menu.classList.add('open');
+}
+document.addEventListener('click', e => {
+    if (!e.target.closest('.dropdown')) {
+        document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+    }
+});
+
 /* ===== WebSocket Manager ===== */
 class WSManager {
     constructor(url, options = {}) {
