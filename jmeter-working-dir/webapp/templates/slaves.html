@@ -543,10 +543,20 @@ function renderVmConfig() {
     const container = document.getElementById('vmForm');
     const ssh = currentVmConfig.ssh_config || {};
     const scripts = currentVmConfig.jmeter_scripts || {};
+    const heap = currentVmConfig.jmeter_heap || {};
+    const slaveDir = currentVmConfig.slave_dir || '~/jmeter-slave';
     const ro = isAdmin ? '' : ' readonly';
     const dis = isAdmin ? '' : ' disabled';
     container.innerHTML = `
         <form onsubmit="return false">
+        <h3 class="text-sm mb-16 section-title">Slave Directory</h3>
+        <div class="form-row mb-16">
+            <div class="form-group form-col" style="flex:2;min-width:250px;">
+                <label class="form-label">Base Directory (on slaves)</label>
+                <input class="form-input form-input-mono" id="vm_slave_dir" value="${escHtml(slaveDir)}" placeholder="~/jmeter-slave"${ro}>
+                <span class="text-sm text-light">Base path on slaves. Uses ~ which resolves via $HOME. test_data/, start-slave.sh, stop-slave.sh are derived from this.</span>
+            </div>
+        </div>
         <h3 class="text-sm mb-16 section-title">SSH Defaults</h3>
         <div class="form-row mb-16">
             <div class="form-group form-col" style="min-width:150px;">
@@ -562,8 +572,8 @@ function renderVmConfig() {
                 <input class="form-input form-input-mono" id="vm_ssh_keyfile" value="${escHtml(ssh.key_file || '')}" placeholder="/path/to/key.pem"${ro}>
             </div>
             <div class="form-group form-col" style="flex:2;min-width:200px;">
-                <label class="form-label">Dest Path</label>
-                <input class="form-input form-input-mono" id="vm_ssh_dest" value="${escHtml(ssh.dest_path || '')}"${ro}>
+                <label class="form-label">Dest Path (override)</label>
+                <input class="form-input form-input-mono" id="vm_ssh_dest" value="${escHtml(ssh.dest_path || '')}" placeholder="(auto: slave_dir/test_data/)"${ro}>
             </div>
         </div>
         <h3 class="text-sm mb-16 section-title">JMeter on Slaves</h3>
@@ -581,15 +591,30 @@ function renderVmConfig() {
                 </select>
             </div>
         </div>
+        <h3 class="text-sm mb-16 section-title">JMeter Heap</h3>
+        <div class="form-row mb-16">
+            <div class="form-group form-col" style="min-width:120px;">
+                <label class="form-label">Xms (initial)</label>
+                <input class="form-input form-input-mono" id="vm_heap_xms" value="${escHtml(heap.xms || '512m')}" placeholder="512m"${ro}>
+            </div>
+            <div class="form-group form-col" style="min-width:120px;">
+                <label class="form-label">Xmx (max)</label>
+                <input class="form-input form-input-mono" id="vm_heap_xmx" value="${escHtml(heap.xmx || '1g')}" placeholder="1g"${ro}>
+            </div>
+            <div class="form-group form-col" style="flex:2;min-width:250px;">
+                <label class="form-label">GC Algorithm</label>
+                <input class="form-input form-input-mono" id="vm_heap_gc" value="${escHtml(heap.gc_algo || '')}" placeholder="-XX:+UseG1GC -XX:MaxGCPauseMillis=100"${ro}>
+            </div>
+        </div>
         <h3 class="text-sm mb-16 section-title">JMeter Scripts (on slaves)</h3>
         <div class="form-row mb-16">
             <div class="form-group form-col">
-                <label class="form-label">Start Script</label>
-                <input class="form-input form-input-mono" id="vm_script_start" value="${escHtml(scripts.start || '')}" placeholder="(auto from JMeter path)"${ro}>
+                <label class="form-label">Start Script (override)</label>
+                <input class="form-input form-input-mono" id="vm_script_start" value="${escHtml(scripts.start || '')}" placeholder="(auto: slave_dir/start-slave.sh)"${ro}>
             </div>
             <div class="form-group form-col">
-                <label class="form-label">Stop Script</label>
-                <input class="form-input form-input-mono" id="vm_script_stop" value="${escHtml(scripts.stop || '')}" placeholder="(auto from JMeter path)"${ro}>
+                <label class="form-label">Stop Script (override)</label>
+                <input class="form-input form-input-mono" id="vm_script_stop" value="${escHtml(scripts.stop || '')}" placeholder="(auto: slave_dir/stop-slave.sh)"${ro}>
             </div>
         </div>
         <div class="text-sm text-light" style="margin-top:-8px;">Per-slave overrides can be set via the &#9881; button on each slave.</div>
@@ -598,6 +623,7 @@ function renderVmConfig() {
 
 async function saveVmConfig() {
     const config = {
+        slave_dir: document.getElementById('vm_slave_dir').value || '~/jmeter-slave',
         ssh_config: {
             user: document.getElementById('vm_ssh_user').value,
             password: document.getElementById('vm_ssh_password').value,
@@ -608,6 +634,11 @@ async function saveVmConfig() {
         jmeter_scripts: {
             start: document.getElementById('vm_script_start').value,
             stop: document.getElementById('vm_script_stop').value,
+        },
+        jmeter_heap: {
+            xms: document.getElementById('vm_heap_xms').value || '512m',
+            xmx: document.getElementById('vm_heap_xmx').value || '1g',
+            gc_algo: document.getElementById('vm_heap_gc').value,
         },
         os: document.getElementById('vm_os').value,
     };

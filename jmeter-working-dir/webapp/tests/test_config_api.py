@@ -70,3 +70,78 @@ class TestDetectJmeter:
         )
         r = admin_client.post(f"{bp}/api/config/detect-jmeter")
         assert r.status_code == 404
+
+
+class TestBuildSshConfigs:
+    """Unit tests for build_ssh_configs() — slave_dir, heap, overrides."""
+
+    def test_default_slave_dir(self):
+        from services.slaves import build_ssh_configs
+        slaves = [{"ip": "10.0.0.1", "enabled": True}]
+        vm_config = {}
+        configs = build_ssh_configs(slaves, vm_config)
+        cfg = configs["10.0.0.1"]
+        assert cfg["slave_dir"] == "~/jmeter-slave"
+        assert cfg["dest_path"] == "~/jmeter-slave/test_data/"
+        assert cfg["jmeter_scripts"]["start"] == "~/jmeter-slave/start-slave.sh"
+        assert cfg["jmeter_scripts"]["stop"] == "~/jmeter-slave/stop-slave.sh"
+
+    def test_custom_slave_dir(self):
+        from services.slaves import build_ssh_configs
+        slaves = [{"ip": "10.0.0.1", "enabled": True}]
+        vm_config = {"slave_dir": "~/custom-dir"}
+        configs = build_ssh_configs(slaves, vm_config)
+        cfg = configs["10.0.0.1"]
+        assert cfg["slave_dir"] == "~/custom-dir"
+        assert cfg["dest_path"] == "~/custom-dir/test_data/"
+
+    def test_per_slave_slave_dir_override(self):
+        from services.slaves import build_ssh_configs
+        slaves = [
+            {"ip": "10.0.0.1", "enabled": True, "overrides": {"slave_dir": "~/override-dir"}},
+            {"ip": "10.0.0.2", "enabled": True},
+        ]
+        vm_config = {"slave_dir": "~/jmeter-slave"}
+        configs = build_ssh_configs(slaves, vm_config)
+        assert configs["10.0.0.1"]["slave_dir"] == "~/override-dir"
+        assert configs["10.0.0.1"]["dest_path"] == "~/override-dir/test_data/"
+        assert configs["10.0.0.2"]["slave_dir"] == "~/jmeter-slave"
+
+    def test_explicit_dest_path_not_overridden(self):
+        """If dest_path is explicitly set in ssh_config, slave_dir should not override it."""
+        from services.slaves import build_ssh_configs
+        slaves = [{"ip": "10.0.0.1", "enabled": True}]
+        vm_config = {
+            "ssh_config": {"dest_path": "/custom/explicit/path/"},
+            "slave_dir": "~/jmeter-slave",
+        }
+        configs = build_ssh_configs(slaves, vm_config)
+        assert configs["10.0.0.1"]["dest_path"] == "/custom/explicit/path/"
+
+    def test_explicit_scripts_preserved(self):
+        """If jmeter_scripts is explicitly set, slave_dir should not override it."""
+        from services.slaves import build_ssh_configs
+        slaves = [{"ip": "10.0.0.1", "enabled": True}]
+        vm_config = {
+            "jmeter_scripts": {"start": "/custom/start.sh", "stop": "/custom/stop.sh"},
+        }
+        configs = build_ssh_configs(slaves, vm_config)
+        assert configs["10.0.0.1"]["jmeter_scripts"]["start"] == "/custom/start.sh"
+
+    def test_heap_settings_merged(self):
+        from services.slaves import build_ssh_configs
+        slaves = [{"ip": "10.0.0.1", "enabled": True}]
+        vm_config = {"jmeter_heap": {"xms": "512m", "xmx": "2g", "gc_algo": "-XX:+UseG1GC"}}
+        configs = build_ssh_configs(slaves, vm_config)
+        assert configs["10.0.0.1"]["jmeter_heap"]["xms"] == "512m"
+        assert configs["10.0.0.1"]["jmeter_heap"]["xmx"] == "2g"
+
+    def test_per_slave_heap_override(self):
+        from services.slaves import build_ssh_configs
+        slaves = [
+            {"ip": "10.0.0.1", "enabled": True, "overrides": {"jmeter_heap": {"xmx": "4g"}}},
+        ]
+        vm_config = {"jmeter_heap": {"xms": "512m", "xmx": "2g"}}
+        configs = build_ssh_configs(slaves, vm_config)
+        assert configs["10.0.0.1"]["jmeter_heap"]["xms"] == "512m"
+        assert configs["10.0.0.1"]["jmeter_heap"]["xmx"] == "4g"

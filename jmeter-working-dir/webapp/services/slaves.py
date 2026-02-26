@@ -8,24 +8,58 @@ _executor = ThreadPoolExecutor(max_workers=20)
 def build_ssh_configs(slaves: list[dict], vm_config: dict) -> dict[str, dict]:
     """Build per-slave SSH configs by merging global defaults with per-slave overrides.
     Returns {ip: merged_ssh_config}.
+
+    The slave_dir field (default ~/jmeter-slave/) is the base directory on slaves.
+    dest_path and jmeter_scripts are derived from slave_dir if not explicitly set.
+    All paths use ~ which resolves via $HOME on the remote machine.
     """
     global_ssh = vm_config.get("ssh_config", {})
     global_scripts = vm_config.get("jmeter_scripts", {})
+    global_heap = vm_config.get("jmeter_heap", {})
+    slave_dir = vm_config.get("slave_dir", "~/jmeter-slave")
+    # Normalize: ensure no trailing slash for consistent joining
+    slave_dir = slave_dir.rstrip("/")
+
     configs = {}
     for s in slaves:
         ip = s["ip"]
         overrides = s.get("overrides", {})
         merged = {**global_ssh}
-        if global_scripts:
-            merged["jmeter_scripts"] = global_scripts
-        # Per-slave overrides
+
+        # Per-slave overrides for SSH fields
         for key in ("user", "password", "dest_path", "jmeter_path", "key_file"):
             if overrides.get(key):
                 merged[key] = overrides[key]
+
+        # Per-slave slave_dir override
+        effective_slave_dir = overrides.get("slave_dir", slave_dir).rstrip("/")
+        merged["slave_dir"] = effective_slave_dir
+
+        # Derive dest_path from slave_dir if not explicitly set
+        if not merged.get("dest_path"):
+            merged["dest_path"] = f"{effective_slave_dir}/test_data/"
+
+        # Derive jmeter_scripts from slave_dir if not explicitly set
+        if global_scripts:
+            merged["jmeter_scripts"] = {**global_scripts}
+        else:
+            merged["jmeter_scripts"] = {
+                "start": f"{effective_slave_dir}/start-slave.sh",
+                "stop": f"{effective_slave_dir}/stop-slave.sh",
+            }
+
+        # Heap settings (global + per-slave override)
+        if global_heap:
+            merged["jmeter_heap"] = {**global_heap}
+        if overrides.get("jmeter_heap"):
+            merged.setdefault("jmeter_heap", {})
+            merged["jmeter_heap"].update(overrides["jmeter_heap"])
+
         # Per-slave OS type (default from global)
         merged.setdefault("os", vm_config.get("os", "linux"))
         if overrides.get("os"):
             merged["os"] = overrides["os"]
+
         configs[ip] = merged
     return configs
 
