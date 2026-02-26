@@ -147,8 +147,8 @@
 </div>
 
 <!-- Add Property Modal -->
-<div id="addPropModal" class="modal" style="display:none;">
-    <div class="modal-content" style="max-width:600px;">
+<div id="addPropModal" class="modal-overlay">
+    <div class="modal" style="max-width:600px;padding:0;">
         <div class="modal-header">
             <h3>Add JMeter Property</h3>
             <button class="modal-close" onclick="closeAddPropertyModal()">&times;</button>
@@ -1106,14 +1106,14 @@ async function saveJmeterProperties() {
 
 // --- Add Property Modal ---
 function openAddPropertyModal() {
-    document.getElementById('addPropModal').style.display = 'flex';
+    document.getElementById('addPropModal').classList.add('active');
     document.getElementById('propSearchInput').value = '';
     document.getElementById('propSearchInput').focus();
     filterPropertyList('');
 }
 
 function closeAddPropertyModal() {
-    document.getElementById('addPropModal').style.display = 'none';
+    document.getElementById('addPropModal').classList.remove('active');
 }
 
 function filterPropertyList(query) {

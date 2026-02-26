@@ -242,8 +242,39 @@ def parse_jmeter_properties_catalog(path: Path) -> list[dict]:
         return []
 
     catalog = []
+    seen_keys: set[str] = set()
     current_category = "General"
     description_lines = []
+
+    def _is_valid_category(name: str) -> bool:
+        """Check if a candidate string is a real section category name."""
+        if not name or "=" in name or len(name) >= 80:
+            return False
+        if name[0].isdigit() or "/" in name:
+            return False
+        # Skip file header noise and sentence-like descriptions
+        noise = ("SHOULD NOT", "should not", "Apache JMeter Property file",
+                 "properties have the prefix", "The below properties",
+                 "The properties below", "the License", "Classname of the")
+        if any(n in name for n in noise):
+            return False
+        # Skip names starting with '- ' (list items, not section headers)
+        if name.startswith("- "):
+            return False
+        return True
+
+    def _add_entry(key: str, value: str) -> None:
+        """Add a catalog entry, skipping duplicates (keep first occurrence)."""
+        if key in seen_keys:
+            return
+        seen_keys.add(key)
+        desc = " ".join(description_lines[-3:]) if description_lines else ""
+        catalog.append({
+            "key": key,
+            "default": value,
+            "description": desc,
+            "category": current_category,
+        })
 
     with open(path, "r", encoding="utf-8") as f:
         for line in f:
@@ -255,13 +286,7 @@ def parse_jmeter_properties_catalog(path: Path) -> list[dict]:
                 # Check if the previous description line is a category name
                 if description_lines:
                     candidate = description_lines[-1].strip()
-                    # Category names are short, title-like, no '=' or '/' or digits at start
-                    # Skip file header noise like "THIS FILE SHOULD NOT BE MODIFIED"
-                    if (candidate and "=" not in candidate and len(candidate) < 80
-                            and not candidate[0].isdigit()
-                            and "/" not in candidate
-                            and "SHOULD NOT" not in candidate
-                            and "should not" not in candidate):
+                    if _is_valid_category(candidate):
                         current_category = candidate
                         description_lines = []
                 continue
@@ -288,13 +313,7 @@ def parse_jmeter_properties_catalog(path: Path) -> list[dict]:
                             and ("." in key or "_" in key)
                         )
                         if is_property_key:
-                            desc = " ".join(description_lines[-3:]) if description_lines else ""
-                            catalog.append({
-                                "key": key,
-                                "default": value,
-                                "description": desc,
-                                "category": current_category,
-                            })
+                            _add_entry(key, value)
                             description_lines = []
                             continue
                     description_lines.append(content)
@@ -306,13 +325,7 @@ def parse_jmeter_properties_catalog(path: Path) -> list[dict]:
                 key = key.strip()
                 value = value.strip()
                 if key:
-                    desc = " ".join(description_lines[-3:]) if description_lines else ""
-                    catalog.append({
-                        "key": key,
-                        "default": value,
-                        "description": desc,
-                        "category": current_category,
-                    })
+                    _add_entry(key, value)
                     description_lines = []
                 continue
 
