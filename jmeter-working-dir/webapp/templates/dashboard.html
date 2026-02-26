@@ -282,6 +282,7 @@ async function loadDashboard() {
             }
         }
         html += '</tbody></table></div>';
+        html += `<div style="text-align:center;margin-top:12px;"><a href="${BASE_PATH}/results" class="btn btn-outline btn-sm">View All Results</a></div>`;
         histEl.innerHTML = html;
     }
 
@@ -295,13 +296,16 @@ async function loadDashboard() {
         let aHtml = '';
         alertItems.forEach(a => {
             const icon = a.level === 'danger' ? '&#9888;' : a.level === 'warning' ? '&#9888;' : '&#8505;';
-            aHtml += `<div class="alert-item alert-${a.level}">
+            const linkHref = a.link ? `${BASE_PATH}${a.link}` : '';
+            const tag = linkHref ? 'a' : 'div';
+            const linkAttrs = linkHref ? ` href="${escAttr(linkHref)}" style="text-decoration:none;color:inherit;"` : '';
+            aHtml += `<${tag} class="alert-item alert-${a.level}"${linkAttrs}>
                 <span class="alert-icon">${icon}</span>
                 <div>
                     <div class="alert-msg">${escAttr(a.message)}</div>
                     ${a.detail ? `<div class="alert-detail text-sm text-light">${escAttr(a.detail)}</div>` : ''}
                 </div>
-            </div>`;
+            </${tag}>`;
         });
         document.getElementById('alertsList').innerHTML = aHtml;
     } else {
@@ -332,13 +336,14 @@ async function loadDashboard() {
     const grafana = statsData.grafana_url;
     const influxdb = statsData.influxdb_url;
     let monHtml = '';
+    const settingsIntegrationsUrl = BASE_PATH + '/settings#tab-integrations';
     monHtml += `<div style="flex:1;min-width:140px;padding:12px;border:1px solid var(--color-border);border-radius:8px;${grafana ? '' : 'opacity:0.5;'}">
         <div class="text-sm" style="font-weight:600;">Grafana</div>
-        ${grafana ? `<a href="${escAttr(grafana)}" target="_blank" class="text-sm" style="color:var(--color-primary);">Open Dashboard</a>` : '<span class="text-sm text-light">Not configured</span>'}
+        ${grafana ? `<a href="${escAttr(grafana)}" target="_blank" class="text-sm" style="color:var(--color-primary);">Open Dashboard</a>` : `<span class="text-sm text-light">Not configured</span> <a href="${settingsIntegrationsUrl}" class="text-sm" style="color:var(--color-primary);">Configure</a>`}
     </div>`;
     monHtml += `<div style="flex:1;min-width:140px;padding:12px;border:1px solid var(--color-border);border-radius:8px;${influxdb ? '' : 'opacity:0.5;'}">
         <div class="text-sm" style="font-weight:600;">InfluxDB</div>
-        ${influxdb ? `<a href="${escAttr(influxdb)}" target="_blank" class="text-sm" style="color:var(--color-primary);">Open UI</a>` : '<span class="text-sm text-light">Not configured</span>'}
+        ${influxdb ? `<a href="${escAttr(influxdb)}" target="_blank" class="text-sm" style="color:var(--color-primary);">Open UI</a>` : `<span class="text-sm text-light">Not configured</span> <a href="${settingsIntegrationsUrl}" class="text-sm" style="color:var(--color-primary);">Configure</a>`}
     </div>`;
     mc.innerHTML = monHtml;
 }
