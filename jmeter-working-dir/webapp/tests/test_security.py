@@ -183,6 +183,11 @@ class TestViewerDenied:
         r = viewer_client.post(f"{bp}/api/results/bulk-delete", json={"folders": ["test"]})
         assert r.status_code == 403
 
+    # -- #11: Result label --
+    def test_result_label(self, viewer_client, bp):
+        r = viewer_client.put(f"{bp}/api/results/some_folder/label", json={"label": "test"})
+        assert r.status_code == 403
+
     # -- Config properties --
     def test_config_properties_put(self, viewer_client, bp):
         r = viewer_client.put(f"{bp}/api/config/properties", json={"properties": {}})

@@ -121,8 +121,19 @@ def _folder_info(d: Path) -> dict:
                 except Exception:
                     pass
 
+    # Label/alias from run_summary.json
+    label = ""
+    summary_path = d / "run_summary.json"
+    if summary_path.exists():
+        try:
+            summary_data = json.loads(summary_path.read_text(encoding="utf-8"))
+            label = summary_data.get("label", "")
+        except Exception:
+            pass
+
     return {
         "name": d.name,
+        "label": label,
         "path": str(d),
         "date": date,
         "size": _quick_folder_size(d),

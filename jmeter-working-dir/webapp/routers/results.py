@@ -74,10 +74,10 @@ async def api_list_results(request: Request, page: int = 0, per_page: int = 0, q
     results_dir = resolve_path(project, "results_dir")
     folders = list_result_folders(results_dir)
 
-    # Search filter
+    # Search filter (matches folder name or label)
     if q:
         q_lower = q.lower()
-        folders = [f for f in folders if q_lower in f["name"].lower()]
+        folders = [f for f in folders if q_lower in f["name"].lower() or q_lower in f.get("label", "").lower()]
 
     total = len(folders)
 
@@ -102,6 +102,34 @@ async def api_list_results(request: Request, page: int = 0, per_page: int = 0, q
             }
 
     return {"folders": folders, "total": total}
+
+
+@router.put("/api/results/{folder}/label")
+async def api_set_label(request: Request, folder: str):
+    """Set or clear a display label for a result folder."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    body = await request.json()
+    label = body.get("label", "").strip()
+
+    project = request.app.state.project
+    results_dir = resolve_path(project, "results_dir")
+    folder_path = find_result_folder(results_dir, folder)
+    if not folder_path:
+        return JSONResponse(status_code=404, content={"error": "Folder not found"})
+
+    summary_path = folder_path / "run_summary.json"
+    existing = {}
+    if summary_path.exists():
+        try:
+            existing = json.loads(summary_path.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+
+    existing["label"] = label
+    summary_path.write_text(json.dumps(existing, indent=2), encoding="utf-8")
+    return {"ok": True, "label": label}
 
 
 @router.get("/api/results/{folder}/stats")

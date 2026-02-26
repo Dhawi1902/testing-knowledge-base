@@ -97,6 +97,56 @@ class TestBulkDelete:
         assert "Not found" in data["results"][0]["error"]
 
 
+class TestResultLabel:
+    def test_set_label(self, admin_client, bp, sample_result):
+        r = admin_client.put(
+            f"{bp}/api/results/20260224_1/label",
+            json={"label": "Baseline run"},
+        )
+        assert r.status_code == 200
+        assert r.json()["label"] == "Baseline run"
+
+    def test_label_in_list(self, admin_client, bp, sample_result):
+        # Set label first
+        admin_client.put(
+            f"{bp}/api/results/20260224_1/label",
+            json={"label": "My Label"},
+        )
+        r = admin_client.get(f"{bp}/api/results/list")
+        folders = r.json()["folders"]
+        folder = next(f for f in folders if f["name"] == "20260224_1")
+        assert folder["label"] == "My Label"
+
+    def test_clear_label(self, admin_client, bp, sample_result):
+        admin_client.put(
+            f"{bp}/api/results/20260224_1/label",
+            json={"label": "temp"},
+        )
+        r = admin_client.put(
+            f"{bp}/api/results/20260224_1/label",
+            json={"label": ""},
+        )
+        assert r.status_code == 200
+        assert r.json()["label"] == ""
+
+    def test_search_by_label(self, admin_client, bp, sample_result):
+        admin_client.put(
+            f"{bp}/api/results/20260224_1/label",
+            json={"label": "Unique Search Label"},
+        )
+        r = admin_client.get(f"{bp}/api/results/list", params={"q": "Unique Search"})
+        data = r.json()
+        assert data["total"] == 1
+        assert data["folders"][0]["name"] == "20260224_1"
+
+    def test_not_found(self, admin_client, bp):
+        r = admin_client.put(
+            f"{bp}/api/results/nonexistent/label",
+            json={"label": "test"},
+        )
+        assert r.status_code == 404
+
+
 class TestResultStats:
     def test_stats(self, admin_client, bp, sample_result):
         r = admin_client.get(f"{bp}/api/results/20260224_1/stats")

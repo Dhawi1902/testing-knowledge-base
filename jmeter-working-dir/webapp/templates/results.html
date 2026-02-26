@@ -127,7 +127,7 @@ function sortBy(key) {
 function renderResults() {
     const tbody = document.getElementById('resultsList');
     const query = (document.getElementById('resultSearch').value || '').toLowerCase();
-    let filtered = query ? allFolders.filter(f => f.name.toLowerCase().includes(query)) : [...allFolders];
+    let filtered = query ? allFolders.filter(f => f.name.toLowerCase().includes(query) || (f.label || '').toLowerCase().includes(query)) : [...allFolders];
     // Sort
     filtered.sort((a, b) => {
         let va = a[sortKey], vb = b[sortKey];
@@ -157,7 +157,7 @@ function renderResults() {
         const jtlNames = (f.jtl_files || []).join(', ');
         return `<tr>
             <td><label class="check"><input type="checkbox" class="result-check" value="${aName}" onchange="updateSelectionBtns()"><span class="check-box"></span></label></td>
-            <td class="text-mono">${eName}${analysisBadge}</td>
+            <td class="text-mono"><span class="result-name" data-folder="${aName}" onclick="editLabel(this)" title="Click to set label">${f.label ? `<span class="badge badge-info" style="margin-right:4px;">${escHtml(f.label)}</span>` : ''}${eName}</span></td>
             <td class="text-sm">${new Date(f.date).toLocaleString()}</td>
             <td>${formatSize(f.size)}</td>
             <td>${f.has_report ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-danger">No</span>'}</td>
@@ -453,6 +453,27 @@ function buildPatternFromPicker() {
     if (!checked.length) return;
     const pattern = '^(' + checked.map(cb => cb.value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')$';
     document.getElementById('regen_label_pattern').value = pattern;
+}
+
+// ===== Inline Label Edit (#11) =====
+async function editLabel(el) {
+    if (!isAdmin) return;
+    const folder = el.dataset.folder;
+    const current = allFolders.find(f => f.name === folder);
+    const currentLabel = current ? (current.label || '') : '';
+    const newLabel = prompt('Set label for ' + folder + ' (leave empty to clear):', currentLabel);
+    if (newLabel === null) return; // cancelled
+    try {
+        await api(`/api/results/${encodeURIComponent(folder)}/label`, {
+            method: 'PUT',
+            body: { label: newLabel },
+        });
+        if (current) current.label = newLabel.trim();
+        renderResults();
+        showToast(newLabel.trim() ? 'Label set' : 'Label cleared', 'success');
+    } catch(e) {
+        showToast('Failed to set label', 'error');
+    }
 }
 
 // ===== Bulk Delete (#10) =====
