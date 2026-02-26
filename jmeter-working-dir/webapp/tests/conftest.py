@@ -108,6 +108,7 @@ def tmp_project_dir(tmp_path_factory):
 
     # Other config files
     (webapp_dir / "presets.json").write_text("{}")
+    (webapp_dir / "filter_presets.json").write_text("{}")
     (webapp_dir / "config").mkdir()
     (project_root / "config.properties").write_text("test_plan=test.jmx\nstudent=10\n")
     (project_root / "config" / "vm_config.json").write_text("{}")
@@ -144,6 +145,7 @@ def _patch_paths(tmp_project_dir):
         patch.object(auth_mod, "_SETTINGS_FILE", d["settings_path"]),
         patch.object(config_mod, "PROJECT_JSON", d["project_json_path"]),
         patch.object(plans_mod, "PRESETS_FILE", d["webapp_dir"] / "presets.json"),
+        patch.object(plans_mod, "FILTER_PRESETS_FILE", d["webapp_dir"] / "filter_presets.json"),
         patch.object(data_mod, "CSV_TEMPLATES_FILE", d["webapp_dir"] / "csv_templates.json"),
     ]
     for p in patches:

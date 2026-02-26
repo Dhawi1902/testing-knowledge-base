@@ -20,6 +20,7 @@ from services.process_manager import jmeter_process_manager
 
 TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
 PRESETS_FILE = Path(__file__).resolve().parent.parent / "presets.json"
+FILTER_PRESETS_FILE = Path(__file__).resolve().parent.parent / "filter_presets.json"
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 router = APIRouter()
@@ -33,6 +34,16 @@ def _load_presets() -> dict:
 
 def _save_presets(data: dict):
     PRESETS_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
+
+
+def _load_filter_presets() -> dict:
+    if FILTER_PRESETS_FILE.exists():
+        return json.loads(FILTER_PRESETS_FILE.read_text(encoding="utf-8"))
+    return {}
+
+
+def _save_filter_presets(data: dict):
+    FILTER_PRESETS_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
 @router.get("/plans")
@@ -254,6 +265,46 @@ async def api_delete_preset(request: Request, name: str):
     presets = _load_presets()
     presets.pop(name, None)
     _save_presets(presets)
+    return {"ok": True}
+
+
+# --- Filter Label Presets ---
+
+@router.get("/api/runner/filter-presets")
+async def api_list_filter_presets():
+    return {"presets": _load_filter_presets()}
+
+
+@router.post("/api/runner/filter-presets")
+async def api_save_filter_preset(request: Request):
+    denied = _check_access(request)
+    if denied:
+        return denied
+    body = await request.json()
+    name = body.get("name", "").strip()
+    pattern = body.get("pattern", "").strip()
+    if not name:
+        return JSONResponse(status_code=400, content={"error": "Preset name is required"})
+    if not pattern:
+        return JSONResponse(status_code=400, content={"error": "Pattern is required"})
+    try:
+        re.compile(pattern)
+    except re.error as e:
+        return JSONResponse(status_code=400, content={"error": f"Invalid regex: {e}"})
+    presets = _load_filter_presets()
+    presets[name] = pattern
+    _save_filter_presets(presets)
+    return {"ok": True}
+
+
+@router.delete("/api/runner/filter-presets/{name}")
+async def api_delete_filter_preset(request: Request, name: str):
+    denied = _check_access(request)
+    if denied:
+        return denied
+    presets = _load_filter_presets()
+    presets.pop(name, None)
+    _save_filter_presets(presets)
     return {"ok": True}
 
 

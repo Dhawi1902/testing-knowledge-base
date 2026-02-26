@@ -120,6 +120,17 @@ class TestViewerDenied:
         r = viewer_client.delete(f"{bp}/api/runner/presets/test")
         assert r.status_code == 403
 
+    def test_filter_presets_save(self, viewer_client, bp):
+        r = viewer_client.post(
+            f"{bp}/api/runner/filter-presets",
+            json={"name": "test", "pattern": "^HTTP"},
+        )
+        assert r.status_code == 403
+
+    def test_filter_presets_delete(self, viewer_client, bp):
+        r = viewer_client.delete(f"{bp}/api/runner/filter-presets/test")
+        assert r.status_code == 403
+
     # -- Plans --
     def test_plans_upload(self, viewer_client, bp):
         r = viewer_client.post(
@@ -171,6 +182,10 @@ class TestViewerDenied:
 
     def test_slave_single_stop(self, viewer_client, bp):
         r = viewer_client.post(f"{bp}/api/slaves/10.0.0.1/stop")
+        assert r.status_code == 403
+
+    def test_slave_single_restart(self, viewer_client, bp):
+        r = viewer_client.post(f"{bp}/api/slaves/10.0.0.1/restart")
         assert r.status_code == 403
 
     # -- F11: Bulk regenerate --

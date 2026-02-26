@@ -74,9 +74,14 @@
                 <span class="toggle-track"></span>
                 <span class="text-sm">Filter labels</span>
             </label>
+            <div id="filterPresetArea" class="flex gap-8" style="align-items:center;display:none;">
+                <select class="form-select" id="filterPresetSelect" onchange="applyFilterPreset()" style="min-width:160px;font-size:12px;padding:4px 8px;height:auto;">
+                    <option value="">Default pattern</option>
+                </select>
+                <button class="btn btn-outline btn-sm" onclick="openFilterPresetManager()" title="Manage filter presets" style="font-size:11px;padding:2px 8px;">&#9881;</button>
+            </div>
             <span id="filterPatternDisplay" class="text-sm text-light" style="font-family:var(--font-mono);display:none;">
                 pattern: <code id="filterPatternText" style="background:var(--color-primary-bg,rgba(59,130,246,0.1));padding:2px 6px;border-radius:4px;"></code>
-                <a href="{{ bp }}/settings" class="text-sm" style="margin-left:4px;" title="Edit filter pattern in Settings">edit</a>
             </span>
             {% endif %}
             <a href="#" id="lastRunLink" class="text-sm" style="display:none;">Last run &rarr;</a>
@@ -175,6 +180,32 @@
         <label class="form-label text-sm" style="margin-bottom:8px;">Saved Presets</label>
         <div id="presetList"></div>
         <p class="text-light text-sm" id="presetEmptyMsg" style="text-align:center;padding:16px 0;">No presets saved yet. Configure your test parameters and save them above.</p>
+    </div>
+</div>
+
+<!-- Filter Preset Manager Modal -->
+<div class="modal-overlay" id="filterPresetModal" role="dialog" aria-modal="true" aria-labelledby="filterPresetModalTitle">
+    <div class="modal">
+        <div class="modal-header">
+            <div>
+                <span class="modal-title" id="filterPresetModalTitle">Filter Label Presets</span>
+                <p class="text-light text-sm" style="margin-top:4px;">Save regex patterns to quickly filter JTL results by label. The default pattern from Settings is always available.</p>
+            </div>
+            <button class="modal-close" onclick="closeFilterPresetManager()" aria-label="Close">&times;</button>
+        </div>
+        <div style="border:1px solid var(--color-border);border-radius:8px;padding:12px;margin-bottom:16px;background:var(--color-surface-alt,var(--color-surface));">
+            <label class="form-label text-sm" style="margin-bottom:6px;">Add new filter preset</label>
+            <div class="flex gap-8 mb-8">
+                <input class="form-input" id="newFilterPresetName" placeholder="e.g. MAYA transactions only" style="flex:1;">
+            </div>
+            <div class="flex gap-8">
+                <input class="form-input form-input-mono" id="newFilterPresetPattern" placeholder="e.g. ^MAYA|^HTTP" style="flex:1;">
+                <button class="btn btn-primary btn-sm" onclick="saveFilterPresetFromModal()">Save</button>
+            </div>
+        </div>
+        <label class="form-label text-sm" style="margin-bottom:8px;">Saved Filter Presets</label>
+        <div id="filterPresetList"></div>
+        <p class="text-light text-sm" id="filterPresetEmptyMsg" style="text-align:center;padding:16px 0;">No filter presets saved yet. Add a name and regex pattern above.</p>
     </div>
 </div>
 {% endblock %}
@@ -480,6 +511,8 @@ async function savePresetFromModal() {
 
 // ===== Filter Config =====
 let labelPattern = '';
+let defaultLabelPattern = '';
+let filterPresets = {};
 
 async function loadFilterConfig() {
     try {
@@ -487,18 +520,147 @@ async function loadFilterConfig() {
         const el = document.getElementById('filterSubResults');
         if (el) el.checked = data.filter_sub_results;
         labelPattern = data.label_pattern || '';
-        // Show current pattern next to toggle
-        const patternDisplay = document.getElementById('filterPatternDisplay');
-        const patternText = document.getElementById('filterPatternText');
-        if (patternDisplay && patternText) {
-            if (labelPattern) {
-                patternText.textContent = labelPattern;
-                patternDisplay.style.display = '';
-            } else {
-                patternDisplay.style.display = 'none';
-            }
-        }
+        defaultLabelPattern = labelPattern;
+        updateFilterPatternDisplay();
+        // Show/hide filter preset area based on toggle
+        const filterArea = document.getElementById('filterPresetArea');
+        if (filterArea) filterArea.style.display = el && el.checked ? 'flex' : 'none';
+        if (el) el.addEventListener('change', () => {
+            if (filterArea) filterArea.style.display = el.checked ? 'flex' : 'none';
+        });
     } catch(e) { console.error('loadFilterConfig:', e); }
+}
+
+function updateFilterPatternDisplay() {
+    const patternDisplay = document.getElementById('filterPatternDisplay');
+    const patternText = document.getElementById('filterPatternText');
+    if (patternDisplay && patternText) {
+        if (labelPattern) {
+            patternText.textContent = labelPattern;
+            patternDisplay.style.display = '';
+        } else {
+            patternDisplay.style.display = 'none';
+        }
+    }
+}
+
+// ===== Filter Presets =====
+async function loadFilterPresets() {
+    try {
+        const data = await api('/api/runner/filter-presets');
+        filterPresets = data.presets || {};
+        renderFilterPresetSelect();
+    } catch(e) { console.error('loadFilterPresets:', e); }
+}
+
+function renderFilterPresetSelect() {
+    const sel = document.getElementById('filterPresetSelect');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Default pattern</option>';
+    for (const name of Object.keys(filterPresets)) {
+        sel.innerHTML += `<option value="${escHtml(name)}">${escHtml(name)}</option>`;
+    }
+}
+
+function applyFilterPreset() {
+    const sel = document.getElementById('filterPresetSelect');
+    const name = sel.value;
+    if (!name) {
+        // Reset to default pattern from settings
+        labelPattern = defaultLabelPattern;
+        updateFilterPatternDisplay();
+        showToast('Filter reset to default pattern', 'info');
+        return;
+    }
+    const pattern = filterPresets[name];
+    if (pattern !== undefined) {
+        labelPattern = pattern;
+        updateFilterPatternDisplay();
+        showToast(`Filter preset "${name}" applied: ${pattern}`, 'success');
+    }
+}
+
+function openFilterPresetManager() {
+    renderFilterPresetList();
+    document.getElementById('newFilterPresetName').value = '';
+    document.getElementById('newFilterPresetPattern').value = '';
+    document.getElementById('filterPresetModal').classList.add('active');
+}
+
+function closeFilterPresetManager() {
+    document.getElementById('filterPresetModal').classList.remove('active');
+}
+
+function renderFilterPresetList() {
+    const names = Object.keys(filterPresets);
+    const list = document.getElementById('filterPresetList');
+    const emptyMsg = document.getElementById('filterPresetEmptyMsg');
+    if (!names.length) {
+        list.innerHTML = '';
+        emptyMsg.style.display = '';
+        return;
+    }
+    emptyMsg.style.display = 'none';
+    list.innerHTML = names.map(name => {
+        const pattern = filterPresets[name];
+        return `<div style="margin-bottom:10px;padding:12px;border-radius:6px;border:1px solid var(--color-border);">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div>
+                    <div class="text-sm" style="font-weight:600;">${escHtml(name)}</div>
+                    <code style="font-size:11px;background:var(--color-primary-bg,rgba(59,130,246,0.1));padding:2px 6px;border-radius:4px;">${escHtml(pattern)}</code>
+                </div>
+                <div style="display:flex;gap:16px;flex-shrink:0;">
+                    <button class="btn btn-primary btn-sm" onclick="applyFilterPresetByName('${escAttr(name)}')">Apply</button>
+                    <button class="btn btn-sm btn-outline" onclick="deleteFilterPresetByName('${escAttr(name)}')" style="color:var(--color-danger);border-color:var(--color-danger);">Delete</button>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function applyFilterPresetByName(name) {
+    document.getElementById('filterPresetSelect').value = name;
+    applyFilterPreset();
+    closeFilterPresetManager();
+}
+
+async function deleteFilterPresetByName(name) {
+    if (!confirmAction(`Delete filter preset "${name}"?`)) return;
+    await api(`/api/runner/filter-presets/${encodeURIComponent(name)}`, { method: 'DELETE' });
+    delete filterPresets[name];
+    renderFilterPresetSelect();
+    renderFilterPresetList();
+    // Reset to default if the active preset was deleted
+    const sel = document.getElementById('filterPresetSelect');
+    if (sel.value === name) {
+        sel.value = '';
+        labelPattern = defaultLabelPattern;
+        updateFilterPatternDisplay();
+    }
+    showToast('Filter preset deleted', 'success');
+}
+
+async function saveFilterPresetFromModal() {
+    const nameInput = document.getElementById('newFilterPresetName');
+    const patternInput = document.getElementById('newFilterPresetPattern');
+    const name = nameInput.value.trim();
+    const pattern = patternInput.value.trim();
+    if (!name) { nameInput.focus(); return; }
+    if (!pattern) { patternInput.focus(); return; }
+    try {
+        await api('/api/runner/filter-presets', {
+            method: 'POST',
+            body: { name, pattern }
+        });
+        filterPresets[name] = pattern;
+        renderFilterPresetSelect();
+        renderFilterPresetList();
+        nameInput.value = '';
+        patternInput.value = '';
+        showToast(`Filter preset "${name}" saved`, 'success');
+    } catch(e) {
+        showToast('Failed to save filter preset', 'error');
+    }
 }
 
 // ===== Dry Run =====
@@ -933,6 +1095,7 @@ document.addEventListener('keydown', (e) => {
     await loadPlans();  // must complete before checkStatus can select a plan
     await loadPresets(); // must complete before user can apply a preset
     await loadFilterConfig(); // load default filter settings from settings.json
+    await loadFilterPresets(); // load saved filter label presets
     checkStatus();
     checkMode();
     loadLastRun();

@@ -298,6 +298,58 @@ class TestFilterConfig:
         assert "label_pattern" in data
 
 
+class TestFilterPresets:
+    def test_list_empty(self, admin_client, bp, tmp_project_dir):
+        (tmp_project_dir["webapp_dir"] / "filter_presets.json").write_text("{}")
+        r = admin_client.get(f"{bp}/api/runner/filter-presets")
+        assert r.status_code == 200
+        assert r.json()["presets"] == {}
+
+    def test_save_and_list(self, admin_client, bp, tmp_project_dir):
+        (tmp_project_dir["webapp_dir"] / "filter_presets.json").write_text("{}")
+        r = admin_client.post(
+            f"{bp}/api/runner/filter-presets",
+            json={"name": "MAYA only", "pattern": "^MAYA"},
+        )
+        assert r.status_code == 200
+        assert r.json()["ok"] is True
+
+        r = admin_client.get(f"{bp}/api/runner/filter-presets")
+        presets = r.json()["presets"]
+        assert "MAYA only" in presets
+        assert presets["MAYA only"] == "^MAYA"
+
+    def test_delete(self, admin_client, bp, tmp_project_dir):
+        fp = tmp_project_dir["webapp_dir"] / "filter_presets.json"
+        fp.write_text(json.dumps({"to_delete": "^OLD"}))
+        r = admin_client.delete(f"{bp}/api/runner/filter-presets/to_delete")
+        assert r.status_code == 200
+
+        r = admin_client.get(f"{bp}/api/runner/filter-presets")
+        assert "to_delete" not in r.json()["presets"]
+
+    def test_save_no_name(self, admin_client, bp):
+        r = admin_client.post(
+            f"{bp}/api/runner/filter-presets",
+            json={"name": "", "pattern": "^test"},
+        )
+        assert r.status_code == 400
+
+    def test_save_no_pattern(self, admin_client, bp):
+        r = admin_client.post(
+            f"{bp}/api/runner/filter-presets",
+            json={"name": "test", "pattern": ""},
+        )
+        assert r.status_code == 400
+
+    def test_save_invalid_regex(self, admin_client, bp):
+        r = admin_client.post(
+            f"{bp}/api/runner/filter-presets",
+            json={"name": "bad", "pattern": "[invalid"},
+        )
+        assert r.status_code == 400
+
+
 class TestRunnerStatus:
     def test_idle(self, admin_client, bp):
         r = admin_client.get(f"{bp}/api/runner/status")
