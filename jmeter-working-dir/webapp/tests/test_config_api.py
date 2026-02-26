@@ -61,6 +61,25 @@ class TestProperties:
         data = r.json()
         assert "properties" in data
         assert isinstance(data["properties"], dict)
+        # Fixture writes test_plan=test.jmx and student=10
+        assert data["properties"]["test_plan"] == "test.jmx"
+        assert data["properties"]["student"] == "10"
+
+    def test_put(self, admin_client, bp):
+        new_props = {"test_plan": "updated.jmx", "rampUp": "60", "loop": "3"}
+        r = admin_client.put(f"{bp}/api/config/properties", json={"properties": new_props})
+        assert r.status_code == 200
+        assert r.json()["ok"] is True
+        # Verify persisted
+        r2 = admin_client.get(f"{bp}/api/config/properties")
+        saved = r2.json()["properties"]
+        assert saved["test_plan"] == "updated.jmx"
+        assert saved["rampUp"] == "60"
+        assert saved["loop"] == "3"
+        # Key from original fixture (student) should be gone since PUT replaces all
+        assert "student" not in saved
+        # Cleanup — restore original
+        admin_client.put(f"{bp}/api/config/properties", json={"properties": {"test_plan": "test.jmx", "student": "10"}})
 
 
 class TestDetectJmeter:

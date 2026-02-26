@@ -56,6 +56,25 @@
         <div id="vmForm"></div>
     </div>
 </div>
+<!-- Config Properties Editor -->
+<div class="card" style="margin-top:24px;">
+    <div class="card-header" style="cursor:pointer;" onclick="document.getElementById('propsBody').style.display = document.getElementById('propsBody').style.display === 'none' ? '' : 'none'; this.querySelector('.collapse-icon').textContent = document.getElementById('propsBody').style.display === 'none' ? '\u25B6' : '\u25BC';">
+        <span class="card-title"><span class="collapse-icon">&#9654;</span> Config Properties</span>
+        <span class="text-light text-sm">JMeter config.properties (key=value)</span>
+    </div>
+    <div id="propsBody" style="display:none;">
+        {% if access_level != 'viewer' %}
+        <div class="flex gap-8 mb-16" style="justify-content:flex-end;">
+            <button class="btn btn-outline btn-sm" onclick="addProperty()">+ Add Property</button>
+            <button class="btn btn-primary btn-sm" onclick="saveProperties()">Save</button>
+        </div>
+        {% endif %}
+        <div id="propsContainer">
+            <div class="text-light" style="text-align:center;padding:16px;">Loading...</div>
+        </div>
+        <div class="text-sm text-light" id="propsPath" style="margin-top:8px;"></div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -693,8 +712,95 @@ function toggleSlaveList() {
     icon.innerHTML = hidden ? '&#9660;' : '&#9654;';
 }
 
+// ===== Config Properties Editor =====
+let currentProperties = {};
+let propsFilePath = '';
+
+async function loadProperties() {
+    try {
+        const data = await api('/api/config/properties');
+        currentProperties = data.properties || {};
+        propsFilePath = data.path || '';
+        renderProperties();
+    } catch (e) {
+        document.getElementById('propsContainer').innerHTML =
+            '<div class="text-light" style="text-align:center;padding:16px;">Failed to load properties.</div>';
+    }
+}
+
+function renderProperties() {
+    const container = document.getElementById('propsContainer');
+    const keys = Object.keys(currentProperties);
+    if (!keys.length) {
+        container.innerHTML = '<div class="text-light" style="text-align:center;padding:16px;">No properties defined. Click "+ Add Property" to add one.</div>';
+    } else {
+        let html = '<table class="props-table"><thead><tr><th>Key</th><th>Value</th>';
+        if (isAdmin) html += '<th style="width:40px;"></th>';
+        html += '</tr></thead><tbody>';
+        keys.forEach(key => {
+            const aKey = escAttr(key);
+            const aVal = escAttr(currentProperties[key]);
+            html += `<tr>
+                <td><input class="form-input form-input-mono prop-key" value="${aKey}" data-orig="${aKey}"${isAdmin ? '' : ' readonly'}></td>
+                <td><input class="form-input form-input-mono prop-val" value="${aVal}"${isAdmin ? '' : ' readonly'}></td>`;
+            if (isAdmin) html += `<td><button class="del-btn" onclick="removeProperty('${aKey}')" title="Remove">&times;</button></td>`;
+            html += '</tr>';
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+    document.getElementById('propsPath').textContent = propsFilePath ? `File: ${propsFilePath}` : '';
+}
+
+function addProperty() {
+    // Add an empty row
+    currentProperties[''] = '';
+    renderProperties();
+    // Focus the last empty key input
+    const inputs = document.querySelectorAll('.prop-key');
+    if (inputs.length) inputs[inputs.length - 1].focus();
+}
+
+function removeProperty(key) {
+    delete currentProperties[key];
+    renderProperties();
+}
+
+async function saveProperties() {
+    // Collect from DOM
+    const rows = document.querySelectorAll('.props-table tbody tr');
+    const props = {};
+    let hasError = false;
+    rows.forEach(row => {
+        const keyInput = row.querySelector('.prop-key');
+        const valInput = row.querySelector('.prop-val');
+        const key = keyInput.value.trim();
+        const val = valInput.value;
+        if (!key) {
+            hasError = true;
+            keyInput.style.borderColor = 'var(--color-danger)';
+            return;
+        }
+        keyInput.style.borderColor = '';
+        props[key] = val;
+    });
+    if (hasError) {
+        showToast('Property keys cannot be empty', 'warning');
+        return;
+    }
+    try {
+        await api('/api/config/properties', { method: 'PUT', body: { properties: props } });
+        currentProperties = props;
+        showToast('Properties saved', 'success');
+        renderProperties();
+    } catch (e) {
+        showToast('Failed to save properties', 'error');
+    }
+}
+
 // ===== Init =====
 loadSlaves();
 loadVmConfig();
+loadProperties();
 </script>
 {% endblock %}

@@ -653,6 +653,13 @@ th.sort-desc::after { content: ' \25BC'; font-size: 0.7em; }
 }
 .section-title { font-weight: 600; }
 
+/* ===== Config Properties Table ===== */
+.props-table { width:100%; border-collapse:collapse; }
+.props-table th { text-align:left; font-size:11px; font-weight:600; color:var(--color-text-light); padding:4px 8px 8px; border-bottom:1px solid var(--color-border); }
+.props-table td { padding:3px 4px; }
+.props-table .form-input { font-size:12px; padding:4px 8px; }
+.props-table .prop-key { font-weight:600; }
+
 /* ===== Alert Items (Dashboard) ===== */
 .alert-item {
     display: flex;
