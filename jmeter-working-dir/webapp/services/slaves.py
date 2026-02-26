@@ -620,3 +620,76 @@ async def clean_slave_log(ip: str, ssh_config: dict) -> dict:
     """Async wrapper for cleaning slave log."""
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(_executor, _clean_slave_log, ip, ssh_config)
+
+
+# --- Resource Monitoring (#30) ---
+
+def _get_slave_resources(ip: str, ssh_config: dict) -> dict:
+    """Get CPU and RAM usage from a slave via SSH (#30).
+
+    Runs `top -bn1` for CPU and `free -m` for RAM.
+    Returns {ip, ok, cpu_percent, ram_percent, ram_used_mb, ram_total_mb}.
+    """
+    try:
+        client = _ssh_connect(ip, ssh_config, timeout=10)
+    except Exception as e:
+        return {"ip": ip, "ok": False, "error": str(e)}
+
+    result = {"ip": ip, "ok": True}
+
+    # CPU usage — parse idle% from top, compute usage
+    try:
+        stdin, stdout, stderr = client.exec_command(
+            "top -bn1 | grep '%Cpu' | head -1", timeout=10
+        )
+        cpu_line = stdout.read().decode("utf-8", errors="replace").strip()
+        stdout.channel.recv_exit_status()
+        # Parse idle percentage: "%Cpu(s): ... XX.X id, ..."
+        idle = 0.0
+        for part in cpu_line.split(","):
+            part = part.strip()
+            if "id" in part:
+                idle = float(part.split()[0])
+                break
+        result["cpu_percent"] = round(100.0 - idle, 1)
+    except Exception:
+        result["cpu_percent"] = None
+
+    # RAM usage — parse from free -m
+    try:
+        stdin, stdout, stderr = client.exec_command("free -m | grep Mem:", timeout=10)
+        mem_line = stdout.read().decode("utf-8", errors="replace").strip()
+        stdout.channel.recv_exit_status()
+        # "Mem:   total   used   free  shared  buff/cache  available"
+        parts = mem_line.split()
+        if len(parts) >= 3:
+            total_mb = int(parts[1])
+            used_mb = int(parts[2])
+            result["ram_total_mb"] = total_mb
+            result["ram_used_mb"] = used_mb
+            result["ram_percent"] = round(used_mb / total_mb * 100, 1) if total_mb > 0 else 0.0
+        else:
+            result["ram_total_mb"] = None
+            result["ram_used_mb"] = None
+            result["ram_percent"] = None
+    except Exception:
+        result["ram_total_mb"] = None
+        result["ram_used_mb"] = None
+        result["ram_percent"] = None
+
+    client.close()
+    return result
+
+
+async def get_slave_resources(ip: str, ssh_config: dict) -> dict:
+    """Async wrapper for getting slave resources."""
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(_executor, _get_slave_resources, ip, ssh_config)
+
+
+async def get_all_slave_resources(
+    slave_ips: list[str], ssh_configs: dict[str, dict]
+) -> list[dict]:
+    """Get resource usage from all slaves in parallel (#30)."""
+    tasks = [get_slave_resources(ip, ssh_configs.get(ip, {})) for ip in slave_ips]
+    return await asyncio.gather(*tasks)

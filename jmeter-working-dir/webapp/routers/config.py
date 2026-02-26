@@ -152,8 +152,10 @@ from services.slaves import (  # noqa: E402
     provision_slave, check_provision_status,
     distribute_files, fetch_slave_log,
     clean_slave_data, clean_slave_log,
+    get_slave_resources, get_all_slave_resources,
 )
 from services.data import list_csv_files
+from services.health_history import load_health_history, record_status_check
 
 # Cache last slave status check for dashboard health dots (E2)
 _last_slave_status: list[dict] = []
@@ -206,6 +208,9 @@ async def api_slave_status(request: Request):
     global _last_slave_status, _last_slave_status_ts
     _last_slave_status = merged
     _last_slave_status_ts = _time.time()
+    # Record to health history (#31)
+    config_dir = resolve_path(project, "config_dir")
+    record_status_check(config_dir, merged)
     return {"slaves": merged, "checked_at": _last_slave_status_ts}
 
 
@@ -451,3 +456,57 @@ async def api_bulk_clean_logs(request: Request):
     tasks = [clean_slave_log(ip, ssh_configs[ip]) for ip in ips if ip in ssh_configs]
     results = await _asyncio.gather(*tasks)
     return {"results": list(results)}
+
+
+# --- Resource Monitoring (#30) ---
+
+@router.get("/api/slaves/{ip}/resources")
+async def api_slave_resources(request: Request, ip: str):
+    """Get CPU and RAM usage from a single slave (#30)."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    project = request.app.state.project
+    slaves, active_ips, ssh_configs = _get_slaves(project)
+    if ip not in ssh_configs:
+        return JSONResponse(status_code=404, content={"error": f"Slave {ip} not found"})
+    result = await get_slave_resources(ip, ssh_configs[ip])
+    return {"result": result}
+
+
+@router.get("/api/slaves/resources")
+async def api_all_slave_resources(request: Request):
+    """Get CPU and RAM usage from all active slaves (#30)."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    project = request.app.state.project
+    slaves, active_ips, ssh_configs = _get_slaves(project)
+    if not active_ips:
+        return {"results": []}
+    results = await get_all_slave_resources(active_ips, ssh_configs)
+    return {"results": list(results)}
+
+
+# --- Health History (#31) ---
+
+@router.get("/api/slaves/health-history")
+async def api_health_history(request: Request):
+    """Return health history for all slaves (#31)."""
+    project = request.app.state.project
+    config_dir = resolve_path(project, "config_dir")
+    history = load_health_history(config_dir)
+    return {"history": history}
+
+
+@router.delete("/api/slaves/health-history")
+async def api_clear_health_history(request: Request):
+    """Clear all health history (#31)."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    project = request.app.state.project
+    config_dir = resolve_path(project, "config_dir")
+    from services.health_history import save_health_history
+    save_health_history(config_dir, {})
+    return {"ok": True}

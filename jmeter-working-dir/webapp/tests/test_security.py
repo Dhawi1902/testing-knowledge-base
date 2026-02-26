@@ -278,6 +278,20 @@ class TestViewerDenied:
         r = viewer_client.post(f"{bp}/api/settings/import", json={"settings": {}})
         assert r.status_code == 403
 
+    # -- #30: Resource monitoring --
+    def test_slave_resources(self, viewer_client, bp):
+        r = viewer_client.get(f"{bp}/api/slaves/10.0.0.1/resources")
+        assert r.status_code == 403
+
+    def test_all_resources(self, viewer_client, bp):
+        r = viewer_client.get(f"{bp}/api/slaves/resources")
+        assert r.status_code == 403
+
+    # -- #31: Health history --
+    def test_clear_health_history(self, viewer_client, bp):
+        r = viewer_client.delete(f"{bp}/api/slaves/health-history")
+        assert r.status_code == 403
+
 
 # ====================================================================
 # Viewer CAN read — read-only endpoints should be accessible
@@ -288,6 +302,10 @@ class TestViewerCanRead:
 
     def test_settings_get(self, viewer_client, bp):
         r = viewer_client.get(f"{bp}/api/settings")
+        assert r.status_code == 200
+
+    def test_health_history_read(self, viewer_client, bp):
+        r = viewer_client.get(f"{bp}/api/slaves/health-history")
         assert r.status_code == 200
 
     def test_plans_list(self, viewer_client, bp):

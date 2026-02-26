@@ -444,3 +444,145 @@ class TestCleanLogEndpoint:
     def test_bulk_no_ips(self, admin_client, bp):
         r = admin_client.post(f"{bp}/api/slaves/bulk-clean-logs", json={"ips": []})
         assert r.status_code == 400
+
+
+class TestHealthHistoryService:
+    """Unit tests for health history persistence (#31)."""
+
+    def test_load_empty(self, tmp_project_dir):
+        from services.health_history import load_health_history
+        config_dir = tmp_project_dir["project_root"] / "config"
+        # Remove if exists
+        hist_path = config_dir / "health_history.json"
+        if hist_path.exists():
+            hist_path.unlink()
+        history = load_health_history(config_dir)
+        assert history == {}
+
+    def test_record_and_load(self, tmp_project_dir):
+        from services.health_history import record_status_check, load_health_history
+        config_dir = tmp_project_dir["project_root"] / "config"
+        status_results = [
+            {"ip": "10.0.0.1", "status": "up"},
+            {"ip": "10.0.0.2", "status": "down"},
+        ]
+        history = record_status_check(config_dir, status_results)
+        assert "10.0.0.1" in history
+        assert "10.0.0.2" in history
+        assert history["10.0.0.1"][-1]["status"] == "up"
+        assert history["10.0.0.2"][-1]["status"] == "down"
+        assert "timestamp" in history["10.0.0.1"][-1]
+        # Verify persistence
+        loaded = load_health_history(config_dir)
+        assert len(loaded["10.0.0.1"]) == len(history["10.0.0.1"])
+        # Cleanup
+        (config_dir / "health_history.json").unlink(missing_ok=True)
+
+    def test_record_with_resources(self, tmp_project_dir):
+        from services.health_history import record_status_check, load_health_history
+        config_dir = tmp_project_dir["project_root"] / "config"
+        status_results = [{"ip": "10.0.0.1", "status": "up"}]
+        resource_data = {"10.0.0.1": {"ok": True, "cpu_percent": 55.0, "ram_percent": 72.3}}
+        history = record_status_check(config_dir, status_results, resource_data)
+        entry = history["10.0.0.1"][-1]
+        assert entry["cpu_percent"] == 55.0
+        assert entry["ram_percent"] == 72.3
+        # Cleanup
+        (config_dir / "health_history.json").unlink(missing_ok=True)
+
+    def test_max_entries(self, tmp_project_dir):
+        from services.health_history import record_status_check, load_health_history, MAX_ENTRIES
+        config_dir = tmp_project_dir["project_root"] / "config"
+        # Record more than MAX_ENTRIES
+        for i in range(MAX_ENTRIES + 10):
+            record_status_check(config_dir, [{"ip": "10.0.0.1", "status": "up"}])
+        loaded = load_health_history(config_dir)
+        assert len(loaded["10.0.0.1"]) == MAX_ENTRIES
+        # Cleanup
+        (config_dir / "health_history.json").unlink(missing_ok=True)
+
+
+class TestHealthHistoryEndpoint:
+    """API tests for health history endpoints (#31)."""
+
+    def test_get_empty(self, admin_client, bp):
+        r = admin_client.get(f"{bp}/api/slaves/health-history")
+        assert r.status_code == 200
+        assert isinstance(r.json()["history"], dict)
+
+    def test_clear(self, admin_client, bp):
+        r = admin_client.delete(f"{bp}/api/slaves/health-history")
+        assert r.status_code == 200
+        assert r.json()["ok"] is True
+
+    def test_status_check_records_history(self, admin_client, bp, monkeypatch):
+        """Verify status check records to health history."""
+        from unittest.mock import AsyncMock
+        monkeypatch.setattr(
+            "routers.config.check_all_slaves",
+            AsyncMock(return_value=[{"ip": "10.0.0.1", "status": "up"}]),
+        )
+        admin_client.put(f"{bp}/api/config/slaves", json={"slaves": [{"ip": "10.0.0.1", "enabled": True}]})
+        # Trigger status check
+        r = admin_client.get(f"{bp}/api/slaves/status")
+        assert r.status_code == 200
+        # Check history was recorded
+        r2 = admin_client.get(f"{bp}/api/slaves/health-history")
+        history = r2.json()["history"]
+        assert "10.0.0.1" in history
+        assert len(history["10.0.0.1"]) >= 1
+        assert history["10.0.0.1"][-1]["status"] == "up"
+        # Cleanup
+        admin_client.put(f"{bp}/api/config/slaves", json={"slaves": []})
+        admin_client.delete(f"{bp}/api/slaves/health-history")
+
+
+class TestResourceMonitoringEndpoint:
+    """API tests for resource monitoring endpoint (#30)."""
+
+    def test_single_not_found(self, admin_client, bp):
+        r = admin_client.get(f"{bp}/api/slaves/10.99.99.99/resources")
+        assert r.status_code == 404
+
+    def test_single_mock(self, admin_client, bp, monkeypatch):
+        from unittest.mock import AsyncMock
+        monkeypatch.setattr(
+            "routers.config.get_slave_resources",
+            AsyncMock(return_value={
+                "ip": "10.0.0.1", "ok": True,
+                "cpu_percent": 45.2, "ram_percent": 62.1,
+                "ram_used_mb": 1200, "ram_total_mb": 1932,
+            }),
+        )
+        admin_client.put(f"{bp}/api/config/slaves", json={"slaves": [{"ip": "10.0.0.1", "enabled": True}]})
+        r = admin_client.get(f"{bp}/api/slaves/10.0.0.1/resources")
+        assert r.status_code == 200
+        result = r.json()["result"]
+        assert result["ok"] is True
+        assert result["cpu_percent"] == 45.2
+        assert result["ram_percent"] == 62.1
+        assert result["ram_used_mb"] == 1200
+        assert result["ram_total_mb"] == 1932
+        admin_client.put(f"{bp}/api/config/slaves", json={"slaves": []})
+
+    def test_all_no_slaves(self, admin_client, bp):
+        r = admin_client.get(f"{bp}/api/slaves/resources")
+        assert r.status_code == 200
+        assert r.json()["results"] == []
+
+    def test_all_mock(self, admin_client, bp, monkeypatch):
+        from unittest.mock import AsyncMock
+        monkeypatch.setattr(
+            "routers.config.get_all_slave_resources",
+            AsyncMock(return_value=[
+                {"ip": "10.0.0.1", "ok": True, "cpu_percent": 30.0, "ram_percent": 50.0,
+                 "ram_used_mb": 512, "ram_total_mb": 1024},
+            ]),
+        )
+        admin_client.put(f"{bp}/api/config/slaves", json={"slaves": [{"ip": "10.0.0.1", "enabled": True}]})
+        r = admin_client.get(f"{bp}/api/slaves/resources")
+        assert r.status_code == 200
+        results = r.json()["results"]
+        assert len(results) == 1
+        assert results[0]["cpu_percent"] == 30.0
+        admin_client.put(f"{bp}/api/config/slaves", json={"slaves": []})

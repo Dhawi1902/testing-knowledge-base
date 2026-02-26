@@ -15,6 +15,7 @@
         <div class="flex gap-8" style="align-items:center;" id="defaultActions">
             {% if access_level != 'viewer' %}<button class="btn btn-outline btn-sm" onclick="addSlave()">+ Add</button>{% endif %}
             <button class="btn btn-outline btn-sm" onclick="refreshStatus()" id="refreshBtn" title="Check online status of all slaves">Check Status</button>
+            <button class="btn btn-outline btn-sm" onclick="refreshResources()" id="resourcesBtn" title="Check CPU/RAM on all slaves">Resources</button>
             {% if access_level != 'viewer' %}
             <button class="btn btn-primary btn-sm" onclick="startAll()" id="startAllBtn">Start All</button>
             <button class="btn btn-outline btn-sm" onclick="stopAll()" id="stopAllBtn" style="color:var(--color-danger);border-color:var(--color-danger);">Stop All</button>
@@ -203,6 +204,8 @@ async function refreshStatus() {
     btn.disabled = false;
     btn.textContent = 'Check Status';
     checking = false;
+    // Reload health history to pick up the new recorded entry (#31)
+    loadHealthHistory().then(() => render());
 }
 
 let lastCheckedTs = null;
@@ -267,10 +270,11 @@ function renderList() {
                 ${statusDot(s)}
                 <span class="slave-ip" ${ipClick}>${escHtml(s.ip)}</span>
                 ${s.nickname ? `<span class="text-sm text-light">(${escHtml(s.nickname)})</span>` : ''}
-                <span class="slave-meta">VM #${i + 1}${hasOverrides ? ' <span class="badge" style="font-size:10px;background:var(--color-border);color:var(--color-text-light);">custom</span>' : ''}${s.error ? ' &mdash; <span style="color:var(--color-danger);">' + escHtml(s.error) + '</span>' : ''}</span>
+                <span class="slave-meta">VM #${i + 1}${hasOverrides ? ' <span class="badge" style="font-size:10px;background:var(--color-border);color:var(--color-text-light);">custom</span>' : ''}${historySparkline(s)}${s.error ? ' &mdash; <span style="color:var(--color-danger);">' + escHtml(s.error) + '</span>' : ''}</span>
                 <div class="slave-actions">
                     ${statusBadge(s)}
                     ${provisionBadges(s)}
+                    ${resourceBadges(s)}
                     ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="testSsh('${aIp}')" title="Test SSH connection">SSH</button>` : ''}
                     ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="testRmi('${aIp}')" title="Test RMI port 1099">RMI</button>` : ''}
                     ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="provisionSingle('${aIp}')" title="Provision slave">Provision</button>` : ''}
@@ -319,6 +323,7 @@ function renderGrid() {
                 <div class="flex gap-8" style="align-items:center;">
                     ${statusBadge(s)}
                     ${provisionBadges(s)}
+                    ${resourceBadges(s)}
                     ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="testSsh('${aIp}')" title="Test SSH">SSH</button>` : ''}
                     ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="testRmi('${aIp}')" title="Test RMI">RMI</button>` : ''}
                     ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="provisionSingle('${aIp}')" title="Provision">Provision</button>` : ''}
@@ -336,7 +341,7 @@ function renderGrid() {
                     </label>` : ''}
                 </div>
             </div>
-            <div class="vm-meta">${s.nickname ? escHtml(s.nickname) + ' &mdash; ' : ''}VM #${i + 1}</div>
+            <div class="vm-meta">${s.nickname ? escHtml(s.nickname) + ' &mdash; ' : ''}VM #${i + 1}${historySparkline(s)}</div>
             ${s.error ? '<div class="vm-error">' + escHtml(s.error) + '</div>' : ''}
             ${expanded ? renderConfigPanel(s) : ''}
         </div>`;
@@ -1158,9 +1163,88 @@ async function bulkCleanLogs() {
     }
 }
 
+// ===== Health History (#31) =====
+let healthHistory = {}; // ip -> [{timestamp, status, cpu_percent, ram_percent}, ...]
+
+async function loadHealthHistory() {
+    try {
+        const data = await api('/api/slaves/health-history');
+        healthHistory = data.history || {};
+    } catch (e) {
+        healthHistory = {};
+    }
+}
+
+function historySparkline(s) {
+    const entries = healthHistory[s.ip];
+    if (!entries || entries.length < 2) return '';
+    // Show last 20 entries as tiny colored dots
+    const recent = entries.slice(-20);
+    let dots = '';
+    recent.forEach(e => {
+        let color;
+        if (e.status === 'up') color = 'var(--color-success, #22c55e)';
+        else if (e.status === 'down') color = 'var(--color-danger, #ef4444)';
+        else color = 'var(--color-border)';
+        const title = new Date(e.timestamp * 1000).toLocaleString();
+        dots += `<span style="display:inline-block;width:6px;height:12px;border-radius:1px;background:${color};margin-right:1px;" title="${title} — ${e.status}${e.cpu_percent != null ? ' CPU:' + e.cpu_percent + '%' : ''}${e.ram_percent != null ? ' RAM:' + e.ram_percent + '%' : ''}"></span>`;
+    });
+    return `<span style="display:inline-flex;align-items:center;gap:0;margin-left:4px;" title="Last ${recent.length} status checks">${dots}</span>`;
+}
+
+// ===== Resource Monitoring (#30) =====
+let resourceData = {}; // ip -> {cpu_percent, ram_percent, ram_used_mb, ram_total_mb}
+
+function resourceBadges(s) {
+    const r = resourceData[s.ip];
+    if (!r) return '';
+    let html = '';
+    if (r.cpu_percent !== null && r.cpu_percent !== undefined) {
+        const cpuCls = r.cpu_percent > 80 ? 'badge-danger' : r.cpu_percent > 60 ? 'badge-warning' : 'badge-success';
+        html += `<span class="badge ${cpuCls}" style="font-size:9px;" title="CPU usage">CPU ${r.cpu_percent}%</span>`;
+    }
+    if (r.ram_percent !== null && r.ram_percent !== undefined) {
+        const ramCls = r.ram_percent > 90 ? 'badge-danger' : r.ram_percent > 75 ? 'badge-warning' : 'badge-success';
+        const ramTitle = r.ram_total_mb ? `RAM: ${r.ram_used_mb}/${r.ram_total_mb} MB` : 'RAM usage';
+        html += `<span class="badge ${ramCls}" style="font-size:9px;" title="${ramTitle}">RAM ${r.ram_percent}%</span>`;
+    }
+    return html;
+}
+
+async function refreshResources() {
+    const btn = document.getElementById('resourcesBtn');
+    btn.disabled = true;
+    btn.textContent = 'Checking...';
+    try {
+        const data = await api('/api/slaves/resources');
+        (data.results || []).forEach(r => {
+            if (r.ok) {
+                resourceData[r.ip] = {
+                    cpu_percent: r.cpu_percent,
+                    ram_percent: r.ram_percent,
+                    ram_used_mb: r.ram_used_mb,
+                    ram_total_mb: r.ram_total_mb,
+                };
+            }
+        });
+        render();
+        const warnings = (data.results || []).filter(r => r.ok && (r.cpu_percent > 80 || r.ram_percent > 90));
+        if (warnings.length > 0) {
+            showToast(`Warning: ${warnings.length} slave(s) with high resource usage`, 'warning');
+        } else {
+            showToast('Resource check complete', 'success');
+        }
+    } catch (e) {
+        showToast('Failed to check resources', 'error');
+    }
+    btn.disabled = false;
+    btn.textContent = 'Resources';
+}
+
 // ===== Init =====
 loadSlaves();
 loadVmConfig();
 loadProperties();
+loadHealthHistory();
 </script>
 {% endblock %}
