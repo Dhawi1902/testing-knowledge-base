@@ -11,7 +11,7 @@
         <div class="flex gap-8" style="align-items:center;">
             <span class="badge" id="modeIndicator" style="background:var(--color-border);color:var(--text-light);">...</span>
             <span class="badge badge-info" id="runnerStatus">Idle</span>
-            <span id="elapsedTimer" class="text-sm text-light" style="display:none;font-family:var(--font-mono);"></span>
+            <span id="elapsedTimer" class="text-sm text-light text-mono" style="display:none;"></span>
         </div>
     </div>
 
@@ -22,17 +22,17 @@
                 <select class="form-select" id="selectedPlan" onchange="onPlanSelected()" style="flex:1;">
                     <option value="">Select a test plan...</option>
                 </select>
-                {% if is_localhost %}<button class="btn btn-outline btn-sm" id="editPlanBtn" onclick="openInJmeter(document.getElementById('selectedPlan').value)" disabled title="Open in JMeter GUI">Edit</button>{% endif %}
-                <button class="btn btn-outline btn-sm" id="downloadPlanBtn" onclick="downloadPlan()" disabled title="Download JMX file">Download</button>
-                {% if access_level != 'viewer' %}<button class="btn btn-outline btn-sm" id="duplicatePlanBtn" onclick="duplicatePlan()" disabled title="Duplicate test plan">Duplicate</button>
-                <button class="btn btn-outline btn-sm" id="renamePlanBtn" onclick="renamePlan()" disabled title="Rename test plan">Rename</button>
-                <button class="btn btn-outline btn-sm" id="deletePlanBtn" onclick="deletePlan()" disabled title="Delete test plan" style="color:var(--color-danger);border-color:var(--color-danger);">Delete</button>
-                <button class="btn btn-outline btn-sm" onclick="document.getElementById('uploadInput').click()" title="Upload a .jmx file">Upload</button>
+                {% if is_localhost %}<button class="btn btn-outline btn-sm" id="editPlanBtn" onclick="openInJmeter(document.getElementById('selectedPlan').value)" disabled title="Open in JMeter GUI">{{ icon('edit-2', 13) }} Edit</button>{% endif %}
+                <button class="btn btn-outline btn-sm" id="downloadPlanBtn" onclick="downloadPlan()" disabled title="Download JMX file">{{ icon('download', 13) }} Download</button>
+                {% if access_level != 'viewer' %}<button class="btn btn-outline btn-sm" id="duplicatePlanBtn" onclick="duplicatePlan()" disabled title="Duplicate test plan">{{ icon('copy', 13) }} Duplicate</button>
+                <button class="btn btn-outline btn-sm" id="renamePlanBtn" onclick="renamePlan()" disabled title="Rename test plan">{{ icon('edit-2', 13) }} Rename</button>
+                <button class="btn btn-outline btn-sm" id="deletePlanBtn" onclick="deletePlan()" disabled title="Delete test plan" style="color:var(--color-danger);border-color:var(--color-danger);">{{ icon('trash-2', 13) }} Delete</button>
+                <button class="btn btn-outline btn-sm" onclick="document.getElementById('uploadInput').click()" title="Upload a .jmx file">{{ icon('upload', 13) }} Upload</button>
                 <input type="file" id="uploadInput" accept=".jmx" style="display:none;" onchange="uploadPlan(this)">{% endif %}
             </div>
-            <span class="text-light text-sm" id="planInfo" style="margin-top:4px;display:none;"></span>
+            <span class="text-light text-sm mt-4" id="planInfo" style="display:none;"></span>
         </div>
-        <div class="form-group" class="form-col">
+        <div class="form-group form-col">
             <label class="form-label">Preset</label>
             <div class="flex gap-8">
                 <select class="form-select" id="presetSelect" onchange="applyPreset()" style="flex:1;">
@@ -44,7 +44,7 @@
     </div>
 
     <div class="flex gap-8 mb-16" style="align-items:center;justify-content:space-between;">
-        <label class="form-label" style="margin:0;">Test Plan Parameters</label>
+        <label class="form-label mb-0">Test Plan Parameters</label>
         <div class="flex gap-8" style="align-items:center;">
             {% if access_level != 'viewer' %}
             <button class="btn btn-outline btn-sm" id="saveAsPresetBtn" onclick="quickSaveAsPreset()" style="display:none;" title="Save current values as a reusable preset">Save as Preset</button>
@@ -58,10 +58,10 @@
     <!-- Command Preview -->
     <div class="form-group mb-16">
         <div style="display:flex;align-items:center;justify-content:space-between;">
-            <label class="form-label" style="margin-bottom:0;">Command Preview</label>
-            <button class="btn btn-outline btn-sm" id="copyCommandBtn" onclick="copyCommand()" style="display:none;font-size:11px;padding:2px 8px;">Copy</button>
+            <label class="form-label mb-0">Command Preview</label>
+            <button class="btn btn-outline btn-sm" id="copyCommandBtn" onclick="copyCommand()" style="display:none;font-size:11px;padding:2px 8px;">{{ icon('copy', 12) }} Copy</button>
         </div>
-        <div class="form-input form-input-mono" id="cmdPreview" style="background: var(--color-surface-alt, var(--color-surface)); min-height: 40px; white-space: pre-wrap; word-break: break-all; cursor: default; margin-top:6px;">
+        <div class="text-mono mt-8" id="cmdPreview" style="background:var(--color-bg);min-height:40px;white-space:pre-wrap;word-break:break-all;cursor:default;padding:12px 16px;border-radius:var(--radius-sm);border:1px solid var(--color-border);font-size:0.85rem;line-height:1.6;color:var(--color-text-light);">
             Select a test plan to see the command.
         </div>
     </div>
@@ -80,7 +80,7 @@
                 </select>
                 <button class="btn btn-outline btn-sm" onclick="openFilterPresetManager()" title="Manage filter presets" style="font-size:11px;padding:2px 8px;">&#9881;</button>
             </div>
-            <span id="filterPatternDisplay" class="text-sm text-light" style="font-family:var(--font-mono);display:none;">
+            <span id="filterPatternDisplay" class="text-sm text-light text-mono" style="display:none;">
                 pattern: <code id="filterPatternText" style="background:var(--color-primary-bg,rgba(59,130,246,0.1));padding:2px 6px;border-radius:4px;"></code>
             </span>
             {% endif %}
@@ -88,9 +88,9 @@
         </div>
         {% if access_level != 'viewer' %}
         <div class="flex gap-8" style="align-items:center;" id="inlineRunnerBtns">
-            <button class="btn btn-outline" id="dryRunBtn" onclick="dryRun()" disabled title="Show full command without executing">Dry Run</button>
-            <button class="btn btn-primary" id="startTestBtn" onclick="startTest()" disabled>Start Test</button>
-            <button class="btn btn-danger" id="stopTestBtn" onclick="stopTest()" disabled>Stop Test</button>
+            <button class="btn btn-outline" id="dryRunBtn" onclick="dryRun()" disabled title="Show full command without executing">{{ icon('terminal', 14) }} Dry Run</button>
+            <button class="btn btn-primary" id="startTestBtn" onclick="startTest()" disabled data-tooltip="Ctrl+Enter">{{ icon('play', 14) }} Start Test</button>
+            <button class="btn btn-danger" id="stopTestBtn" onclick="stopTest()" disabled>{{ icon('stop-circle', 14) }} Stop Test</button>
         </div>
         {% endif %}
     </div>
@@ -98,47 +98,47 @@
     {% if access_level != 'viewer' %}
     <!-- Mobile bottom action bar (visible only on mobile via CSS) -->
     <div class="mobile-action-bar" id="mobileActionBar">
-        <button class="btn btn-primary" onclick="startTest()">Start Test</button>
-        <button class="btn btn-danger" onclick="stopTest()">Stop Test</button>
+        <button class="btn btn-primary" onclick="startTest()">{{ icon('play', 14) }} Start Test</button>
+        <button class="btn btn-danger" onclick="stopTest()">{{ icon('stop-circle', 14) }} Stop Test</button>
     </div>
     {% endif %}
 </div>
 
 <!-- Live Output -->
-<div class="card" style="margin-top:24px;" id="outputCard">
+<div class="card mt-24" id="outputCard">
     <div class="card-header">
         <span class="card-title">Live Output</span>
     </div>
 
-    <p class="text-light text-sm" id="outputPlaceholder" style="text-align:center;padding:16px 0;">No active test. Stats will appear here during a run.</p>
+    <p class="text-light text-sm py-16" id="outputPlaceholder" style="text-align:center;">No active test. Stats will appear here during a run.</p>
 
     <!-- Live Summary -->
     <div class="card-grid mb-16" id="liveSummary" style="display:none;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));">
-        <div class="stat-card" style="padding:10px;">
+        <div class="stat-card p-12" style="background:var(--color-success-subtle);">
             <div class="stat-value text-sm" id="liveThroughput">-</div>
             <div class="stat-label" style="font-size:11px;">Throughput</div>
         </div>
-        <div class="stat-card" style="padding:10px;">
+        <div class="stat-card p-12" style="background:var(--color-warning-subtle);">
             <div class="stat-value text-sm" id="liveAvgRT">-</div>
             <div class="stat-label" style="font-size:11px;">Avg Response</div>
         </div>
-        <div class="stat-card" style="padding:10px;">
+        <div class="stat-card p-12" style="background:var(--color-danger-subtle);">
             <div class="stat-value text-sm" id="liveErrorRate">-</div>
             <div class="stat-label" style="font-size:11px;">Error Rate</div>
         </div>
-        <div class="stat-card" style="padding:10px;">
+        <div class="stat-card p-12" style="background:var(--color-primary-subtle);">
             <div class="stat-value text-sm" id="liveSamples">-</div>
             <div class="stat-label" style="font-size:11px;">Total Samples</div>
         </div>
-        <div class="stat-card" style="padding:10px;">
+        <div class="stat-card p-12">
             <div class="stat-value text-sm" id="liveVUActive">-</div>
             <div class="stat-label" style="font-size:11px;">Active VUs</div>
         </div>
-        <div class="stat-card" style="padding:10px;">
+        <div class="stat-card p-12">
             <div class="stat-value text-sm" id="liveVUStarted">-</div>
             <div class="stat-label" style="font-size:11px;">Started VUs</div>
         </div>
-        <div class="stat-card" style="padding:10px;">
+        <div class="stat-card p-12">
             <div class="stat-value text-sm" id="liveVUFinished">-</div>
             <div class="stat-label" style="font-size:11px;">Finished VUs</div>
         </div>
@@ -166,20 +166,20 @@
         <div class="modal-header">
             <div>
                 <span class="modal-title" id="presetModalTitle">Manage Presets</span>
-                <p class="text-light text-sm" style="margin-top:4px;">Save current parameter values as a reusable preset. Apply them anytime from the Preset dropdown.</p>
+                <p class="text-light text-sm mt-4">Save current parameter values as a reusable preset. Apply them anytime from the Preset dropdown.</p>
             </div>
             <button class="modal-close" onclick="closePresetManager()" aria-label="Close">&times;</button>
         </div>
         <div style="border:1px solid var(--color-border);border-radius:8px;padding:12px;margin-bottom:16px;background:var(--color-surface-alt,var(--color-surface));">
-            <label class="form-label text-sm" style="margin-bottom:6px;">Save current values as preset</label>
+            <label class="form-label text-sm mb-8">Save current values as preset</label>
             <div class="flex gap-8">
                 <input class="form-input" id="newPresetName" placeholder="e.g. Light Load, Stress Test..." style="flex:1;">
                 <button class="btn btn-primary btn-sm" onclick="savePresetFromModal()">Save</button>
             </div>
         </div>
-        <label class="form-label text-sm" style="margin-bottom:8px;">Saved Presets</label>
+        <label class="form-label text-sm mb-8">Saved Presets</label>
         <div id="presetList"></div>
-        <p class="text-light text-sm" id="presetEmptyMsg" style="text-align:center;padding:16px 0;">No presets saved yet. Configure your test parameters and save them above.</p>
+        <p class="text-light text-sm py-16" id="presetEmptyMsg" style="text-align:center;">No presets saved yet. Configure your test parameters and save them above.</p>
     </div>
 </div>
 
@@ -189,12 +189,12 @@
         <div class="modal-header">
             <div>
                 <span class="modal-title" id="filterPresetModalTitle">Filter Label Presets</span>
-                <p class="text-light text-sm" style="margin-top:4px;">Save regex patterns to quickly filter JTL results by label. The default pattern from Settings is always available.</p>
+                <p class="text-light text-sm mt-4">Save regex patterns to quickly filter JTL results by label. The default pattern from Settings is always available.</p>
             </div>
             <button class="modal-close" onclick="closeFilterPresetManager()" aria-label="Close">&times;</button>
         </div>
         <div style="border:1px solid var(--color-border);border-radius:8px;padding:12px;margin-bottom:16px;background:var(--color-surface-alt,var(--color-surface));">
-            <label class="form-label text-sm" style="margin-bottom:6px;">Add new filter preset</label>
+            <label class="form-label text-sm mb-8">Add new filter preset</label>
             <div class="flex gap-8 mb-8">
                 <input class="form-input" id="newFilterPresetName" placeholder="e.g. MAYA transactions only" style="flex:1;">
             </div>
@@ -203,9 +203,9 @@
                 <button class="btn btn-primary btn-sm" onclick="saveFilterPresetFromModal()">Save</button>
             </div>
         </div>
-        <label class="form-label text-sm" style="margin-bottom:8px;">Saved Filter Presets</label>
+        <label class="form-label text-sm mb-8">Saved Filter Presets</label>
         <div id="filterPresetList"></div>
-        <p class="text-light text-sm" id="filterPresetEmptyMsg" style="text-align:center;padding:16px 0;">No filter presets saved yet. Add a name and regex pattern above.</p>
+        <p class="text-light text-sm py-16" id="filterPresetEmptyMsg" style="text-align:center;">No filter presets saved yet. Add a name and regex pattern above.</p>
     </div>
 </div>
 {% endblock %}
@@ -358,10 +358,11 @@ async function updatePreview() {
 function copyCommand() {
     const text = document.getElementById('cmdPreview').textContent;
     if (!text || text.startsWith('Select a test plan')) return;
+    const btn = document.getElementById('copyCommandBtn');
+    const originalHTML = btn.innerHTML;
     navigator.clipboard.writeText(text).then(() => {
-        const btn = document.getElementById('copyCommandBtn');
-        btn.textContent = 'Copied!';
-        setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+        btn.innerHTML = originalHTML.replace('Copy', 'Copied!');
+        setTimeout(() => { btn.innerHTML = originalHTML; }, 1500);
     }).catch(() => showToast('Copy failed', 'error'));
 }
 
