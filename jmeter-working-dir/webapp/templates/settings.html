@@ -146,11 +146,11 @@
             <div class="form-group" style="min-width:300px;flex:2;">
                 <label class="form-label">Access Token</label>
                 <div id="tokenStatusArea" style="margin-bottom:8px;"></div>
-                <div style="position:relative;">
+                <form onsubmit="return false" style="position:relative;">
                     <input class="form-input form-input-mono" id="set_auth_token" type="password" placeholder="Enter new token to change" style="padding-right:40px;" autocomplete="new-password">
                     <button type="button" onclick="toggleTokenVisibility()" id="tokenToggleBtn"
                         style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--color-text-light);font-size:13px;padding:2px 4px;">Show</button>
-                </div>
+                </form>
                 <span class="text-light text-sm">Leave empty to keep current token. Enter a new value to change it. Localhost always has full access.</span>
                 <div id="tokenClearArea" style="margin-top:8px;display:none;">
                     <button class="btn btn-outline btn-sm" style="color:var(--color-danger);border-color:var(--color-danger);" onclick="clearToken()">Remove Token</button>

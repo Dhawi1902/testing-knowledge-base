@@ -189,6 +189,7 @@ function renderList() {
                     ${statusBadge(s)}
                     ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="startSingle('${aIp}')" title="Start JMeter server">&#9654;</button>` : ''}
                     ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;color:var(--color-danger);border-color:var(--color-danger);" onclick="stopSingle('${aIp}')" title="Stop JMeter server">&#9632;</button>` : ''}
+                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="restartSingle('${aIp}')" title="Restart JMeter server">&#8635;</button>` : ''}
                     ${isAdmin ? `<button class="gear-btn${expanded ? ' active' : ''}" onclick="toggleConfig('${aIp}')" title="SSH overrides">&#9881;</button>` : ''}
                     ${isAdmin ? `<button class="del-btn" onclick="removeSlave('${aIp}')" title="Remove">&times;</button>` : ''}
                     ${isAdmin ? `<label class="toggle" title="${enabled ? 'Disable' : 'Enable'}">
@@ -229,6 +230,7 @@ function renderGrid() {
                     ${statusBadge(s)}
                     ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="startSingle('${aIp}')" title="Start">&#9654;</button>` : ''}
                     ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;color:var(--color-danger);border-color:var(--color-danger);" onclick="stopSingle('${aIp}')" title="Stop">&#9632;</button>` : ''}
+                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="restartSingle('${aIp}')" title="Restart">&#8635;</button>` : ''}
                     ${isAdmin ? `<button class="gear-btn${expanded ? ' active' : ''}" onclick="toggleConfig('${aIp}')" title="SSH overrides">&#9881;</button>` : ''}
                     ${isAdmin ? `<button class="del-btn" onclick="removeSlave('${aIp}')" title="Remove">&times;</button>` : ''}
                     ${isAdmin ? `<label class="toggle" title="${enabled ? 'Disable' : 'Enable'}">
@@ -438,7 +440,7 @@ function renderConfigPanel(s) {
     const ov = s.overrides || {};
     const ssh = currentVmConfig.ssh_config || {};
     const ip = escAttr(s.ip);
-    return `<div class="slave-config-panel">
+    return `<form onsubmit="return false" class="slave-config-panel">
         <div class="form-group">
             <label class="form-label">Nickname</label>
             <input class="form-input" value="${escAttr(s.nickname || '')}" placeholder="Optional display name"
@@ -452,7 +454,7 @@ function renderConfigPanel(s) {
         <div class="form-group">
             <label class="form-label">SSH Password</label>
             <input class="form-input" type="password" value="${escAttr(ov.password || '')}" placeholder="(global default)"
-                onchange="updateOverride('${ip}','password',this.value)">
+                onchange="updateOverride('${ip}','password',this.value)" autocomplete="off">
         </div>
         <div class="form-group">
             <label class="form-label">SSH Key File</label>
@@ -470,7 +472,7 @@ function renderConfigPanel(s) {
                 onchange="updateOverride('${ip}','jmeter_path',this.value)">
         </div>
         <div class="override-hint">Leave blank to use global defaults from VM Configuration.</div>
-    </div>`;
+    </form>`;
 }
 
 async function updateNickname(ip, value) {
@@ -544,6 +546,7 @@ function renderVmConfig() {
     const ro = isAdmin ? '' : ' readonly';
     const dis = isAdmin ? '' : ' disabled';
     container.innerHTML = `
+        <form onsubmit="return false">
         <h3 class="text-sm mb-16 section-title">SSH Defaults</h3>
         <div class="form-row mb-16">
             <div class="form-group form-col" style="min-width:150px;">
@@ -552,7 +555,7 @@ function renderVmConfig() {
             </div>
             <div class="form-group form-col" style="min-width:150px;">
                 <label class="form-label">Password</label>
-                <input class="form-input" id="vm_ssh_password" type="password" value="${escHtml(ssh.password || '')}"${ro}>
+                <input class="form-input" id="vm_ssh_password" type="password" value="${escHtml(ssh.password || '')}"${ro} autocomplete="off">
             </div>
             <div class="form-group form-col" style="min-width:200px;">
                 <label class="form-label">SSH Key File</label>
@@ -589,7 +592,8 @@ function renderVmConfig() {
                 <input class="form-input form-input-mono" id="vm_script_stop" value="${escHtml(scripts.stop || '')}" placeholder="(auto from JMeter path)"${ro}>
             </div>
         </div>
-        <div class="text-sm text-light" style="margin-top:-8px;">Per-slave overrides can be set via the &#9881; button on each slave.</div>`;
+        <div class="text-sm text-light" style="margin-top:-8px;">Per-slave overrides can be set via the &#9881; button on each slave.</div>
+        </form>`;
 }
 
 async function saveVmConfig() {
@@ -635,6 +639,18 @@ async function stopSingle(ip) {
         showToast(`Failed to stop on ${ip}`, 'error');
     }
     setTimeout(() => refreshStatus(), 2000);
+}
+
+async function restartSingle(ip) {
+    showToast(`Restarting JMeter on ${ip}...`, 'info');
+    try {
+        const data = await api(`/api/slaves/${encodeURIComponent(ip)}/restart`, { method: 'POST' });
+        const r = data.start_result;
+        showToast(r.ok ? `Restarted on ${ip}` : `Restart failed on ${ip}: ${r.error || 'Unknown error'}`, r.ok ? 'success' : 'error');
+    } catch (e) {
+        showToast(`Failed to restart on ${ip}`, 'error');
+    }
+    setTimeout(() => refreshStatus(), 3000);
 }
 
 // ===== Collapse =====

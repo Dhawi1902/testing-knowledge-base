@@ -122,19 +122,22 @@ function initTabs(container) {
     // Panels live as siblings/in the parent card, not inside the tab bar
     const scope = el.closest('.card') || el.parentElement || el;
     const buttons = el.querySelectorAll('.tab-btn');
+    function activateTab(target) {
+        el.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
+        scope.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        const btn = el.querySelector(`.tab-btn[data-tab="${target}"]`);
+        if (btn) { btn.classList.add('active'); btn.setAttribute('aria-selected', 'true'); }
+        const panel = scope.querySelector(`#${target}`);
+        if (panel) panel.classList.add('active');
+    }
     buttons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const target = btn.dataset.tab;
-            // Deactivate all
-            el.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
-            scope.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-            // Activate target
-            btn.classList.add('active');
-            btn.setAttribute('aria-selected', 'true');
-            const panel = scope.querySelector(`#${target}`);
-            if (panel) panel.classList.add('active');
-        });
+        btn.addEventListener('click', () => activateTab(btn.dataset.tab));
     });
+    // Activate tab from URL hash (e.g. #tab-integrations)
+    const hash = window.location.hash.replace('#', '');
+    if (hash && scope.querySelector(`#${hash}`)) {
+        activateTab(hash);
+    }
 }
 
 /* ===== Modal ===== */

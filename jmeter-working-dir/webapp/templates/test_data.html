@@ -408,17 +408,37 @@ async function buildCsv() {
 
 /* ===== Upload ===== */
 
-async function uploadCsv() {
+async function uploadCsv(overwrite = false) {
     const input = document.getElementById('uploadFile');
     if (!input.files.length) return;
+    const file = input.files[0];
     const formData = new FormData();
-    formData.append('file', input.files[0]);
+    formData.append('file', file);
+    const url = BASE_PATH + '/api/data/upload' + (overwrite ? '?overwrite=true' : '');
     try {
-        const data = await api('/api/data/upload', { method: 'POST', body: formData });
+        const resp = await fetch(url, { method: 'POST', body: formData });
+        const data = await resp.json();
+        if (resp.status === 409) {
+            // File exists — ask user to confirm overwrite
+            if (confirmAction(`"${file.name}" already exists. Overwrite it?`)) {
+                await uploadCsv(true);
+            } else {
+                input.value = '';
+            }
+            return;
+        }
+        if (!resp.ok) {
+            showToast(data.error || 'Upload failed', 'error');
+            input.value = '';
+            return;
+        }
         showToast(`Uploaded ${data.filename}`, 'success');
         input.value = '';
         loadFiles();
-    } catch(e) { input.value = ''; }
+    } catch(e) {
+        showToast('Upload failed', 'error');
+        input.value = '';
+    }
 }
 
 

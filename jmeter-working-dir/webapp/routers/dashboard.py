@@ -139,6 +139,7 @@ async def api_alerts(request: Request):
             "level": "warning",
             "message": f"{len(no_report)} result(s) missing HTML report",
             "detail": names + suffix,
+            "link": "/results",
         })
 
     # Disk usage check
@@ -154,11 +155,13 @@ async def api_alerts(request: Request):
         alerts.append({
             "level": "danger",
             "message": f"Results directory very large ({total_size / 1024**3:.1f} GB)",
+            "link": "/results",
         })
     elif total_size > 1 * 1024 ** 3:
         alerts.append({
             "level": "warning",
             "message": f"Results directory exceeds 1 GB ({total_size / 1024**3:.1f} GB)",
+            "link": "/results",
         })
 
     # Empty result folders (no JTL and no report)
@@ -167,6 +170,7 @@ async def api_alerts(request: Request):
         alerts.append({
             "level": "info",
             "message": f"{len(empty)} result folder(s) with no data",
+            "link": "/results",
         })
 
     # Slave health from cached status
@@ -179,6 +183,7 @@ async def api_alerts(request: Request):
             "level": "danger",
             "message": f"{len(down)} slave(s) unreachable",
             "detail": ips,
+            "link": "/slaves",
         })
 
     return {"alerts": alerts}

@@ -256,3 +256,18 @@ async def api_stop_single_slave(request: Request, ip: str):
         return JSONResponse(status_code=404, content={"error": f"Slave {ip} not found"})
     result = await stop_jmeter_server(ip, ssh_configs[ip])
     return {"result": result}
+
+
+@router.post("/api/slaves/{ip}/restart")
+async def api_restart_single_slave(request: Request, ip: str):
+    """Restart JMeter server on a single slave (stop + start)."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    project = request.app.state.project
+    slaves, active_ips, ssh_configs = _get_slaves(project)
+    if ip not in ssh_configs:
+        return JSONResponse(status_code=404, content={"error": f"Slave {ip} not found"})
+    stop_result = await stop_jmeter_server(ip, ssh_configs[ip])
+    start_result = await start_jmeter_server(ip, ssh_configs[ip])
+    return {"stop_result": stop_result, "start_result": start_result}
