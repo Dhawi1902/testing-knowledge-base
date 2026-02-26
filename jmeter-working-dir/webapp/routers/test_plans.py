@@ -257,7 +257,67 @@ async def api_delete_preset(request: Request, name: str):
     return {"ok": True}
 
 
-# --- Delete / Upload / Download ---
+# --- Duplicate / Rename / Delete / Upload / Download ---
+
+@router.post("/api/plans/{filename}/duplicate")
+async def api_duplicate_plan(request: Request, filename: str):
+    """Duplicate a .jmx file with a new name (e.g. 'Copy of X.jmx')."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    project = request.app.state.project
+    jmx_dir = resolve_path(project, "jmx_dir")
+    jmx_path = safe_join(jmx_dir, filename)
+    if jmx_path is None:
+        return JSONResponse(status_code=403, content={"error": "Access denied"})
+    if not jmx_path.exists() or jmx_path.suffix != ".jmx":
+        return JSONResponse(status_code=404, content={"error": "File not found"})
+
+    # Determine new name: "Copy of X.jmx", "Copy of X (2).jmx", etc.
+    stem = jmx_path.stem
+    new_name = f"Copy of {stem}.jmx"
+    new_path = jmx_dir / new_name
+    counter = 2
+    while new_path.exists():
+        new_name = f"Copy of {stem} ({counter}).jmx"
+        new_path = jmx_dir / new_name
+        counter += 1
+
+    import shutil
+    shutil.copy2(str(jmx_path), str(new_path))
+    return {"ok": True, "filename": new_name}
+
+
+@router.post("/api/plans/{filename}/rename")
+async def api_rename_plan(request: Request, filename: str):
+    """Rename a .jmx file. Updates preset references if any."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    body = await request.json()
+    new_name = body.get("new_name", "").strip()
+    if not new_name:
+        return JSONResponse(status_code=400, content={"error": "New name is required"})
+    if not new_name.endswith(".jmx"):
+        new_name += ".jmx"
+
+    project = request.app.state.project
+    jmx_dir = resolve_path(project, "jmx_dir")
+    old_path = safe_join(jmx_dir, filename)
+    if old_path is None:
+        return JSONResponse(status_code=403, content={"error": "Access denied"})
+    if not old_path.exists() or old_path.suffix != ".jmx":
+        return JSONResponse(status_code=404, content={"error": "File not found"})
+
+    new_path = safe_join(jmx_dir, new_name)
+    if new_path is None:
+        return JSONResponse(status_code=403, content={"error": "Invalid new name"})
+    if new_path.exists():
+        return JSONResponse(status_code=409, content={"error": f"{new_name} already exists"})
+
+    old_path.rename(new_path)
+    return {"ok": True, "filename": new_name}
+
 
 @router.delete("/api/plans/{filename}")
 async def api_delete_plan(request: Request, filename: str):

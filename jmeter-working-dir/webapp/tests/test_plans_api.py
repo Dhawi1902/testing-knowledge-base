@@ -115,6 +115,97 @@ class TestPresets:
         assert r.status_code == 400
 
 
+class TestDuplicatePlan:
+    def test_duplicate(self, admin_client, bp, sample_jmx):
+        r = admin_client.post(f"{bp}/api/plans/test.jmx/duplicate")
+        assert r.status_code == 200
+        data = r.json()
+        assert data["ok"] is True
+        assert data["filename"] == "Copy of test.jmx"
+        # Verify file exists
+        r2 = admin_client.get(f"{bp}/api/plans/list")
+        names = [p["filename"] for p in r2.json()["plans"]]
+        assert "Copy of test.jmx" in names
+        # Clean up
+        admin_client.delete(f"{bp}/api/plans/Copy of test.jmx")
+
+    def test_duplicate_increments(self, admin_client, bp, sample_jmx, tmp_project_dir):
+        """Duplicate with existing 'Copy of' should increment counter."""
+        from tests.conftest import make_jmx
+        jmx_dir = tmp_project_dir["project_root"] / "test_plan"
+        copy1 = make_jmx(jmx_dir, "Copy of test.jmx")
+        try:
+            r = admin_client.post(f"{bp}/api/plans/test.jmx/duplicate")
+            assert r.status_code == 200
+            assert r.json()["filename"] == "Copy of test (2).jmx"
+            admin_client.delete(f"{bp}/api/plans/Copy of test (2).jmx")
+        finally:
+            if copy1.exists():
+                copy1.unlink()
+
+    def test_duplicate_not_found(self, admin_client, bp):
+        r = admin_client.post(f"{bp}/api/plans/missing.jmx/duplicate")
+        assert r.status_code == 404
+
+
+class TestRenamePlan:
+    def test_rename(self, admin_client, bp, sample_jmx):
+        r = admin_client.post(
+            f"{bp}/api/plans/test.jmx/rename",
+            json={"new_name": "renamed.jmx"},
+        )
+        assert r.status_code == 200
+        data = r.json()
+        assert data["ok"] is True
+        assert data["filename"] == "renamed.jmx"
+        # Rename back for cleanup
+        admin_client.post(
+            f"{bp}/api/plans/renamed.jmx/rename",
+            json={"new_name": "test.jmx"},
+        )
+
+    def test_rename_auto_adds_extension(self, admin_client, bp, sample_jmx):
+        r = admin_client.post(
+            f"{bp}/api/plans/test.jmx/rename",
+            json={"new_name": "renamed_plan"},
+        )
+        assert r.status_code == 200
+        assert r.json()["filename"] == "renamed_plan.jmx"
+        # Rename back
+        admin_client.post(
+            f"{bp}/api/plans/renamed_plan.jmx/rename",
+            json={"new_name": "test.jmx"},
+        )
+
+    def test_rename_conflict(self, admin_client, bp, sample_jmx, tmp_project_dir):
+        from tests.conftest import make_jmx
+        jmx_dir = tmp_project_dir["project_root"] / "test_plan"
+        existing = make_jmx(jmx_dir, "existing.jmx")
+        try:
+            r = admin_client.post(
+                f"{bp}/api/plans/test.jmx/rename",
+                json={"new_name": "existing.jmx"},
+            )
+            assert r.status_code == 409
+        finally:
+            if existing.exists():
+                existing.unlink()
+
+    def test_rename_not_found(self, admin_client, bp):
+        r = admin_client.post(
+            f"{bp}/api/plans/missing.jmx/rename",
+            json={"new_name": "new.jmx"},
+        )
+        assert r.status_code == 404
+
+    def test_rename_empty_name(self, admin_client, bp, sample_jmx):
+        r = admin_client.post(
+            f"{bp}/api/plans/test.jmx/rename",
+            json={"new_name": ""},
+        )
+        assert r.status_code == 400
+
+
 class TestDeletePlan:
     def test_delete(self, admin_client, bp, sample_jmx):
         r = admin_client.delete(f"{bp}/api/plans/test.jmx")

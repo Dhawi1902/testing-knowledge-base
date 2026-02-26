@@ -24,7 +24,9 @@
                 </select>
                 {% if is_localhost %}<button class="btn btn-outline btn-sm" id="editPlanBtn" onclick="openInJmeter(document.getElementById('selectedPlan').value)" disabled title="Open in JMeter GUI">Edit</button>{% endif %}
                 <button class="btn btn-outline btn-sm" id="downloadPlanBtn" onclick="downloadPlan()" disabled title="Download JMX file">Download</button>
-                {% if access_level != 'viewer' %}<button class="btn btn-outline btn-sm" id="deletePlanBtn" onclick="deletePlan()" disabled title="Delete test plan" style="color:var(--color-danger);border-color:var(--color-danger);">Delete</button>
+                {% if access_level != 'viewer' %}<button class="btn btn-outline btn-sm" id="duplicatePlanBtn" onclick="duplicatePlan()" disabled title="Duplicate test plan">Duplicate</button>
+                <button class="btn btn-outline btn-sm" id="renamePlanBtn" onclick="renamePlan()" disabled title="Rename test plan">Rename</button>
+                <button class="btn btn-outline btn-sm" id="deletePlanBtn" onclick="deletePlan()" disabled title="Delete test plan" style="color:var(--color-danger);border-color:var(--color-danger);">Delete</button>
                 <button class="btn btn-outline btn-sm" onclick="document.getElementById('uploadInput').click()" title="Upload a .jmx file">Upload</button>
                 <input type="file" id="uploadInput" accept=".jmx" style="display:none;" onchange="uploadPlan(this)">{% endif %}
             </div>
@@ -55,8 +57,11 @@
 
     <!-- Command Preview -->
     <div class="form-group mb-16">
-        <label class="form-label">Command Preview</label>
-        <div class="form-input form-input-mono" id="cmdPreview" style="background: var(--color-surface-alt, var(--color-surface)); min-height: 40px; white-space: pre-wrap; word-break: break-all; cursor: default;">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+            <label class="form-label" style="margin-bottom:0;">Command Preview</label>
+            <button class="btn btn-outline btn-sm" id="copyCommandBtn" onclick="copyCommand()" style="display:none;font-size:11px;padding:2px 8px;">Copy</button>
+        </div>
+        <div class="form-input form-input-mono" id="cmdPreview" style="background: var(--color-surface-alt, var(--color-surface)); min-height: 40px; white-space: pre-wrap; word-break: break-all; cursor: default; margin-top:6px;">
             Select a test plan to see the command.
         </div>
     </div>
@@ -230,6 +235,12 @@ async function onPlanSelected() {
         if (dlBtn) dlBtn.disabled = true;
         const delBtnEmpty = document.getElementById('deletePlanBtn');
         if (delBtnEmpty) delBtnEmpty.disabled = true;
+        const dupBtnEmpty = document.getElementById('duplicatePlanBtn');
+        if (dupBtnEmpty) dupBtnEmpty.disabled = true;
+        const renBtnEmpty = document.getElementById('renamePlanBtn');
+        if (renBtnEmpty) renBtnEmpty.disabled = true;
+        const dryBtnEmpty = document.getElementById('dryRunBtn');
+        if (dryBtnEmpty) dryBtnEmpty.disabled = true;
         planInfo.style.display = 'none';
         return;
     }
@@ -245,6 +256,10 @@ async function onPlanSelected() {
     if (dlBtn) dlBtn.disabled = false;
     const delBtn = document.getElementById('deletePlanBtn');
     if (delBtn) delBtn.disabled = isTestRunning;
+    const dupBtn = document.getElementById('duplicatePlanBtn');
+    if (dupBtn) dupBtn.disabled = isTestRunning;
+    const renBtn = document.getElementById('renamePlanBtn');
+    if (renBtn) renBtn.disabled = isTestRunning;
 
     // Show plan info
     const plan = allPlans.find(p => p.filename === filename);
@@ -294,14 +309,29 @@ function getPresetValues() {
 
 async function updatePreview() {
     const filename = document.getElementById('selectedPlan').value;
-    if (!filename) return;
+    const copyBtn = document.getElementById('copyCommandBtn');
+    if (!filename) {
+        if (copyBtn) copyBtn.style.display = 'none';
+        return;
+    }
     try {
         const data = await api('/api/runner/preview', {
             method: 'POST',
             body: { filename, overrides: getOverrides() }
         });
         document.getElementById('cmdPreview').textContent = data.command;
+        if (copyBtn) copyBtn.style.display = '';
     } catch(e) { console.error(e); }
+}
+
+function copyCommand() {
+    const text = document.getElementById('cmdPreview').textContent;
+    if (!text || text.startsWith('Select a test plan')) return;
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copyCommandBtn');
+        btn.textContent = 'Copied!';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+    }).catch(() => showToast('Copy failed', 'error'));
 }
 
 // ===== Presets =====
@@ -576,11 +606,32 @@ function updateTimer() {
     document.getElementById('elapsedTimer').textContent = `${h}:${m}:${s}`;
 }
 
+function playCompletionSound() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        // Two-tone chime: C5 then E5
+        [523.25, 659.25].forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.3, ctx.currentTime + i * 0.15);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.15 + 0.4);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(ctx.currentTime + i * 0.15);
+            osc.stop(ctx.currentTime + i * 0.15 + 0.4);
+        });
+    } catch(e) { /* audio not available */ }
+}
+
 function notifyTestComplete() {
     const plan = document.getElementById('selectedPlan').value || 'Test';
     const samples = document.getElementById('liveSamples').textContent;
     const errors = document.getElementById('liveErrorRate').textContent;
     const body = `${samples} samples · ${errors} errors`;
+    // Audio notification
+    playCompletionSound();
     // Browser notification (works even if tab is in background)
     if (Notification.permission === 'granted') {
         const n = new Notification(`${plan} — Finished`, { body });
@@ -801,6 +852,40 @@ async function deletePlan() {
         onPlanSelected();
     } catch(e) {
         showToast('Delete failed', 'error');
+    }
+}
+
+async function duplicatePlan() {
+    const filename = document.getElementById('selectedPlan').value;
+    if (!filename) return;
+    try {
+        const data = await api(`/api/plans/${encodeURIComponent(filename)}/duplicate`, { method: 'POST' });
+        showToast(`Duplicated as ${data.filename}`, 'success');
+        await loadPlans();
+        document.getElementById('selectedPlan').value = data.filename;
+        onPlanSelected();
+    } catch(e) {
+        showToast('Duplicate failed', 'error');
+    }
+}
+
+async function renamePlan() {
+    const filename = document.getElementById('selectedPlan').value;
+    if (!filename) return;
+    const stem = filename.replace(/\.jmx$/i, '');
+    const newName = prompt('Rename test plan:', stem);
+    if (!newName || newName.trim() === '' || newName.trim() === stem) return;
+    try {
+        const data = await api(`/api/plans/${encodeURIComponent(filename)}/rename`, {
+            method: 'POST',
+            body: { new_name: newName.trim() }
+        });
+        showToast(`Renamed to ${data.filename}`, 'success');
+        await loadPlans();
+        document.getElementById('selectedPlan').value = data.filename;
+        onPlanSelected();
+    } catch(e) {
+        showToast('Rename failed', 'error');
     }
 }
 

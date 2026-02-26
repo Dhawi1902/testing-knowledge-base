@@ -193,9 +193,17 @@ class TestViewerDenied:
         r = viewer_client.put(f"{bp}/api/config/properties", json={"properties": {}})
         assert r.status_code == 403
 
-    # -- Plans delete --
+    # -- Plans CRUD --
     def test_plans_delete(self, viewer_client, bp):
         r = viewer_client.delete(f"{bp}/api/plans/test.jmx")
+        assert r.status_code == 403
+
+    def test_plans_duplicate(self, viewer_client, bp):
+        r = viewer_client.post(f"{bp}/api/plans/test.jmx/duplicate")
+        assert r.status_code == 403
+
+    def test_plans_rename(self, viewer_client, bp):
+        r = viewer_client.post(f"{bp}/api/plans/test.jmx/rename", json={"new_name": "new.jmx"})
         assert r.status_code == 403
 
     # -- Settings export/import --
