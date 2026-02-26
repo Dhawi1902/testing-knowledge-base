@@ -44,7 +44,7 @@
         <div class="empty-state-desc">Run a test from the Test Plans page to see results here.</div>
         <a href="{{ base_path }}/plans" class="btn btn-primary">Go to Test Plans</a>
     </div>
-    <div id="paginationControls" style="display:none;padding:12px 0;border-top:1px solid var(--color-border);margin-top:8px;"></div>
+    <div id="paginationControls" class="mt-8" style="display:none;padding:12px 0;border-top:1px solid var(--color-border);"></div>
 </div>
 
 <!-- Compare Panel -->
@@ -67,7 +67,7 @@
             <div class="text-sm mb-16" id="regenModalInfo"></div>
 
             <h4 class="text-sm mb-8 section-title">Filtering</h4>
-            <div style="display:flex;flex-direction:column;gap:10px;" class="mb-16">
+            <div class="flex mb-16" style="flex-direction:column;gap:10px;">
                 <label class="toggle">
                     <input type="checkbox" id="regen_filter_sub" checked>
                     <span class="toggle-track"></span>
@@ -96,7 +96,7 @@
             <h4 class="text-sm mb-8 section-title">Graph settings</h4>
             <span class="text-light text-sm">Uses graph configuration from <a href="settings" style="color:var(--color-primary);">Settings &gt; Report</a> tab.</span>
         </div>
-        <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--color-border);">
+        <div class="modal-footer">
             <button class="btn btn-outline btn-sm" onclick="closeModal('regenModal')">Cancel</button>
             <button class="btn btn-primary btn-sm" id="regenModalBtn" onclick="doRegenerate()">Regenerate</button>
         </div>
@@ -174,17 +174,46 @@ function renderResults() {
         tbody.innerHTML = `<tr><td colspan="7" class="text-light">${q ? 'No matching results.' : 'No results found.'}</td></tr>`;
         return;
     }
+    // Inline SVG icon helpers for JS-generated HTML
+    const svgIcon = (paths, size=14) => `<svg class="icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+    const icons = {
+        barChart: svgIcon('<path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/>'),
+        externalLink: svgIcon('<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>'),
+        moreHorizontal: svgIcon('<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>', 16),
+        download: svgIcon('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>'),
+        refreshCw: svgIcon('<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/>'),
+        folderOpen: svgIcon('<path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/>'),
+        trash: svgIcon('<path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/>'),
+    };
+
     tbody.innerHTML = filtered.map(f => {
         const eName = escHtml(f.name);
         const aName = escAttr(f.name);
-        let actions = '';
-        if (f.has_jtl) actions += `<button class="btn btn-outline btn-sm" onclick="toggleStats('${aName}')" title="Preview stats">Stats</button>`;
-        if (f.has_report) actions += `<button class="btn btn-outline btn-sm" onclick="openReport('${aName}')">Report &#8599;</button>`;
-        if (f.has_report) actions += `<button class="btn btn-outline btn-sm" onclick="downloadReport('${aName}')" title="Download report as zip">Download</button>`;
-        if (f.has_jtl && isAdmin) actions += `<button class="btn btn-outline btn-sm" id="regen-${eName}" onclick="regenerateReport('${aName}')">Regenerate</button>`;
-        if (isLocalhost) actions += `<button class="btn btn-outline btn-sm" onclick="openFolder('${aName}')">Open</button>`;
-        if (isAdmin) actions += `<button class="btn btn-sm btn-outline" onclick="deleteResult('${aName}')" style="color:var(--color-danger);border-color:var(--color-danger);">Delete</button>`;
-        const analysisBadge = f.has_analysis ? ' <span class="badge badge-info" title="Analysis available">AI</span>' : '';
+
+        // Primary visible buttons: Stats + Report
+        let primaryBtns = '';
+        if (f.has_jtl) primaryBtns += `<button class="btn btn-outline btn-sm" onclick="toggleStats('${aName}')" data-tooltip="Preview stats">${icons.barChart} Stats</button>`;
+        if (f.has_report) primaryBtns += `<button class="btn btn-outline btn-sm" onclick="openReport('${aName}')" data-tooltip="Open report">${icons.externalLink} Report</button>`;
+
+        // Overflow dropdown items: Download, Regenerate, Open Folder, Delete
+        let dropdownItems = '';
+        if (f.has_report) dropdownItems += `<button class="dropdown-item" onclick="downloadReport('${aName}')">${icons.download} Download Report</button>`;
+        if (f.has_jtl && isAdmin) dropdownItems += `<button class="dropdown-item" id="regen-${eName}" onclick="regenerateReport('${aName}')">${icons.refreshCw} Regenerate</button>`;
+        if (isLocalhost) dropdownItems += `<button class="dropdown-item" onclick="openFolder('${aName}')">${icons.folderOpen} Open Folder</button>`;
+        if (isAdmin) {
+            if (dropdownItems) dropdownItems += '<div class="dropdown-divider"></div>';
+            dropdownItems += `<button class="dropdown-item danger" onclick="deleteResult('${aName}')">${icons.trash} Delete</button>`;
+        }
+
+        let dropdownHtml = '';
+        if (dropdownItems) {
+            dropdownHtml = `<div class="dropdown">
+                <button class="btn btn-sm btn-icon" onclick="toggleDropdown(this)" data-tooltip="More actions">${icons.moreHorizontal}</button>
+                <div class="dropdown-menu">${dropdownItems}</div>
+            </div>`;
+        }
+
+        const actions = primaryBtns + dropdownHtml;
         const jtlNames = (f.jtl_files || []).join(', ');
         return `<tr>
             <td><label class="check"><input type="checkbox" class="result-check" value="${aName}" onchange="updateSelectionBtns()"><span class="check-box"></span></label></td>
@@ -193,7 +222,7 @@ function renderResults() {
             <td>${formatSize(f.size)}</td>
             <td>${f.has_report ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-danger">No</span>'}</td>
             <td>${f.has_jtl ? `<span class="badge badge-success" title="${escAttr(jtlNames)}">Yes</span>` : '<span class="badge badge-danger">No</span>'}</td>
-            <td class="table-actions"><div class="flex gap-8" style="flex-wrap:wrap;">${actions}</div></td>
+            <td class="table-actions"><div class="flex gap-8" style="align-items:center;">${actions}</div></td>
         </tr>
         <tr class="stats-row hidden" id="stats-${eName}"><td colspan="7" style="padding:0;"></td></tr>`;
     }).join('');
@@ -324,6 +353,7 @@ async function doRegenerate() {
     closeModal('regenModal');
 
     const btn = document.getElementById('regen-' + folder);
+    const btnOrigHtml = btn ? btn.innerHTML : '';
     if (btn) { btn.disabled = true; btn.textContent = 'Regenerating...'; }
     showToast('Regenerating report — this may take several minutes for large files...', 'info', 600000, 'regen-toast');
     document.getElementById('stopRegenBtn').classList.remove('hidden');
@@ -361,7 +391,7 @@ async function doRegenerate() {
         regenAbortController = null;
         document.getElementById('stopRegenBtn').classList.add('hidden');
         dismissToast('regen-toast');
-        if (btn) { btn.disabled = false; btn.textContent = 'Regenerate'; }
+        if (btn) { btn.disabled = false; btn.innerHTML = btnOrigHtml; }
     }
 }
 
@@ -433,13 +463,13 @@ async function toggleStats(folder) {
         return;
     }
     const cell = row.querySelector('td');
-    cell.innerHTML = '<div style="padding:12px;"><span class="text-light">Loading stats...</span></div>';
+    cell.innerHTML = '<div class="p-12"><span class="text-light">Loading stats...</span></div>';
     row.classList.remove('hidden');
     try {
         const data = await api(`/api/results/${encodeURIComponent(folder)}/stats`);
-        if (data.error) { cell.innerHTML = `<div style="padding:12px;" class="text-light">${escHtml(data.error)}</div>`; return; }
+        if (data.error) { cell.innerHTML = `<div class="p-12 text-light">${escHtml(data.error)}</div>`; return; }
         const o = data.overall;
-        let html = `<div style="padding:12px;background:var(--color-surface-alt);border-top:1px solid var(--color-border);">
+        let html = `<div class="surface-card p-12" style="border-radius:0;border-top:1px solid var(--color-border);">
             <div class="form-row mb-8">
                 <div class="surface-card"><span class="text-sm text-light">Samples</span><div class="text-bold">${o.total_samples.toLocaleString()}</div></div>
                 <div class="surface-card"><span class="text-sm text-light">Avg RT</span><div class="text-bold">${o.avg.toFixed(0)} ms</div></div>
@@ -449,7 +479,7 @@ async function toggleStats(folder) {
                 <div class="surface-card"><span class="text-sm text-light">Duration</span><div class="text-bold">${o.duration_sec.toFixed(0)}s</div></div>
             </div>`;
         if (data.transactions && data.transactions.length > 0) {
-            html += `<div style="overflow-x:auto;"><table style="width:100%;font-size:12px;">
+            html += `<div class="table-wrapper"><table class="text-xs">
                 <thead><tr><th>Label</th><th>Samples</th><th>Avg</th><th>Median</th><th>P90</th><th>P95</th><th>Min</th><th>Max</th><th>Error %</th></tr></thead><tbody>`;
             data.transactions.forEach(t => {
                 html += `<tr><td class="text-mono">${escHtml(t.label)}</td><td>${t.samples}</td><td>${t.avg}</td><td>${t.median}</td><td>${t.p90}</td><td>${t.p95}</td><td>${t.min}</td><td>${t.max}</td>
@@ -460,7 +490,7 @@ async function toggleStats(folder) {
         html += '</div>';
         cell.innerHTML = html;
     } catch(e) {
-        cell.innerHTML = `<div style="padding:12px;" class="text-light">Failed to load stats</div>`;
+        cell.innerHTML = `<div class="p-12 text-light">Failed to load stats</div>`;
     }
 }
 
@@ -564,6 +594,13 @@ async function bulkDelete() {
         btn.textContent = 'Delete Selected';
     }
 }
+
+// Close dropdown menus when a dropdown-item is clicked
+document.addEventListener('click', e => {
+    if (e.target.closest('.dropdown-item')) {
+        document.querySelectorAll('.dropdown-menu.open').forEach(m => m.classList.remove('open'));
+    }
+});
 
 loadResults();
 </script>
