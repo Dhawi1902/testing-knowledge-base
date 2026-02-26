@@ -22,6 +22,7 @@
         <button class="tab-btn" data-tab="tab-project" role="tab" aria-selected="false" aria-controls="tab-project">Project</button>
         <button class="tab-btn" data-tab="tab-report" role="tab" aria-selected="false" aria-controls="tab-report">Report</button>
         <button class="tab-btn" data-tab="tab-integrations" role="tab" aria-selected="false" aria-controls="tab-integrations">Integrations</button>
+        <button class="tab-btn" data-tab="tab-jmeter" role="tab" aria-selected="false" aria-controls="tab-jmeter">JMeter</button>
         <button class="tab-btn" data-tab="tab-system" role="tab" aria-selected="false" aria-controls="tab-system">System</button>
     </div>
 
@@ -147,6 +148,7 @@
                 <label class="form-label">Access Token</label>
                 <div id="tokenStatusArea" style="margin-bottom:8px;"></div>
                 <form onsubmit="return false" style="position:relative;">
+                    <input type="text" name="username" autocomplete="username" style="display:none" aria-hidden="true" tabindex="-1">
                     <input class="form-input form-input-mono" id="set_auth_token" type="password" placeholder="Enter new token to change" style="padding-right:40px;" autocomplete="new-password">
                     <button type="button" onclick="toggleTokenVisibility()" id="tokenToggleBtn"
                         style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--color-text-light);font-size:13px;padding:2px 4px;">Show</button>
@@ -304,6 +306,51 @@
         <div class="flex gap-8">
             <button class="btn btn-outline btn-sm" id="testOllamaBtn" onclick="testOllama()">Test Connection</button>
             <span class="text-light text-sm" id="ollamaStatus"></span>
+        </div>
+    </div>
+
+    <!-- ==================== JMeter Tab ==================== -->
+    <div id="tab-jmeter" class="tab-panel" role="tabpanel">
+
+        <div class="flex gap-8 mb-16" style="justify-content:space-between;align-items:center;">
+            <div>
+                <h3 class="text-sm section-title" style="margin:0;">Master Properties</h3>
+                <span class="text-light text-sm">user.properties overrides applied to the JMeter master <span id="jpropsCount"></span></span>
+            </div>
+            {% if access_level != 'viewer' %}
+            <div class="flex gap-8">
+                <button class="btn btn-outline btn-sm" onclick="openAddPropertyModal()">+ Add Property</button>
+                <button class="btn btn-primary btn-sm" onclick="saveJmeterProperties()">Save</button>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Properties content -->
+        <div id="jpropsContainer">
+            <div class="text-light" style="text-align:center;padding:16px;">Loading...</div>
+        </div>
+        <div class="text-sm text-light" id="jpropsPath" style="margin-top:8px;"></div>
+    </div>
+
+    <!-- Add Property Modal -->
+    <div id="addPropModal" class="modal-overlay">
+        <div class="modal" style="max-width:600px;padding:0;">
+            <div class="modal-header">
+                <h3>Add JMeter Property</h3>
+                <button class="modal-close" onclick="closeAddPropertyModal()">&times;</button>
+            </div>
+            <div style="padding:16px;">
+                <input class="form-input mb-8" id="propSearchInput" type="text" placeholder="Search properties... (e.g. rmi, http, timeout)" oninput="filterPropertyList(this.value)">
+                <div id="propSearchResults" style="max-height:400px;overflow-y:auto;"></div>
+                <div style="margin-top:12px;border-top:1px solid var(--color-border);padding-top:12px;">
+                    <div class="text-sm text-bold mb-4">Custom Property</div>
+                    <div class="flex gap-8">
+                        <input class="form-input form-input-mono" id="customPropKey" placeholder="key" style="flex:1;">
+                        <input class="form-input form-input-mono" id="customPropVal" placeholder="value" style="flex:1;">
+                        <button class="btn btn-primary btn-sm" onclick="addCustomProperty()">Add</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -689,9 +736,207 @@ async function importSettings(input) {
     input.value = '';
 }
 
+// ===== JMeter Master Properties =====
+let jpropsCatalog = [];
+let jpropsOverrides = {};
+let jpropsPath = '';
+
+const CURATED_MASTER = {
+    'Distributed / RMI': ['remote_hosts','client.rmi.localport','java.rmi.server.hostname','server.rmi.ssl.disable'],
+    'Remote Batching': ['mode','num_sample_threshold','time_threshold'],
+    'Results / JTL Save': ['jmeter.save.saveservice.output_format','jmeter.save.saveservice.response_data','jmeter.save.saveservice.samplerData','jmeter.save.saveservice.requestHeaders','jmeter.save.saveservice.url','jmeter.save.saveservice.responseHeaders','jmeter.save.saveservice.timestamp_format'],
+    'Report Generator': ['jmeter.reportgenerator.apdex_satisfied_threshold','jmeter.reportgenerator.apdex_tolerated_threshold','jmeter.reportgenerator.overall_granularity'],
+    'Summariser': ['summariser.interval','summariser.out'],
+    'HTTP': ['httpclient4.retrycount','httpclient4.time_to_live','httpclient4.idletimeout','httpsampler.ignore_failed_embedded_resources'],
+};
+
+async function loadJmeterProperties() {
+    try {
+        const [catalogResp, propsResp] = await Promise.all([
+            api('/api/config/jmeter-properties/catalog'),
+            api('/api/config/jmeter-properties/master'),
+        ]);
+        jpropsCatalog = catalogResp.catalog || [];
+        jpropsOverrides = propsResp.properties || {};
+        jpropsPath = propsResp.path || '';
+        renderJmeterProperties();
+    } catch (e) {
+        document.getElementById('jpropsContainer').innerHTML =
+            '<div class="text-light" style="text-align:center;padding:16px;">Failed to load properties.</div>';
+    }
+}
+
+function renderJmeterProperties() {
+    const container = document.getElementById('jpropsContainer');
+    const catalogMap = {};
+    jpropsCatalog.forEach(e => { catalogMap[e.key] = e; });
+
+    let html = '';
+    const renderedKeys = new Set();
+
+    for (const [section, keys] of Object.entries(CURATED_MASTER)) {
+        html += `<div class="mb-16">`;
+        html += `<div class="text-sm text-bold mb-4" style="color:var(--color-text-secondary);">${escHtml(section)}</div>`;
+        html += `<div class="props-grid">`;
+        keys.forEach(key => {
+            renderedKeys.add(key);
+            const override = jpropsOverrides[key];
+            const catalogEntry = catalogMap[key];
+            const defaultVal = catalogEntry ? catalogEntry.default : '';
+            const desc = catalogEntry ? catalogEntry.description : '';
+            const hasOverride = override !== undefined && override !== '';
+            const displayVal = hasOverride ? override : defaultVal;
+            const inputClass = hasOverride ? 'form-input form-input-mono' : 'form-input form-input-mono text-light';
+
+            html += `<div class="prop-row flex gap-8 mb-4" style="align-items:center;">`;
+            html += `<label class="form-label" style="min-width:280px;font-family:var(--font-mono);font-size:12px;" title="${escAttr(desc)}">${escHtml(key)}</label>`;
+            html += `<input class="${inputClass} jprop-input" data-key="${escAttr(key)}" value="${escAttr(displayVal)}" `;
+            html += `placeholder="${escAttr(defaultVal)}" ${isAdmin ? '' : 'readonly'} `;
+            html += `style="flex:1;${hasOverride ? '' : 'opacity:0.5;'}" `;
+            html += `onfocus="this.style.opacity='1'" onblur="if(!this.value||this.value==='${escAttr(defaultVal)}')this.style.opacity='0.5'">`;
+            if (isAdmin && hasOverride) {
+                html += `<button class="del-btn" onclick="resetJprop('${escAttr(key)}')" title="Reset to default">&circlearrowright;</button>`;
+            } else {
+                html += `<span style="width:24px;display:inline-block;"></span>`;
+            }
+            html += `</div>`;
+        });
+        html += `</div></div>`;
+    }
+
+    const customKeys = Object.keys(jpropsOverrides).filter(k => !renderedKeys.has(k));
+    if (customKeys.length) {
+        html += `<div class="mb-16">`;
+        html += `<div class="text-sm text-bold mb-4" style="color:var(--color-text-secondary);">Custom Overrides</div>`;
+        customKeys.forEach(key => {
+            renderedKeys.add(key);
+            html += `<div class="prop-row flex gap-8 mb-4" style="align-items:center;">`;
+            html += `<input class="form-input form-input-mono jprop-key" value="${escAttr(key)}" style="min-width:280px;" ${isAdmin ? '' : 'readonly'}>`;
+            html += `<input class="form-input form-input-mono jprop-input" data-key="${escAttr(key)}" value="${escAttr(jpropsOverrides[key])}" style="flex:1;" ${isAdmin ? '' : 'readonly'}>`;
+            if (isAdmin) {
+                html += `<button class="del-btn" onclick="resetJprop('${escAttr(key)}')" title="Remove">&times;</button>`;
+            }
+            html += `</div>`;
+        });
+        html += `</div>`;
+    }
+
+    if (!html) {
+        html = '<div class="text-light" style="text-align:center;padding:16px;">No properties. Click "+ Add Property" to configure.</div>';
+    }
+
+    container.innerHTML = html;
+    document.getElementById('jpropsPath').textContent = jpropsPath ? `File: ${jpropsPath}` : '';
+
+    const count = Object.keys(jpropsOverrides).length;
+    document.getElementById('jpropsCount').textContent = count ? `(${count} override${count > 1 ? 's' : ''})` : '';
+}
+
+function resetJprop(key) {
+    delete jpropsOverrides[key];
+    renderJmeterProperties();
+}
+
+async function saveJmeterProperties() {
+    const inputs = document.querySelectorAll('.jprop-input');
+    const props = {};
+    inputs.forEach(input => {
+        if (input.parentElement.querySelector('.jprop-key')) return;
+        const key = input.dataset.key;
+        const val = input.value.trim();
+        if (key && val) props[key] = val;
+    });
+    const keyInputs = document.querySelectorAll('.jprop-key');
+    keyInputs.forEach(keyInput => {
+        const newKey = keyInput.value.trim();
+        const valInput = keyInput.parentElement.querySelector('.jprop-input');
+        if (newKey && valInput && valInput.value.trim()) {
+            const origKey = valInput.dataset.key;
+            if (origKey !== newKey) delete props[origKey];
+            props[newKey] = valInput.value.trim();
+        }
+    });
+    try {
+        await api('/api/config/jmeter-properties/master', { method: 'PUT', body: { properties: props } });
+        jpropsOverrides = props;
+        showToast('Master properties saved', 'success');
+        renderJmeterProperties();
+    } catch (e) {
+        showToast('Failed to save properties', 'error');
+    }
+}
+
+// --- Add Property Modal ---
+function openAddPropertyModal() {
+    document.getElementById('addPropModal').classList.add('active');
+    document.getElementById('propSearchInput').value = '';
+    document.getElementById('propSearchInput').focus();
+    filterPropertyList('');
+}
+
+function closeAddPropertyModal() {
+    document.getElementById('addPropModal').classList.remove('active');
+}
+
+function filterPropertyList(query) {
+    const container = document.getElementById('propSearchResults');
+    const q = query.toLowerCase();
+    let filtered = jpropsCatalog;
+    if (q) {
+        filtered = jpropsCatalog.filter(e =>
+            e.key.toLowerCase().includes(q) ||
+            e.description.toLowerCase().includes(q) ||
+            e.category.toLowerCase().includes(q)
+        );
+    }
+    const groups = {};
+    filtered.slice(0, 50).forEach(e => {
+        if (!groups[e.category]) groups[e.category] = [];
+        groups[e.category].push(e);
+    });
+    let html = '';
+    for (const [cat, entries] of Object.entries(groups)) {
+        html += `<div class="text-sm text-bold mb-4 mt-8" style="color:var(--color-text-secondary);">${escHtml(cat)}</div>`;
+        entries.forEach(e => {
+            const already = e.key in jpropsOverrides;
+            html += `<div class="prop-search-item flex gap-8 mb-2" style="align-items:center;padding:4px 8px;border-radius:4px;cursor:pointer;${already ? 'opacity:0.4;' : ''}" `;
+            html += `data-pkey="${escAttr(e.key)}" data-pdefault="${escAttr(e.default)}" `;
+            html += `onclick="${already ? '' : 'addCatalogPropertyFromEl(this)'}">`;
+            html += `<code style="min-width:240px;font-size:12px;">${escHtml(e.key)}</code>`;
+            html += `<span class="text-light text-sm" style="flex:1;">${escHtml(e.description).substring(0, 80)}</span>`;
+            html += `<code class="text-light" style="font-size:11px;">${escHtml(e.default)}</code>`;
+            html += `</div>`;
+        });
+    }
+    if (!html) html = '<div class="text-light" style="text-align:center;padding:16px;">No matching properties.</div>';
+    if (filtered.length > 50) html += `<div class="text-light text-sm" style="text-align:center;padding:8px;">Showing 50 of ${filtered.length} — type to narrow results</div>`;
+    container.innerHTML = html;
+}
+
+function addCatalogProperty(key, defaultVal) {
+    jpropsOverrides[key] = defaultVal;
+    renderJmeterProperties();
+    closeAddPropertyModal();
+    showToast(`Added ${key}`, 'success');
+}
+
+function addCatalogPropertyFromEl(el) {
+    addCatalogProperty(el.dataset.pkey, el.dataset.pdefault);
+}
+
+function addCustomProperty() {
+    const key = document.getElementById('customPropKey').value.trim();
+    const val = document.getElementById('customPropVal').value.trim();
+    if (!key) { showToast('Key cannot be empty', 'warning'); return; }
+    jpropsOverrides[key] = val;
+    renderJmeterProperties();
+    closeAddPropertyModal();
+    showToast(`Added ${key}`, 'success');
+}
+
 // Init
 initTabs('.tabs');
-Promise.all([loadSettings(), loadProjectConfig(), loadReportSettings()]).then(() => applyAccessControl());
+Promise.all([loadSettings(), loadProjectConfig(), loadReportSettings(), loadJmeterProperties()]).then(() => applyAccessControl());
 loadSystemInfo();
 </script>
 {% endblock %}

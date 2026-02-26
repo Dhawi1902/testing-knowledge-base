@@ -121,18 +121,14 @@
 </div>
 {% endif %}
 
-<!-- JMeter Properties Editor (#26 redesign) -->
+<!-- Slave JMeter Properties (#26) -->
 <div class="card" style="margin-top:24px;">
     <div class="card-header" style="cursor:pointer;" onclick="toggleJmeterProps()">
-        <span class="card-title"><span class="collapse-icon" id="jpropsIcon">&#9654;</span> JMeter Properties</span>
-        <span class="text-light text-sm">user.properties overrides <span id="jpropsCount"></span></span>
+        <span class="card-title"><span class="collapse-icon" id="jpropsIcon">&#9654;</span> Slave Properties</span>
+        <span class="text-light text-sm">slave-user.properties overrides <span id="jpropsCount"></span></span>
     </div>
     <div id="jpropsBody" style="display:none;">
-        <!-- Tabs: Master | Slave -->
-        <div class="flex gap-8 mb-16" style="border-bottom:1px solid var(--color-border);padding-bottom:8px;">
-            <button class="btn btn-sm" id="jpropsTabMaster" onclick="switchJpropsTab('master')" style="font-weight:bold;">Master</button>
-            <button class="btn btn-sm btn-outline" id="jpropsTabSlave" onclick="switchJpropsTab('slave')">Slave</button>
-            <div style="flex:1;"></div>
+        <div class="flex gap-8 mb-16" style="justify-content:flex-end;">
             {% if access_level != 'viewer' %}
             <button class="btn btn-outline btn-sm" onclick="openAddPropertyModal()">+ Add Property</button>
             <button class="btn btn-primary btn-sm" onclick="saveJmeterProperties()">Save</button>
@@ -938,21 +934,11 @@ function toggleSlaveList() {
     icon.innerHTML = hidden ? '&#9660;' : '&#9654;';
 }
 
-// ===== JMeter Properties Editor =====
-let jpropsTab = 'master';
+// ===== Slave JMeter Properties =====
 let jpropsCatalog = [];
 let jpropsOverrides = {};
 let jpropsPath = '';
 
-// Curated property keys per tab
-const CURATED_MASTER = {
-    'Distributed / RMI': ['remote_hosts','client.rmi.localport','java.rmi.server.hostname','server.rmi.ssl.disable'],
-    'Remote Batching': ['mode','num_sample_threshold','time_threshold'],
-    'Results / JTL Save': ['jmeter.save.saveservice.output_format','jmeter.save.saveservice.response_data','jmeter.save.saveservice.samplerData','jmeter.save.saveservice.requestHeaders','jmeter.save.saveservice.url','jmeter.save.saveservice.responseHeaders','jmeter.save.saveservice.timestamp_format'],
-    'Report Generator': ['jmeter.reportgenerator.apdex_satisfied_threshold','jmeter.reportgenerator.apdex_tolerated_threshold','jmeter.reportgenerator.overall_granularity'],
-    'Summariser': ['summariser.interval','summariser.out'],
-    'HTTP': ['httpclient4.retrycount','httpclient4.time_to_live','httpclient4.idletimeout','httpsampler.ignore_failed_embedded_resources'],
-};
 const CURATED_SLAVE = {
     'RMI': ['server.rmi.localport','server_port','java.rmi.server.hostname','server.rmi.ssl.disable'],
     'Runtime': ['server.exitaftertest'],
@@ -969,20 +955,11 @@ function toggleJmeterProps() {
     if (hidden && !jpropsCatalog.length) loadJmeterProperties();
 }
 
-function switchJpropsTab(tab) {
-    jpropsTab = tab;
-    document.getElementById('jpropsTabMaster').className = tab === 'master' ? 'btn btn-sm' : 'btn btn-sm btn-outline';
-    document.getElementById('jpropsTabSlave').className = tab === 'slave' ? 'btn btn-sm' : 'btn btn-sm btn-outline';
-    document.getElementById('jpropsTabMaster').style.fontWeight = tab === 'master' ? 'bold' : '';
-    document.getElementById('jpropsTabSlave').style.fontWeight = tab === 'slave' ? 'bold' : '';
-    loadJmeterProperties();
-}
-
 async function loadJmeterProperties() {
     try {
         const [catalogResp, propsResp] = await Promise.all([
             api('/api/config/jmeter-properties/catalog'),
-            api(`/api/config/jmeter-properties/${jpropsTab}`),
+            api('/api/config/jmeter-properties/slave'),
         ]);
         jpropsCatalog = catalogResp.catalog || [];
         jpropsOverrides = propsResp.properties || {};
@@ -996,7 +973,7 @@ async function loadJmeterProperties() {
 
 function renderJmeterProperties() {
     const container = document.getElementById('jpropsContainer');
-    const curated = jpropsTab === 'master' ? CURATED_MASTER : CURATED_SLAVE;
+    const curated = CURATED_SLAVE;
     const catalogMap = {};
     jpropsCatalog.forEach(e => { catalogMap[e.key] = e; });
 
@@ -1095,9 +1072,9 @@ async function saveJmeterProperties() {
         }
     });
     try {
-        await api(`/api/config/jmeter-properties/${jpropsTab}`, { method: 'PUT', body: { properties: props } });
+        await api('/api/config/jmeter-properties/slave', { method: 'PUT', body: { properties: props } });
         jpropsOverrides = props;
-        showToast(`${jpropsTab === 'master' ? 'Master' : 'Slave'} properties saved`, 'success');
+        showToast('Slave properties saved', 'success');
         renderJmeterProperties();
     } catch (e) {
         showToast('Failed to save properties', 'error');
