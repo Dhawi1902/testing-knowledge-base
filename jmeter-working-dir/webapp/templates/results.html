@@ -508,7 +508,7 @@ async function editLabel(el) {
     const folder = el.dataset.folder;
     const current = allFolders.find(f => f.name === folder);
     const currentLabel = current ? (current.label || '') : '';
-    const newLabel = prompt('Set label for ' + folder + ' (leave empty to clear):', currentLabel);
+    const newLabel = await promptAction('Set Label', { placeholder: 'e.g. Baseline 15k users', defaultValue: currentLabel, description: 'Label for ' + folder });
     if (newLabel === null) return; // cancelled
     try {
         await api(`/api/results/${encodeURIComponent(folder)}/label`, {

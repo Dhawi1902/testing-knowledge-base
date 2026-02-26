@@ -569,12 +569,12 @@ function selectPreset(key) {
     renderPresetList();
 }
 
-function saveCustomPreset() {
+async function saveCustomPreset() {
     const columns = getColumnDefs();
     const filename = document.getElementById('buildFilename').value.trim();
     const rc = parseInt(document.getElementById('buildRowCount').value) || 0;
-    const label = prompt('Preset name:');
-    if (!label || !label.trim()) return;
+    const label = await promptAction('Save Preset', { placeholder: 'e.g. Student Login Data', validate: v => v ? null : 'Name is required' });
+    if (!label) return;
     const key = label.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
     const custom = getCustomPresets();
     const preset = { label: label.trim(), filename, columns };

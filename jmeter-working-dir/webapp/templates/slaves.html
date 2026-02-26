@@ -493,8 +493,8 @@ function editSlaveIp(oldIp, spanEl) {
 }
 
 async function addSlave() {
-    const ip = prompt('Enter slave IP address:');
-    if (!ip || !ip.trim()) return;
+    const ip = await promptAction('Add Slave', { placeholder: '10.0.0.1 or 100.64.1.2', description: 'Enter the slave VM IP address', validate: v => v && v.trim() ? null : 'Enter a valid IP address' });
+    if (!ip) return;
     const trimmed = ip.trim();
     // Basic IP/hostname validation
     const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;

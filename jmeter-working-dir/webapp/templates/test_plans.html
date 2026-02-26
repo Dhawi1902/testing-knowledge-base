@@ -1035,8 +1035,8 @@ async function renamePlan() {
     const filename = document.getElementById('selectedPlan').value;
     if (!filename) return;
     const stem = filename.replace(/\.jmx$/i, '');
-    const newName = prompt('Rename test plan:', stem);
-    if (!newName || newName.trim() === '' || newName.trim() === stem) return;
+    const newName = await promptAction('Rename Test Plan', { defaultValue: stem, validate: v => v && v.trim() !== stem ? null : 'Enter a new name' });
+    if (!newName) return;
     try {
         const data = await api(`/api/plans/${encodeURIComponent(filename)}/rename`, {
             method: 'POST',

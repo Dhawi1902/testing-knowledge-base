@@ -195,6 +195,48 @@ document.addEventListener('keydown', e => {
     }
 });
 
+/* ===== Prompt Dialog ===== */
+let _promptResolve = null;
+let _promptValidate = null;
+function promptAction(title, { placeholder = '', defaultValue = '', description = '', validate = null } = {}) {
+    return new Promise(resolve => {
+        _promptResolve = resolve;
+        _promptValidate = validate;
+        document.getElementById('promptTitle').textContent = title;
+        document.getElementById('promptDesc').textContent = description;
+        document.getElementById('promptDesc').style.display = description ? 'block' : 'none';
+        const input = document.getElementById('promptInput');
+        input.placeholder = placeholder;
+        input.value = defaultValue;
+        document.getElementById('promptError').style.display = 'none';
+        openModal('promptModal');
+        input.focus();
+        input.select();
+    });
+}
+function submitPromptModal() {
+    const value = document.getElementById('promptInput').value.trim();
+    if (_promptValidate) {
+        const err = _promptValidate(value);
+        if (err) {
+            const errEl = document.getElementById('promptError');
+            errEl.textContent = err;
+            errEl.style.display = 'block';
+            return;
+        }
+    }
+    closeModal('promptModal');
+    if (_promptResolve) { _promptResolve(value); _promptResolve = null; }
+}
+function closePromptModal(value) {
+    closeModal('promptModal');
+    if (_promptResolve) { _promptResolve(value); _promptResolve = null; }
+}
+document.getElementById('promptInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') submitPromptModal();
+    if (e.key === 'Escape') closePromptModal(null);
+});
+
 /* ===== WebSocket Manager ===== */
 class WSManager {
     constructor(url, options = {}) {
