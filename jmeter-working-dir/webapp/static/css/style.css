@@ -573,6 +573,12 @@ th.sort-desc::after { content: ' \25BC'; font-size: 0.7em; }
 .dropdown-item.danger:hover { background: var(--color-danger-subtle); }
 .dropdown-divider { height: 1px; margin: 4px 0; background: var(--color-border); }
 
+/* ===== Tooltips ===== */
+[data-tooltip] { position: relative; }
+[data-tooltip]::after { content: attr(data-tooltip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); padding: 4px 8px; font-size: 0.75rem; font-weight: 500; color: #fff; background: #1e293b; border-radius: var(--radius-sm); white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity 0.15s; z-index: 100; margin-bottom: 6px; }
+[data-tooltip]:hover::after { opacity: 1; }
+[data-theme="dark"] [data-tooltip]::after { background: #e2e8f0; color: #0f172a; }
+
 /* ===== Log Output ===== */
 .log-output {
     background: #0f172a;
