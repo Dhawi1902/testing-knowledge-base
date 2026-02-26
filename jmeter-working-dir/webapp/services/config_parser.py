@@ -229,3 +229,80 @@ def write_slaves(path: Path, slaves: list[dict]) -> None:
     """Write slave objects to file as JSON."""
     with open(path, "w", encoding="utf-8") as f:
         json.dump(slaves, f, indent=2, ensure_ascii=False)
+
+
+def parse_jmeter_properties_catalog(path: Path) -> list[dict]:
+    """Parse jmeter.properties file to extract a catalog of all properties.
+
+    Returns list of {"key": str, "default": str, "description": str, "category": str}.
+    Reads both commented-out (#key=value) and active (key=value) properties.
+    Categories are detected from section header comments like '#---...'.
+    """
+    if not path.exists():
+        return []
+
+    catalog = []
+    current_category = "General"
+    description_lines = []
+
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            stripped = line.strip()
+
+            # Detect section headers: lines like "#----" preceded by "# Section Name"
+            if stripped.startswith("#") and stripped.replace("#", "").replace("-", "").strip() == "":
+                # This is a separator line like "#-----------"
+                # Check if the previous description line is a category name
+                if description_lines:
+                    candidate = description_lines[-1].strip()
+                    # Category names are short, don't contain '=' and aren't property descriptions
+                    if candidate and "=" not in candidate and len(candidate) < 80:
+                        current_category = candidate
+                        description_lines = []
+                continue
+
+            # Collect comment lines as potential descriptions
+            if stripped.startswith("#"):
+                content = stripped.lstrip("#").strip()
+                # Skip license headers and empty comments
+                if content and not content.startswith("Licensed to") and not content.startswith("http://"):
+                    # Check if this is a commented-out property: #key=value
+                    if "=" in content and not content.startswith(" ") and not any(c == " " for c in content.split("=", 1)[0]):
+                        key, _, value = content.partition("=")
+                        key = key.strip()
+                        value = value.strip()
+                        if key and not key.startswith("Example") and not key.startswith("//"):
+                            desc = " ".join(description_lines[-3:]) if description_lines else ""
+                            catalog.append({
+                                "key": key,
+                                "default": value,
+                                "description": desc,
+                                "category": current_category,
+                            })
+                            description_lines = []
+                            continue
+                    description_lines.append(content)
+                continue
+
+            # Active (uncommented) property: key=value
+            if "=" in stripped:
+                key, _, value = stripped.partition("=")
+                key = key.strip()
+                value = value.strip()
+                if key:
+                    desc = " ".join(description_lines[-3:]) if description_lines else ""
+                    catalog.append({
+                        "key": key,
+                        "default": value,
+                        "description": desc,
+                        "category": current_category,
+                    })
+                    description_lines = []
+                continue
+
+            # Blank line — reset description buffer
+            if not stripped:
+                description_lines = []
+                continue
+
+    return catalog

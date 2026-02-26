@@ -537,6 +537,82 @@ class TestHealthHistoryEndpoint:
         admin_client.delete(f"{bp}/api/slaves/health-history")
 
 
+class TestJmeterPropertiesCatalog:
+    """Unit tests for parse_jmeter_properties_catalog()."""
+
+    def test_parse_catalog_from_sample(self, tmp_path):
+        """Parse a sample jmeter.properties file and extract catalog entries."""
+        from services.config_parser import parse_jmeter_properties_catalog
+
+        sample = tmp_path / "jmeter.properties"
+        sample.write_text(
+            "#---------------------------------------------------------------------------\n"
+            "# Distributed Testing\n"
+            "#---------------------------------------------------------------------------\n"
+            "\n"
+            "# Set this if you don't want to use SSL for RMI\n"
+            "#server.rmi.ssl.disable=false\n"
+            "\n"
+            "# Comma-separated list of remote servers\n"
+            "remote_hosts=127.0.0.1\n"
+            "\n"
+            "#---------------------------------------------------------------------------\n"
+            "# HTTP\n"
+            "#---------------------------------------------------------------------------\n"
+            "\n"
+            "# Number of retries for HTTP\n"
+            "#httpclient4.retrycount=0\n",
+            encoding="utf-8",
+        )
+        catalog = parse_jmeter_properties_catalog(sample)
+        assert len(catalog) >= 3
+        # Check a commented-out property
+        ssl_entry = next(e for e in catalog if e["key"] == "server.rmi.ssl.disable")
+        assert ssl_entry["default"] == "false"
+        assert "SSL" in ssl_entry["description"] or "ssl" in ssl_entry["description"].lower()
+        assert ssl_entry["category"] == "Distributed Testing"
+        # Check an active property
+        hosts_entry = next(e for e in catalog if e["key"] == "remote_hosts")
+        assert hosts_entry["default"] == "127.0.0.1"
+        assert hosts_entry["category"] == "Distributed Testing"
+        # Check category change
+        http_entry = next(e for e in catalog if e["key"] == "httpclient4.retrycount")
+        assert http_entry["category"] == "HTTP"
+        assert http_entry["default"] == "0"
+
+    def test_parse_catalog_no_properties(self, tmp_path):
+        """File with only comments returns empty catalog."""
+        from services.config_parser import parse_jmeter_properties_catalog
+
+        sample = tmp_path / "jmeter.properties"
+        sample.write_text("# Just comments\n", encoding="utf-8")
+        catalog = parse_jmeter_properties_catalog(sample)
+        assert catalog == []
+
+    def test_parse_catalog_missing_file(self, tmp_path):
+        """Missing file returns empty catalog."""
+        from services.config_parser import parse_jmeter_properties_catalog
+
+        catalog = parse_jmeter_properties_catalog(tmp_path / "nope.properties")
+        assert catalog == []
+
+    def test_description_does_not_bleed_across_blank_lines(self, tmp_path):
+        """Comments separated by a blank line are not merged into one description."""
+        from services.config_parser import parse_jmeter_properties_catalog
+
+        sample = tmp_path / "jmeter.properties"
+        sample.write_text(
+            "# Unrelated comment\n"
+            "\n"
+            "# Direct description\n"
+            "#key=val\n",
+            encoding="utf-8",
+        )
+        catalog = parse_jmeter_properties_catalog(sample)
+        assert len(catalog) == 1
+        assert catalog[0]["description"] == "Direct description"
+
+
 class TestResourceMonitoringEndpoint:
     """API tests for resource monitoring endpoint (#30)."""
 
