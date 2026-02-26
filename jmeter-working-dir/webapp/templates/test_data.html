@@ -3,12 +3,23 @@
 {% block title %}Test Data{% endblock %}
 {% block page_title %}Test Data{% endblock %}
 
+{% block head %}
+<style>
+/* Preview table zebra striping */
+#buildPreviewTable tbody tr:nth-child(even),
+#previewContent tbody tr:nth-child(even),
+#distPreview tbody tr:nth-child(even) {
+    background: var(--color-surface-alt);
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <!-- CSV Files -->
 <div class="card mb-16">
     <div class="card-header">
         <span class="card-title">CSV Files</span>
-        <button class="btn btn-outline btn-sm" onclick="loadFiles()">Refresh</button>
+        <button class="btn btn-outline btn-sm" onclick="loadFiles()">{{ icon('refresh-cw', 14) }} Refresh</button>
     </div>
     <div class="table-wrapper" id="csvFilesTable">
         <table>
@@ -34,30 +45,30 @@
 </div>
 
 <!-- CSV Builder -->
-<div class="card mb-16" style="padding:0; overflow:hidden;">
-    <div class="card-header" style="padding:12px 16px;">
+<div class="card mb-16 p-0" style="overflow:hidden;">
+    <div class="card-header px-16 py-12">
         <span class="card-title">CSV Builder</span>
     </div>
     <div class="csv-builder-layout">
         <!-- Preset sidebar -->
         <div class="preset-sidebar">
             <div class="sidebar-label">Templates</div>
-            <button class="preset-item" onclick="createNew()" style="color:var(--color-primary);">+ Create new</button>
+            <button class="preset-item" onclick="createNew()" style="color:var(--color-primary);">{{ icon('plus', 14) }} Create new</button>
             <div id="presetList"></div>
         </div>
 
         <!-- Builder main -->
         <div class="builder-main">
-            <div id="builderEmpty" class="hidden" style="display:flex; align-items:center; justify-content:center; flex:1; color:var(--color-text-light); font-size:14px;">
-                Select a template or click "+ Create new" to start
+            <div id="builderEmpty" class="hidden text-secondary" style="display:flex; align-items:center; justify-content:center; flex:1;">
+                Select a template or click "Create new" to start
             </div>
             <div id="builderForm">
-            <div style="display:flex; gap:10px; align-items:center; margin-bottom:14px; flex-wrap:wrap;">
-                <div class="form-group" style="margin-bottom:0;">
+            <div class="flex gap-8 mb-12" style="align-items:center; flex-wrap:wrap;">
+                <div class="form-group mb-0">
                     <label class="form-label">Filename</label>
                     <input type="text" class="form-input" id="buildFilename" value="master_data.csv" style="width:200px;">
                 </div>
-                <div class="form-group" style="margin-bottom:0;">
+                <div class="form-group mb-0">
                     <label class="form-label">Rows</label>
                     <input type="number" class="form-input" id="buildRowCount" placeholder="auto" min="1" max="1000000" style="width:100px;" title="Leave empty when using sequential columns">
                 </div>
@@ -65,23 +76,23 @@
 
             <label class="form-label">Columns</label>
             <div id="columnDefs"></div>
-            <div style="margin-top:8px;">
-                <button class="btn btn-outline btn-sm" onclick="addColumn()">+ Add Column</button>
+            <div class="mt-8">
+                <button class="btn btn-outline btn-sm" onclick="addColumn()">{{ icon('plus', 14) }} Add Column</button>
             </div>
 
             <div class="builder-actions">
-                <button class="btn btn-outline btn-sm" onclick="previewBuild()">Preview</button>
+                <button class="btn btn-outline btn-sm" onclick="previewBuild()">{{ icon('eye', 14) }} Preview</button>
                 {% if access_level != 'viewer' %}
-                <button class="btn btn-primary btn-sm" id="buildBtn" onclick="buildCsv()">Generate</button>
+                <button class="btn btn-primary btn-sm" id="buildBtn" onclick="buildCsv()">{{ icon('play', 14) }} Generate</button>
                 <label class="btn btn-outline btn-sm" style="cursor:pointer;">
-                    Upload CSV
+                    {{ icon('upload', 14) }} Upload CSV
                     <input type="file" id="uploadFile" accept=".csv" onchange="uploadCsv()" style="display:none;">
                 </label>
                 {% endif %}
-                <button class="btn btn-outline btn-sm" onclick="saveCustomPreset()">Save template</button>
+                <button class="btn btn-outline btn-sm" onclick="saveCustomPreset()">{{ icon('save', 14) }} Save template</button>
             </div>
 
-            <div id="buildPreview" class="hidden" style="margin-top:16px;">
+            <div id="buildPreview" class="hidden mt-16">
                 <label class="form-label">Preview</label>
                 <div class="table-wrapper" id="buildPreviewTable"></div>
             </div>
@@ -97,17 +108,17 @@
     </div>
 
     <div id="distItems"></div>
-    <div style="display:flex; gap:8px; margin-bottom:12px;">
-        <button class="btn btn-outline btn-sm" onclick="addDistFile()">+ Add file</button>
-        <button class="btn btn-outline btn-sm" onclick="previewDist()">Preview</button>
+    <div class="flex gap-8 mb-12">
+        <button class="btn btn-outline btn-sm" onclick="addDistFile()">{{ icon('plus', 14) }} Add file</button>
+        <button class="btn btn-outline btn-sm" onclick="previewDist()">{{ icon('eye', 14) }} Preview</button>
         {% if access_level != 'viewer' %}
-        <button class="btn btn-primary btn-sm" id="distributeBtn" onclick="distributeData()">Distribute</button>
+        <button class="btn btn-primary btn-sm" id="distributeBtn" onclick="distributeData()">{{ icon('send', 14) }} Distribute</button>
         {% endif %}
     </div>
 
-    <div id="distPreview" class="hidden" style="margin-bottom:12px;"></div>
+    <div id="distPreview" class="hidden mb-12"></div>
 
-    <div id="distOutput" class="hidden" style="margin-top:12px;">
+    <div id="distOutput" class="hidden mt-12">
         <pre class="log-output" id="distLog" style="height:200px;"></pre>
     </div>
 </div>
@@ -119,7 +130,7 @@
             <span class="modal-title" id="previewTitle">CSV Preview</span>
             <button class="modal-close" onclick="closeModal('previewModal')" aria-label="Close">&times;</button>
         </div>
-        <div id="previewContent" class="table-wrapper" style="max-height:60vh;overflow:auto;"></div>
+        <div id="previewContent" class="table-wrapper" style="max-height:60vh; overflow:auto;"></div>
     </div>
 </div>
 {% endblock %}
@@ -127,6 +138,13 @@
 {% block scripts %}
 <script>
 const ACCESS_LEVEL = '{{ access_level | default("viewer") }}';
+
+/* Icon constants for JS-generated markup */
+const ICON_TRASH = `{{ icon('trash-2', 14) }}`;
+const ICON_DOWNLOAD = `{{ icon('download', 14) }}`;
+const ICON_EYE_BTN = `<button class="btn btn-outline btn-sm" onclick="previewFile('{FN}')">{{ icon('eye', 14) }} Preview</button>`;
+const ICON_PLUS = `{{ icon('plus', 14) }}`;
+const ICON_SPINNER = `{{ icon('loader-2', 14, 'icon-spin') }}`;
 
 const COL_TYPES = [
     { value: 'sequential',  label: 'Sequential ID' },
@@ -173,7 +191,7 @@ function renderTypeBody(body, type, def = {}) {
     if (type === 'sequential') {
         body.innerHTML = `
             <div class="seq-ranges"></div>
-            <button class="btn btn-outline btn-sm" onclick="addRange(this.closest('.builder-col'))">+ Range</button>
+            <button class="btn btn-outline btn-sm" onclick="addRange(this.closest('.builder-col'))">${ICON_PLUS} Range</button>
         `;
         const ranges = def.ranges || [{ prefix: def.prefix || '', start: def.start ?? 1, end: def.end ?? 50000, width: def.width ?? 6 }];
         ranges.forEach(r => addRange(body.closest('.builder-col'), r));
@@ -184,7 +202,7 @@ function renderTypeBody(body, type, def = {}) {
     } else if (type === 'random_pick') {
         body.innerHTML = `
             <div class="pick-entries"></div>
-            <button class="btn btn-outline btn-sm" onclick="addPickValue(this.closest('.builder-col'))">+ Value</button>
+            <button class="btn btn-outline btn-sm" onclick="addPickValue(this.closest('.builder-col'))">${ICON_PLUS} Value</button>
             <div class="type-help">Counts that don't add up to total rows: remainder filled with last value, excess trimmed. All shuffled.</div>
         `;
         const entries = def.values || [{ value: '', count: '' }];
@@ -382,7 +400,7 @@ function previewBuild() {
         html += '</tr>';
     }
     html += '</tbody></table>';
-    html += `<p class="text-light text-sm" style="margin-top:6px;">${totalRows.toLocaleString()} rows will be generated.</p>`;
+    html += `<p class="text-light text-sm mt-8">${totalRows.toLocaleString()} rows will be generated.</p>`;
 
     document.getElementById('buildPreviewTable').innerHTML = html;
     document.getElementById('buildPreview').classList.remove('hidden');
@@ -396,7 +414,7 @@ async function buildCsv() {
 
     const btn = document.getElementById('buildBtn');
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> Generating...';
+    btn.innerHTML = ICON_SPINNER + ' Generating...';
     try {
         const rc = parseInt(document.getElementById('buildRowCount').value);
         const body = { filename, columns };
@@ -406,7 +424,7 @@ async function buildCsv() {
         loadFiles();
     } catch(e) { console.error(e); } finally {
         btn.disabled = false;
-        btn.textContent = 'Generate';
+        btn.innerHTML = `{{ icon('play', 14) }} Generate`;
     }
 }
 
@@ -626,8 +644,8 @@ function addDistFile() {
     const el = document.createElement('div');
     el.className = 'dist-item';
     el.innerHTML = `
-        <select class="form-input dist-file" style="padding:4px 6px; font-size:12px; max-width:250px;">${buildFileOptions()}</select>
-        <select class="form-input dist-mode" onchange="onDistModeChange(this)" style="padding:4px 6px; font-size:12px; width:130px;">
+        <select class="form-input dist-file text-xs" style="padding:4px 6px; max-width:250px;">${buildFileOptions()}</select>
+        <select class="form-input dist-mode text-xs" onchange="onDistModeChange(this)" style="padding:4px 6px; width:130px;">
             <option value="copy">Copy to all</option>
             <option value="split">Split</option>
         </select>
@@ -703,7 +721,7 @@ async function previewDist() {
         const numSlaves = slaveIps.length;
 
         if (!numSlaves) {
-            previewEl.innerHTML = '<span class="text-light text-sm" style="color:var(--color-error, #ef4444);">No active slaves configured.</span>';
+            previewEl.innerHTML = '<span class="text-sm" style="color:var(--color-error, #ef4444);">No active slaves configured.</span>';
             return;
         }
 
@@ -720,7 +738,7 @@ async function previewDist() {
         }
         if (errors.length) {
             html += errors.map(e =>
-                `<p class="text-sm" style="color:var(--color-error,#ef4444);margin-bottom:4px;">${escHtml(e.file)}: ${escHtml(e.error)}</p>`
+                `<p class="text-sm mb-4" style="color:var(--color-error,#ef4444);">${escHtml(e.file)}: ${escHtml(e.error)}</p>`
             ).join('');
         }
 
@@ -734,7 +752,7 @@ async function previewDist() {
         if (hasValidData) {
             // --- Summary table ---
             const fileNames = items.map(i => i.file);
-            html += '<table style="font-size:13px;"><thead><tr><th>Slave</th>';
+            html += '<table class="text-sm"><thead><tr><th>Slave</th>';
             for (const fn of fileNames) html += `<th class="text-mono">${escHtml(fn)}</th>`;
             html += '<th>Total</th></tr></thead><tbody>';
 
@@ -776,14 +794,14 @@ async function previewDist() {
             const sr = splitResults[item.file];
             if (!sr || sr.error || !sr.slaves) continue;
 
-            html += `<details style="margin-top:10px;"><summary style="cursor:pointer;font-size:13px;color:var(--color-text-light);">` +
+            html += `<details class="mt-8"><summary class="text-sm text-secondary" style="cursor:pointer;">` +
                 `Data preview: <span class="text-mono">${escHtml(item.file)}</span> (${sr.source_rows.toLocaleString()} source rows)</summary>`;
-            html += '<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:8px;">';
+            html += '<div class="flex mt-8 gap-12" style="flex-wrap:wrap;">';
 
             for (const slave of sr.slaves) {
                 html += `<div style="flex:1;min-width:280px;max-width:100%;">`;
-                html += `<div style="font-size:12px;margin-bottom:4px;"><span class="text-mono">${escHtml(slave.ip)}</span> — ${slave.total_rows.toLocaleString()} rows</div>`;
-                html += '<table style="font-size:12px;"><thead><tr>';
+                html += `<div class="text-xs mb-4"><span class="text-mono">${escHtml(slave.ip)}</span> — ${slave.total_rows.toLocaleString()} rows</div>`;
+                html += '<table class="text-xs"><thead><tr>';
                 for (const col of sr.columns) html += `<th>${escHtml(col)}</th>`;
                 html += '</tr></thead><tbody>';
 
@@ -817,7 +835,7 @@ async function distributeData() {
 
     const btn = document.getElementById('distributeBtn');
     btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> Distributing...';
+    btn.innerHTML = ICON_SPINNER + ' Distributing...';
     document.getElementById('distOutput').classList.remove('hidden');
     document.getElementById('distLog').textContent = `Distributing ${items.length} file(s) ...\n`;
 
@@ -826,9 +844,9 @@ async function distributeData() {
 
         let log = '';
         for (const r of (data.results || [])) {
-            const icon = r.ok ? '[OK]' : '[FAIL]';
+            const status = r.ok ? '[OK]' : '[FAIL]';
             const rows = r.rows != null ? ` (${r.rows} rows)` : '';
-            log += `${icon} ${r.ip} \u2190 ${r.file}${rows}\n    ${r.detail}\n`;
+            log += `${status} ${r.ip} \u2190 ${r.file}${rows}\n    ${r.detail}\n`;
         }
         log += `\n${data.summary}\n`;
         document.getElementById('distLog').textContent = log;
@@ -839,7 +857,7 @@ async function distributeData() {
         document.getElementById('distLog').textContent += 'Error: ' + (e.message || e) + '\n';
     } finally {
         btn.disabled = false;
-        btn.textContent = 'Distribute';
+        btn.innerHTML = `{{ icon('send', 14) }} Distribute`;
     }
 }
 
@@ -871,14 +889,14 @@ async function loadFiles() {
                 ? `<td class="text-mono text-sm"><span class="rename-trigger" onclick="startRename(this, '${aFn}')" title="Click to rename">${eFn}</span></td>`
                 : `<td class="text-mono text-sm">${eFn}</td>`;
             const delBtn = canEdit
-                ? `<button class="btn btn-outline btn-sm" style="color:var(--color-error,#ef4444);border-color:var(--color-error,#ef4444);" onclick="deleteFile('${aFn}')">Delete</button>`
+                ? `<button class="btn btn-outline btn-sm" style="color:var(--color-error,#ef4444);border-color:var(--color-error,#ef4444);" onclick="deleteFile('${aFn}')">${ICON_TRASH} Delete</button>`
                 : '';
             return `<tr>
             ${nameCell}
             <td class="text-sm">${(f.columns || []).map((c, i) => '<code style="padding:1px 6px;border-radius:3px;background:' + colColors[i % colColors.length] + '22;color:' + colColors[i % colColors.length] + ';border:1px solid ' + colColors[i % colColors.length] + '33;white-space:nowrap;display:inline-block;margin:1px 2px;">' + escHtml(c) + '</code>').join('')}</td>
             <td>${f.rows >= 0 ? f.rows.toLocaleString() : '-'}</td>
             <td>${formatSize(f.size)}</td>
-            <td><span style="display:inline-flex;gap:4px;"><button class="btn btn-outline btn-sm" onclick="previewFile('${aFn}')">Preview</button><a class="btn btn-outline btn-sm" href="${BASE_PATH}/api/data/download/${encodeURIComponent(f.filename)}" download style="text-decoration:none;">Download</a>${delBtn}</span></td>
+            <td><span class="flex gap-4">${ICON_EYE_BTN.replace('{FN}', aFn)}<a class="btn btn-outline btn-sm" href="${BASE_PATH}/api/data/download/${encodeURIComponent(f.filename)}" download style="text-decoration:none;">${ICON_DOWNLOAD} Download</a>${delBtn}</span></td>
         </tr>`;
         }).join('');
     } catch(e) { console.error(e); }
@@ -890,7 +908,7 @@ async function loadFiles() {
 function startRename(el, oldName) {
     const td = el.parentElement;
     const base = oldName.replace(/\.csv$/i, '');
-    td.innerHTML = `<form onsubmit="return doRename(this, '${escAttr(oldName)}')" style="display:inline-flex;gap:4px;align-items:center;">
+    td.innerHTML = `<form onsubmit="return doRename(this, '${escAttr(oldName)}')" class="flex gap-4" style="display:inline-flex;align-items:center;">
         <input type="text" class="form-input text-mono" value="${escAttr(base)}" style="padding:2px 6px;font-size:13px;width:180px;" autofocus>
         <span class="text-mono text-sm" style="color:var(--color-text-light);">.csv</span>
         <button type="submit" class="btn btn-outline btn-sm">OK</button>
@@ -966,7 +984,7 @@ async function previewFile(filename, rows = 50) {
         html += '</tr></thead><tbody>';
         data.rows.forEach(row => {
             html += '<tr>';
-            row.forEach(cell => { html += `<td class="text-sm">${escHtml(cell || '')}</td>`; });
+            row.forEach(cell => { html += `<td class="text-sm text-mono">${escHtml(cell || '')}</td>`; });
             html += '</tr>';
         });
         html += '</tbody></table>';
@@ -974,7 +992,7 @@ async function previewFile(filename, rows = 50) {
         const remaining = data.total_rows - data.total_preview;
         if (remaining > 0) {
             const nextBatch = Math.min(remaining, 500);
-            html += `<div style="margin-top:8px;display:flex;align-items:center;gap:12px;">`;
+            html += `<div class="flex mt-8 gap-12" style="align-items:center;">`;
             html += `<span class="text-light text-sm">Showing ${data.total_preview.toLocaleString()} of ${data.total_rows.toLocaleString()} rows</span>`;
             html += `<button class="btn btn-outline btn-sm" onclick="previewFile('${escAttr(filename)}', ${data.total_preview + nextBatch})">Load ${nextBatch.toLocaleString()} more</button>`;
             if (data.total_rows <= 10000) {
