@@ -9,21 +9,21 @@
         <span class="card-title">App Settings</span>
         <div class="flex gap-8">
             {% if access_level != 'viewer' %}
-            <button class="btn btn-outline btn-sm" onclick="exportSettings()" title="Export settings as JSON">Export</button>
-            <button class="btn btn-outline btn-sm" onclick="document.getElementById('importInput').click()" title="Import settings from JSON">Import</button>
+            <button class="btn btn-outline btn-sm" onclick="exportSettings()" title="Export settings as JSON">{{ icon('download', 14) }} Export</button>
+            <button class="btn btn-outline btn-sm" onclick="document.getElementById('importInput').click()" title="Import settings from JSON">{{ icon('upload', 14) }} Import</button>
             <input type="file" id="importInput" accept=".json" style="display:none;" onchange="importSettings(this)">
-            <button class="btn btn-primary btn-sm" onclick="saveAllSettings()">Save</button>
+            <button class="btn btn-primary btn-sm" onclick="saveAllSettings()">{{ icon('save', 14) }} Save</button>
             {% endif %}
         </div>
     </div>
 
     <div class="tabs" role="tablist">
-        <button class="tab-btn active" data-tab="tab-general" role="tab" aria-selected="true" aria-controls="tab-general">General</button>
-        <button class="tab-btn" data-tab="tab-project" role="tab" aria-selected="false" aria-controls="tab-project">Project</button>
-        <button class="tab-btn" data-tab="tab-report" role="tab" aria-selected="false" aria-controls="tab-report">Report</button>
-        <button class="tab-btn" data-tab="tab-integrations" role="tab" aria-selected="false" aria-controls="tab-integrations">Integrations</button>
-        <button class="tab-btn" data-tab="tab-jmeter" role="tab" aria-selected="false" aria-controls="tab-jmeter">JMeter</button>
-        <button class="tab-btn" data-tab="tab-system" role="tab" aria-selected="false" aria-controls="tab-system">System</button>
+        <button class="tab-btn active" data-tab="tab-general" role="tab" aria-selected="true" aria-controls="tab-general">{{ icon('settings', 14) }} General</button>
+        <button class="tab-btn" data-tab="tab-project" role="tab" aria-selected="false" aria-controls="tab-project">{{ icon('folder-open', 14) }} Project</button>
+        <button class="tab-btn" data-tab="tab-report" role="tab" aria-selected="false" aria-controls="tab-report">{{ icon('bar-chart-3', 14) }} Report</button>
+        <button class="tab-btn" data-tab="tab-integrations" role="tab" aria-selected="false" aria-controls="tab-integrations">{{ icon('zap', 14) }} Integrations</button>
+        <button class="tab-btn" data-tab="tab-jmeter" role="tab" aria-selected="false" aria-controls="tab-jmeter">{{ icon('terminal', 14) }} JMeter</button>
+        <button class="tab-btn" data-tab="tab-system" role="tab" aria-selected="false" aria-controls="tab-system">{{ icon('hard-drive', 14) }} System</button>
     </div>
 
     <!-- ==================== General Tab ==================== -->
@@ -46,12 +46,12 @@
             <label class="toggle">
                 <input type="checkbox" id="set_allow_external">
                 <span class="toggle-track"></span>
-                <span class="form-label" style="margin:0;">Allow external access (0.0.0.0)</span>
+                <span class="form-label mb-0">Allow external access (0.0.0.0)</span>
             </label>
         </div>
         {% if access_level != 'viewer' %}
         <div class="flex gap-8 mb-16" style="align-items:center;">
-            <button class="btn btn-outline btn-sm" id="restartBtn" onclick="restartServer()" style="display:none;">Restart Now</button>
+            <button class="btn btn-outline btn-sm" id="restartBtn" onclick="restartServer()" style="display:none;">{{ icon('power', 14) }} Restart Now</button>
             <span class="text-light text-sm" id="restartHint">Changes to server settings require a restart.</span>
         </div>
         {% endif %}
@@ -64,7 +64,7 @@
             <label class="toggle">
                 <input type="checkbox" id="set_sidebar_collapsed">
                 <span class="toggle-track"></span>
-                <span class="form-label" style="margin:0;">Start with sidebar collapsed</span>
+                <span class="form-label mb-0">Start with sidebar collapsed</span>
             </label>
         </div>
 
@@ -87,12 +87,12 @@
             <label class="toggle">
                 <input type="checkbox" id="set_auto_scroll" checked>
                 <span class="toggle-track"></span>
-                <span class="form-label" style="margin:0;">Auto-scroll log output</span>
+                <span class="form-label mb-0">Auto-scroll log output</span>
             </label>
             <label class="toggle">
                 <input type="checkbox" id="set_confirm_stop" checked>
                 <span class="toggle-track"></span>
-                <span class="form-label" style="margin:0;">Confirm before stopping test</span>
+                <span class="form-label mb-0">Confirm before stopping test</span>
             </label>
         </div>
 
@@ -105,7 +105,7 @@
             <label class="toggle">
                 <input type="checkbox" id="set_filter_sub_results" checked>
                 <span class="toggle-track"></span>
-                <span class="form-label" style="margin:0;">Filter sub-results</span>
+                <span class="form-label mb-0">Filter sub-results</span>
             </label>
         </div>
         <div class="form-row mb-16">
@@ -137,7 +137,7 @@
         <div class="form-row mb-16">
             <div class="form-group" style="min-width:300px;flex:2;">
                 <label class="form-label">Access Token</label>
-                <div id="tokenStatusArea" style="margin-bottom:8px;"></div>
+                <div id="tokenStatusArea" class="mb-8"></div>
                 <form onsubmit="return false" style="position:relative;">
                     <input type="text" name="username" autocomplete="username" style="display:none" aria-hidden="true" tabindex="-1">
                     <input class="form-input form-input-mono" id="set_auth_token" type="password" placeholder="Enter new token to change" style="padding-right:40px;" autocomplete="new-password">
@@ -145,7 +145,7 @@
                         style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--color-text-light);font-size:13px;padding:2px 4px;">Show</button>
                 </form>
                 <span class="text-light text-sm">Leave empty to keep current token. Enter a new value to change it. Localhost always has full access.</span>
-                <div id="tokenClearArea" style="margin-top:8px;display:none;">
+                <div id="tokenClearArea" class="mt-8" style="display:none;">
                     <button class="btn btn-outline btn-sm" style="color:var(--color-danger);border-color:var(--color-danger);" onclick="clearToken()">Remove Token</button>
                     <span class="text-light text-sm" style="margin-left:8px;">Disables token auth for remote users.</span>
                 </div>
@@ -158,11 +158,11 @@
 
         <h3 class="text-sm mb-16 section-title">Project Info</h3>
         <div class="form-row mb-16">
-            <div class="form-group" class="form-col">
+            <div class="form-group form-col">
                 <label class="form-label">Project Name</label>
                 <input class="form-input" id="set_proj_name">
             </div>
-            <div class="form-group" class="form-col">
+            <div class="form-group form-col">
                 <label class="form-label">JMeter Path</label>
                 <div class="flex gap-8">
                     <input class="form-input form-input-mono" id="set_proj_jmeter" style="flex:1;">
@@ -177,25 +177,25 @@
 
         <h3 class="text-sm mb-16 section-title">Paths <span class="text-light" style="font-weight:400;">(relative to project root)</span></h3>
         <div class="form-row mb-16">
-            <div class="form-group" class="form-col">
+            <div class="form-group form-col">
                 <label class="form-label">JMX Directory</label>
                 <input class="form-input form-input-mono" id="set_proj_jmx_dir">
             </div>
-            <div class="form-group" class="form-col">
+            <div class="form-group form-col">
                 <label class="form-label">Config Directory</label>
                 <input class="form-input form-input-mono" id="set_proj_config_dir">
             </div>
         </div>
         <div class="form-row mb-16">
-            <div class="form-group" class="form-col">
+            <div class="form-group form-col">
                 <label class="form-label">Results Directory</label>
                 <input class="form-input form-input-mono" id="set_proj_results_dir">
             </div>
-            <div class="form-group" class="form-col">
+            <div class="form-group form-col">
                 <label class="form-label">Test Data Directory</label>
                 <input class="form-input form-input-mono" id="set_proj_data_dir">
             </div>
-            <div class="form-group" class="form-col">
+            <div class="form-group form-col">
                 <label class="form-label">Slaves File</label>
                 <input class="form-input form-input-mono" id="set_proj_slaves_file">
             </div>
@@ -237,7 +237,7 @@
 
         <!-- Graph toggles -->
         <div class="flex gap-8 mb-16" style="align-items:center;flex-wrap:wrap;">
-            <h3 class="text-sm" style="font-weight:600;margin:0;">Graphs</h3>
+            <h3 class="text-sm text-bold mb-0">Graphs</h3>
             {% if access_level != 'viewer' %}
             <button class="btn btn-outline btn-sm" onclick="reportPreset('disable_heavy')">Disable All Heavy</button>
             <button class="btn btn-outline btn-sm" onclick="reportPreset('enable_all')">Enable All</button>
@@ -246,17 +246,17 @@
         </div>
 
         <!-- Over-time (heavy) -->
-        <div class="mb-16" class="surface-card">
-            <div class="text-sm mb-8" class="section-title">Over-time graphs <span class="badge badge-warning" style="font-size:11px;margin-left:4px;">Heavy</span></div>
+        <div class="surface-card mb-16 p-12">
+            <div class="text-sm mb-8 section-title">Over-time graphs <span class="badge badge-warning text-xs" style="margin-left:4px;">Heavy</span></div>
             <span class="text-light text-sm mb-8" style="display:block;">One data point per granularity interval per sampler. Largest contributor to report size.</span>
-            <div id="reportGraphsOvertime" style="display:flex;flex-direction:column;gap:8px;"></div>
+            <div id="reportGraphsOvertime" class="gap-8" style="display:flex;flex-direction:column;"></div>
         </div>
 
         <!-- Summary (light) -->
-        <div class="mb-16" class="surface-card">
-            <div class="text-sm mb-8" class="section-title">Summary graphs <span class="badge badge-success" style="font-size:11px;margin-left:4px;">Light</span></div>
+        <div class="surface-card mb-16 p-12">
+            <div class="text-sm mb-8 section-title">Summary graphs <span class="badge badge-success text-xs" style="margin-left:4px;">Light</span></div>
             <span class="text-light text-sm mb-8" style="display:block;">Aggregate statistics. Minimal impact on report size.</span>
-            <div id="reportGraphsSummary" style="display:flex;flex-direction:column;gap:8px;"></div>
+            <div id="reportGraphsSummary" class="gap-8" style="display:flex;flex-direction:column;"></div>
         </div>
     </div>
 
@@ -266,11 +266,11 @@
         <!-- Monitoring -->
         <h3 class="text-sm mb-16 section-title">Monitoring</h3>
         <div class="form-row mb-16">
-            <div class="form-group" class="form-col">
+            <div class="form-group form-col">
                 <label class="form-label">Grafana URL</label>
                 <input class="form-input form-input-mono" id="set_grafana_url" placeholder="http://grafana:3000">
             </div>
-            <div class="form-group" class="form-col">
+            <div class="form-group form-col">
                 <label class="form-label">InfluxDB URL</label>
                 <input class="form-input form-input-mono" id="set_influxdb_url" placeholder="http://influxdb:8086">
             </div>
@@ -303,15 +303,15 @@
     <!-- ==================== JMeter Tab ==================== -->
     <div id="tab-jmeter" class="tab-panel" role="tabpanel">
 
-        <div class="flex gap-8 mb-16" style="justify-content:space-between;align-items:center;">
+        <div class="flex-between gap-8 mb-16">
             <div>
-                <h3 class="text-sm section-title" style="margin:0;">Master Properties</h3>
+                <h3 class="text-sm section-title mb-0">Master Properties</h3>
                 <span class="text-light text-sm">user.properties overrides applied to the JMeter master <span id="jpropsCount"></span></span>
             </div>
             {% if access_level != 'viewer' %}
             <div class="flex gap-8">
                 <button class="btn btn-outline btn-sm" onclick="openAddPropertyModal()">+ Add Property</button>
-                <button class="btn btn-primary btn-sm" onclick="saveJmeterProperties()">Save</button>
+                <button class="btn btn-primary btn-sm" onclick="saveJmeterProperties()">{{ icon('save', 14) }} Save</button>
             </div>
             {% endif %}
         </div>
@@ -320,7 +320,7 @@
         <div id="jpropsContainer">
             <div class="text-light" style="text-align:center;padding:16px;">Loading...</div>
         </div>
-        <div class="text-sm text-light" id="jpropsPath" style="margin-top:8px;"></div>
+        <div class="text-sm text-light mt-8" id="jpropsPath"></div>
     </div>
 
     <!-- Add Property Modal -->
@@ -330,7 +330,7 @@
                 <h3>Add JMeter Property</h3>
                 <button class="modal-close" onclick="closeAddPropertyModal()">&times;</button>
             </div>
-            <div style="padding:16px;">
+            <div class="p-16">
                 <input class="form-input mb-8" id="propSearchInput" type="text" placeholder="Search properties... (e.g. rmi, http, timeout)" oninput="filterPropertyList(this.value)">
                 <div id="propSearchResults" style="max-height:400px;overflow-y:auto;"></div>
                 <div style="margin-top:12px;border-top:1px solid var(--color-border);padding-top:12px;">
@@ -679,7 +679,7 @@ function renderReportSettings() {
         const html = `<label class="toggle">
             <input type="checkbox" id="rg_${g.id}" ${enabled ? 'checked' : ''}>
             <span class="toggle-track"></span>
-            <span class="form-label" style="margin:0;">${g.title}</span>
+            <span class="form-label mb-0">${g.title}</span>
         </label>`;
         if (g.category === 'overtime') {
             overtimeContainer.insertAdjacentHTML('beforeend', html);
