@@ -17,27 +17,27 @@
         </div>
         <nav class="sidebar-nav">
             <a href="{{ bp }}/" class="nav-item {% if active_page == 'dashboard' %}active{% endif %}">
-                <span class="nav-icon">&#9632;</span>
+                <span class="nav-icon">{{ icon('layout-dashboard', 18) }}</span>
                 <span class="nav-label">Dashboard</span>
             </a>
             <a href="{{ bp }}/plans" class="nav-item {% if active_page == 'plans' %}active{% endif %}">
-                <span class="nav-icon">&#9654;</span>
+                <span class="nav-icon">{{ icon('play', 18) }}</span>
                 <span class="nav-label">Test Plans & Runner</span>
             </a>
             <a href="{{ bp }}/results" class="nav-item {% if active_page == 'results' %}active{% endif %}">
-                <span class="nav-icon">&#9733;</span>
+                <span class="nav-icon">{{ icon('bar-chart-3', 18) }}</span>
                 <span class="nav-label">Results</span>
             </a>
             <a href="{{ bp }}/data" class="nav-item {% if active_page == 'data' %}active{% endif %}">
-                <span class="nav-icon">&#9776;</span>
+                <span class="nav-icon">{{ icon('database', 18) }}</span>
                 <span class="nav-label">Test Data</span>
             </a>
             <a href="{{ bp }}/fleet" class="nav-item {% if active_page == 'slaves' %}active{% endif %}">
-                <span class="nav-icon">&#9731;</span>
+                <span class="nav-icon">{{ icon('server', 18) }}</span>
                 <span class="nav-label">Fleet</span>
             </a>
-<a href="{{ bp }}/settings" class="nav-item {% if active_page == 'settings' %}active{% endif %}" style="margin-top:auto;">
-                <span class="nav-icon">&#9881;</span>
+            <a href="{{ bp }}/settings" class="nav-item {% if active_page == 'settings' %}active{% endif %}" style="margin-top:auto;">
+                <span class="nav-icon">{{ icon('settings', 18) }}</span>
                 <span class="nav-label">Settings</span>
             </a>
         </nav>
@@ -48,7 +48,7 @@
 
     <main class="main-content" id="mainContent">
         <header class="topbar">
-            <button class="menu-btn" id="menuBtn" title="Open menu" aria-label="Open menu">&#9776;</button>
+            <button class="menu-btn" id="menuBtn" title="Open menu" aria-label="Open menu">{{ icon('layers', 20) }}</button>
             <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
         </header>
         <div class="content">
@@ -59,23 +59,23 @@
     <!-- Mobile bottom navigation -->
     <nav class="bottom-nav" id="bottomNav" aria-label="Bottom navigation">
         <a href="{{ bp }}/" class="bottom-nav-item {% if active_page == 'dashboard' %}active{% endif %}" aria-label="Dashboard">
-            <span class="bnav-icon">&#9632;</span>
+            <span class="bnav-icon">{{ icon('layout-dashboard', 20) }}</span>
             <span class="bnav-label">Dashboard</span>
         </a>
         <a href="{{ bp }}/plans" class="bottom-nav-item {% if active_page == 'plans' %}active{% endif %}" aria-label="Test Plans">
-            <span class="bnav-icon">&#9654;</span>
+            <span class="bnav-icon">{{ icon('play', 20) }}</span>
             <span class="bnav-label">Run</span>
         </a>
         <a href="{{ bp }}/results" class="bottom-nav-item {% if active_page == 'results' %}active{% endif %}" aria-label="Results">
-            <span class="bnav-icon">&#9733;</span>
+            <span class="bnav-icon">{{ icon('bar-chart-3', 20) }}</span>
             <span class="bnav-label">Results</span>
         </a>
         <a href="{{ bp }}/data" class="bottom-nav-item {% if active_page == 'data' %}active{% endif %}" aria-label="Test Data">
-            <span class="bnav-icon">&#9776;</span>
+            <span class="bnav-icon">{{ icon('database', 20) }}</span>
             <span class="bnav-label">Data</span>
         </a>
         <button class="bottom-nav-more" id="bottomNavMore" aria-label="More" onclick="toggleSidebar()">
-            <span class="bnav-icon">&#9776;</span>
+            <span class="bnav-icon">{{ icon('more-horizontal', 20) }}</span>
             <span class="bnav-label">More</span>
         </button>
     </nav>

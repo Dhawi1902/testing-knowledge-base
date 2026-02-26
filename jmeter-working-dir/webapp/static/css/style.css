@@ -194,7 +194,7 @@ body {
     border-left: 3px solid var(--color-sidebar-active);
     padding-left: 13px; /* compensate for border */
 }
-.nav-icon { font-size: 1.1rem; width: 20px; text-align: center; }
+.nav-icon { display: inline-flex; align-items: center; justify-content: center; width: 20px; }
 
 /* ===== Main Content ===== */
 .main-content {
