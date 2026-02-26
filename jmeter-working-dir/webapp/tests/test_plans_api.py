@@ -136,6 +136,58 @@ class TestPreviewCommand:
         assert "command" in r.json()
 
 
+class TestDryRun:
+    def test_dry_run_basic(self, admin_client, bp, sample_jmx):
+        r = admin_client.post(
+            f"{bp}/api/runner/dry-run",
+            json={"filename": "test.jmx", "overrides": {"student": "20"}},
+        )
+        assert r.status_code == 200
+        data = r.json()
+        assert data["ok"] is True
+        assert "command" in data
+        assert "result_dir" in data
+        assert "post_commands" in data
+        assert "test.jmx" in data["command"]
+
+    def test_dry_run_no_dirs_created(self, admin_client, bp, sample_jmx, tmp_project_dir):
+        """Dry run should NOT create result directories."""
+        results_dir = tmp_project_dir["project_root"] / "results"
+        before = set(results_dir.rglob("*")) if results_dir.exists() else set()
+        admin_client.post(
+            f"{bp}/api/runner/dry-run",
+            json={"filename": "test.jmx", "overrides": {}},
+        )
+        after = set(results_dir.rglob("*")) if results_dir.exists() else set()
+        assert after == before, "Dry run should not create any new files/dirs"
+
+    def test_dry_run_with_filter(self, admin_client, bp, sample_jmx):
+        r = admin_client.post(
+            f"{bp}/api/runner/dry-run",
+            json={
+                "filename": "test.jmx",
+                "overrides": {},
+                "filter_sub_results": True,
+                "label_pattern": "^HTTP",
+            },
+        )
+        assert r.status_code == 200
+        data = r.json()
+        assert len(data["post_commands"]) > 0
+
+    def test_dry_run_invalid_regex(self, admin_client, bp, sample_jmx):
+        r = admin_client.post(
+            f"{bp}/api/runner/dry-run",
+            json={
+                "filename": "test.jmx",
+                "overrides": {},
+                "filter_sub_results": True,
+                "label_pattern": "[invalid",
+            },
+        )
+        assert r.status_code == 400
+
+
 class TestRunnerBuffer:
     def test_empty_buffer(self, admin_client, bp):
         r = admin_client.get(f"{bp}/api/runner/buffer")

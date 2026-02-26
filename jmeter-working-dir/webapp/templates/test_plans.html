@@ -78,6 +78,7 @@
         </div>
         {% if access_level != 'viewer' %}
         <div class="flex gap-8" style="align-items:center;" id="inlineRunnerBtns">
+            <button class="btn btn-outline" id="dryRunBtn" onclick="dryRun()" disabled title="Show full command without executing">Dry Run</button>
             <button class="btn btn-primary" id="startTestBtn" onclick="startTest()" disabled>Start Test</button>
             <button class="btn btn-danger" id="stopTestBtn" onclick="stopTest()" disabled>Stop Test</button>
         </div>
@@ -233,6 +234,8 @@ async function onPlanSelected() {
         return;
     }
     if (editBtn) editBtn.disabled = isTestRunning;
+    const dryRunBtn = document.getElementById('dryRunBtn');
+    if (dryRunBtn) dryRunBtn.disabled = isTestRunning;
     const startBtn = document.getElementById('startTestBtn');
     if (startBtn) startBtn.disabled = isTestRunning;
     const saveDefaultsBtn = document.getElementById('saveToDefaultsBtn');
@@ -468,6 +471,27 @@ async function loadFilterConfig() {
     } catch(e) { console.error('loadFilterConfig:', e); }
 }
 
+// ===== Dry Run =====
+async function dryRun() {
+    const filename = document.getElementById('selectedPlan').value;
+    if (!filename) return;
+    try {
+        const filter_sub_results = document.getElementById('filterSubResults').checked;
+        const label_pattern = filter_sub_results ? labelPattern : '';
+        const data = await api('/api/runner/dry-run', {
+            method: 'POST',
+            body: { filename, overrides: getOverrides(), filter_sub_results, label_pattern }
+        });
+        let preview = data.command;
+        if (data.post_commands && data.post_commands.length) {
+            preview += '\n\n# Post-processing:\n' + data.post_commands.join('\n');
+        }
+        preview += '\n\n# Result dir: ' + data.result_dir;
+        document.getElementById('cmdPreview').textContent = preview;
+        showToast('Dry run — command preview updated', 'info');
+    } catch(e) { console.error(e); }
+}
+
 // ===== Runner =====
 async function startTest() {
     const filename = document.getElementById('selectedPlan').value;
@@ -534,6 +558,8 @@ function setConfigLocked(locked) {
     if (filterEl) filterEl.disabled = locked;
     const editBtn = document.getElementById('editPlanBtn');
     if (editBtn) editBtn.disabled = locked;
+    const dryRunBtn = document.getElementById('dryRunBtn');
+    if (dryRunBtn) dryRunBtn.disabled = locked;
     const saveBtn = document.getElementById('saveToDefaultsBtn');
     if (saveBtn) saveBtn.disabled = locked;
     const presetBtn = document.getElementById('saveAsPresetBtn');

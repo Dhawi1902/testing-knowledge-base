@@ -90,6 +90,37 @@ async def api_command_preview(request: Request):
     return {"command": preview}
 
 
+@router.post("/api/runner/dry-run")
+async def api_dry_run(request: Request):
+    """Dry run: build the full JMeter command without executing or creating dirs."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    body = await request.json()
+    project = request.app.state.project
+    filename = body.get("filename", "")
+    overrides = body.get("overrides", {})
+    filter_sub_results = body.get("filter_sub_results", False)
+    label_pattern = body.get("label_pattern", "")
+    if label_pattern:
+        try:
+            re.compile(label_pattern)
+        except re.error as e:
+            return JSONResponse(status_code=400, content={"error": f"Invalid regex pattern: {e}"})
+    cmd, result_dir, post_commands = build_jmeter_command(
+        project, filename, overrides,
+        filter_sub_results=filter_sub_results,
+        label_pattern=label_pattern,
+        dry_run=True,
+    )
+    return {
+        "ok": True,
+        "command": " ".join(cmd),
+        "result_dir": result_dir,
+        "post_commands": [" ".join(pc) for pc in post_commands],
+    }
+
+
 @router.post("/api/runner/start")
 async def api_start_test(request: Request):
     denied = _check_access(request)
