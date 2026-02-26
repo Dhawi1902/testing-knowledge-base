@@ -300,3 +300,147 @@ class TestProvisionStatusEndpoint:
         assert status["java"] is True
         assert status["jmeter"] is False
         admin_client.put(f"{bp}/api/config/slaves", json={"slaves": []})
+
+
+class TestSyncDataEndpoint:
+    """API tests for sync data endpoint (#29)."""
+
+    def test_preview(self, admin_client, bp, sample_csv):
+        """Preview shows CSV files and active slaves."""
+        admin_client.put(f"{bp}/api/config/slaves", json={"slaves": [{"ip": "10.0.0.1", "enabled": True}]})
+        r = admin_client.get(f"{bp}/api/slaves/sync-data/preview")
+        assert r.status_code == 200
+        data = r.json()
+        assert "files" in data
+        assert "slaves" in data
+        assert len(data["files"]) >= 1
+        assert "10.0.0.1" in data["slaves"]
+        admin_client.put(f"{bp}/api/config/slaves", json={"slaves": []})
+
+    def test_preview_no_slaves(self, admin_client, bp, sample_csv):
+        """Preview with no active slaves returns empty slave list."""
+        r = admin_client.get(f"{bp}/api/slaves/sync-data/preview")
+        assert r.status_code == 200
+        assert r.json()["slaves"] == []
+
+    def test_sync_no_files(self, admin_client, bp):
+        """Sync with no CSV files returns 400."""
+        admin_client.put(f"{bp}/api/config/slaves", json={"slaves": [{"ip": "10.0.0.1", "enabled": True}]})
+        r = admin_client.post(f"{bp}/api/slaves/sync-data")
+        assert r.status_code == 400
+        admin_client.put(f"{bp}/api/config/slaves", json={"slaves": []})
+
+    def test_sync_no_slaves(self, admin_client, bp, sample_csv):
+        """Sync with no active slaves returns 400."""
+        r = admin_client.post(f"{bp}/api/slaves/sync-data")
+        assert r.status_code == 400
+        assert "No active slaves" in r.json()["error"]
+
+    def test_sync_mock(self, admin_client, bp, sample_csv, monkeypatch):
+        """Mock distribute to verify endpoint wiring."""
+        from unittest.mock import AsyncMock
+        monkeypatch.setattr(
+            "routers.config.distribute_files",
+            AsyncMock(return_value=[{"ip": "10.0.0.1", "file": "test_users.csv", "ok": True, "detail": "uploaded"}]),
+        )
+        admin_client.put(f"{bp}/api/config/slaves", json={"slaves": [{"ip": "10.0.0.1", "enabled": True}]})
+        r = admin_client.post(f"{bp}/api/slaves/sync-data")
+        assert r.status_code == 200
+        assert r.json()["ok"] is True
+        assert "1/1" in r.json()["summary"]
+        admin_client.put(f"{bp}/api/config/slaves", json={"slaves": []})
+
+
+class TestSlaveLogEndpoint:
+    """API tests for slave log endpoint (#22)."""
+
+    def test_not_found(self, admin_client, bp):
+        r = admin_client.get(f"{bp}/api/slaves/10.99.99.99/log")
+        assert r.status_code == 404
+
+    def test_with_slave_mock(self, admin_client, bp, monkeypatch):
+        from unittest.mock import AsyncMock
+        monkeypatch.setattr(
+            "routers.config.fetch_slave_log",
+            AsyncMock(return_value={"ip": "10.0.0.1", "ok": True, "log": "log content here\n", "path": "~/jmeter-slave/jmeter-slave.log"}),
+        )
+        admin_client.put(f"{bp}/api/config/slaves", json={"slaves": [{"ip": "10.0.0.1", "enabled": True}]})
+        r = admin_client.get(f"{bp}/api/slaves/10.0.0.1/log")
+        assert r.status_code == 200
+        assert r.json()["result"]["ok"] is True
+        assert "log content" in r.json()["result"]["log"]
+        admin_client.put(f"{bp}/api/config/slaves", json={"slaves": []})
+
+
+class TestCleanDataEndpoint:
+    """API tests for clean data endpoint (#32)."""
+
+    def test_not_found(self, admin_client, bp):
+        r = admin_client.post(f"{bp}/api/slaves/10.99.99.99/clean-data")
+        assert r.status_code == 404
+
+    def test_with_slave_mock(self, admin_client, bp, monkeypatch):
+        from unittest.mock import AsyncMock
+        monkeypatch.setattr(
+            "routers.config.clean_slave_data",
+            AsyncMock(return_value={"ip": "10.0.0.1", "ok": True, "files_removed": 3}),
+        )
+        admin_client.put(f"{bp}/api/config/slaves", json={"slaves": [{"ip": "10.0.0.1", "enabled": True}]})
+        r = admin_client.post(f"{bp}/api/slaves/10.0.0.1/clean-data")
+        assert r.status_code == 200
+        assert r.json()["result"]["ok"] is True
+        assert r.json()["result"]["files_removed"] == 3
+        admin_client.put(f"{bp}/api/config/slaves", json={"slaves": []})
+
+    def test_bulk(self, admin_client, bp, monkeypatch):
+        from unittest.mock import AsyncMock
+        monkeypatch.setattr(
+            "routers.config.clean_slave_data",
+            AsyncMock(return_value={"ip": "10.0.0.1", "ok": True, "files_removed": 2}),
+        )
+        admin_client.put(f"{bp}/api/config/slaves", json={"slaves": [{"ip": "10.0.0.1", "enabled": True}]})
+        r = admin_client.post(f"{bp}/api/slaves/bulk-clean-data", json={"ips": ["10.0.0.1"]})
+        assert r.status_code == 200
+        assert len(r.json()["results"]) == 1
+        admin_client.put(f"{bp}/api/config/slaves", json={"slaves": []})
+
+    def test_bulk_no_ips(self, admin_client, bp):
+        r = admin_client.post(f"{bp}/api/slaves/bulk-clean-data", json={"ips": []})
+        assert r.status_code == 400
+
+
+class TestCleanLogEndpoint:
+    """API tests for clean log endpoint (#33)."""
+
+    def test_not_found(self, admin_client, bp):
+        r = admin_client.post(f"{bp}/api/slaves/10.99.99.99/clean-log")
+        assert r.status_code == 404
+
+    def test_with_slave_mock(self, admin_client, bp, monkeypatch):
+        from unittest.mock import AsyncMock
+        monkeypatch.setattr(
+            "routers.config.clean_slave_log",
+            AsyncMock(return_value={"ip": "10.0.0.1", "ok": True, "bytes_cleared": 10240}),
+        )
+        admin_client.put(f"{bp}/api/config/slaves", json={"slaves": [{"ip": "10.0.0.1", "enabled": True}]})
+        r = admin_client.post(f"{bp}/api/slaves/10.0.0.1/clean-log")
+        assert r.status_code == 200
+        assert r.json()["result"]["ok"] is True
+        assert r.json()["result"]["bytes_cleared"] == 10240
+        admin_client.put(f"{bp}/api/config/slaves", json={"slaves": []})
+
+    def test_bulk(self, admin_client, bp, monkeypatch):
+        from unittest.mock import AsyncMock
+        monkeypatch.setattr(
+            "routers.config.clean_slave_log",
+            AsyncMock(return_value={"ip": "10.0.0.1", "ok": True, "bytes_cleared": 5000}),
+        )
+        admin_client.put(f"{bp}/api/config/slaves", json={"slaves": [{"ip": "10.0.0.1", "enabled": True}]})
+        r = admin_client.post(f"{bp}/api/slaves/bulk-clean-logs", json={"ips": ["10.0.0.1"]})
+        assert r.status_code == 200
+        assert len(r.json()["results"]) == 1
+        admin_client.put(f"{bp}/api/config/slaves", json={"slaves": []})
+
+    def test_bulk_no_ips(self, admin_client, bp):
+        r = admin_client.post(f"{bp}/api/slaves/bulk-clean-logs", json={"ips": []})
+        assert r.status_code == 400

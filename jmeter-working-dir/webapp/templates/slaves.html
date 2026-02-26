@@ -18,6 +18,7 @@
             {% if access_level != 'viewer' %}
             <button class="btn btn-primary btn-sm" onclick="startAll()" id="startAllBtn">Start All</button>
             <button class="btn btn-outline btn-sm" onclick="stopAll()" id="stopAllBtn" style="color:var(--color-danger);border-color:var(--color-danger);">Stop All</button>
+            <button class="btn btn-outline btn-sm" onclick="syncData()" title="Distribute test data to all active slaves">Sync Data</button>
             {% endif %}
             <span style="width:1px;height:24px;background:var(--color-border);margin:0 4px;"></span>
             <button class="btn btn-outline btn-sm view-toggle" id="viewListBtn" onclick="setView('list')" title="List view">&#9776;</button>
@@ -30,6 +31,8 @@
             <button class="btn btn-outline btn-sm" onclick="bulkEnable(true)">Enable</button>
             <button class="btn btn-outline btn-sm" onclick="bulkEnable(false)">Disable</button>
             <button class="btn btn-outline btn-sm" onclick="bulkProvision()">Provision</button>
+            <button class="btn btn-outline btn-sm" onclick="bulkCleanData()">Clean Data</button>
+            <button class="btn btn-outline btn-sm" onclick="bulkCleanLogs()">Clean Logs</button>
             <button class="btn btn-sm" onclick="bulkRemove()" style="color:var(--color-danger);border:1px solid var(--color-danger);background:transparent;">Remove</button>
             <button class="btn btn-outline btn-sm" onclick="clearSelection()">Clear</button>
         </div>
@@ -70,6 +73,48 @@
         </div>
         <div class="modal-footer">
             <button class="btn btn-outline btn-sm" onclick="closeProvisionModal()">Close</button>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Slave Log Modal (#22) -->
+{% if access_level != 'viewer' %}
+<div class="modal-overlay" id="logModal" style="display:none;">
+    <div class="modal" style="max-width:800px;width:95vw;">
+        <div class="modal-header">
+            <h3 class="modal-title" id="logModalTitle">Slave Log</h3>
+            <button class="modal-close" onclick="closeLogModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="logContent" style="background:var(--color-bg);border:1px solid var(--color-border);border-radius:6px;padding:12px;font-family:var(--font-mono);font-size:11px;max-height:500px;overflow-y:auto;white-space:pre-wrap;line-height:1.5;"></div>
+        </div>
+        <div class="modal-footer" style="justify-content:space-between;">
+            <span class="text-sm text-light" id="logPath"></span>
+            <div class="flex gap-8">
+                <button class="btn btn-outline btn-sm" onclick="refreshLog()">Refresh</button>
+                <button class="btn btn-outline btn-sm" onclick="closeLogModal()">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Sync Data Modal (#29) -->
+{% if access_level != 'viewer' %}
+<div class="modal-overlay" id="syncModal" style="display:none;">
+    <div class="modal" style="max-width:600px;width:95vw;">
+        <div class="modal-header">
+            <h3 class="modal-title">Sync Test Data</h3>
+            <button class="modal-close" onclick="closeSyncModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="syncPreview" style="margin-bottom:12px;">Loading...</div>
+            <div id="syncLog" style="background:var(--color-bg);border:1px solid var(--color-border);border-radius:6px;padding:12px;font-family:var(--font-mono);font-size:12px;max-height:300px;overflow-y:auto;white-space:pre-wrap;line-height:1.6;display:none;"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline btn-sm" onclick="closeSyncModal()">Close</button>
+            <button class="btn btn-primary btn-sm" onclick="runSyncData()" id="syncBtn">Sync All</button>
         </div>
     </div>
 </div>
@@ -232,6 +277,9 @@ function renderList() {
                     ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="startSingle('${aIp}')" title="Start JMeter server">&#9654;</button>` : ''}
                     ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;color:var(--color-danger);border-color:var(--color-danger);" onclick="stopSingle('${aIp}')" title="Stop JMeter server">&#9632;</button>` : ''}
                     ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="restartSingle('${aIp}')" title="Restart JMeter server">&#8635;</button>` : ''}
+                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="viewLog('${aIp}')" title="View slave log">Log</button>` : ''}
+                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="confirmCleanData('${aIp}')" title="Clean test data">Clean</button>` : ''}
+                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="confirmCleanLog('${aIp}')" title="Clean log file">ClnLog</button>` : ''}
                     ${isAdmin ? `<button class="gear-btn${expanded ? ' active' : ''}" onclick="toggleConfig('${aIp}')" title="SSH overrides">&#9881;</button>` : ''}
                     ${isAdmin ? `<button class="del-btn" onclick="removeSlave('${aIp}')" title="Remove">&times;</button>` : ''}
                     ${isAdmin ? `<label class="toggle" title="${enabled ? 'Disable' : 'Enable'}">
@@ -277,6 +325,9 @@ function renderGrid() {
                     ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="startSingle('${aIp}')" title="Start">&#9654;</button>` : ''}
                     ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;color:var(--color-danger);border-color:var(--color-danger);" onclick="stopSingle('${aIp}')" title="Stop">&#9632;</button>` : ''}
                     ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="restartSingle('${aIp}')" title="Restart">&#8635;</button>` : ''}
+                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="viewLog('${aIp}')" title="Log">Log</button>` : ''}
+                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="confirmCleanData('${aIp}')" title="Clean data">Clean</button>` : ''}
+                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="confirmCleanLog('${aIp}')" title="Clean log">ClnLog</button>` : ''}
                     ${isAdmin ? `<button class="gear-btn${expanded ? ' active' : ''}" onclick="toggleConfig('${aIp}')" title="SSH overrides">&#9881;</button>` : ''}
                     ${isAdmin ? `<button class="del-btn" onclick="removeSlave('${aIp}')" title="Remove">&times;</button>` : ''}
                     ${isAdmin ? `<label class="toggle" title="${enabled ? 'Disable' : 'Enable'}">
@@ -936,6 +987,174 @@ async function saveProperties() {
         renderProperties();
     } catch (e) {
         showToast('Failed to save properties', 'error');
+    }
+}
+
+// ===== Sync Data (#29) =====
+async function syncData() {
+    const modal = document.getElementById('syncModal');
+    const preview = document.getElementById('syncPreview');
+    const logEl = document.getElementById('syncLog');
+    logEl.style.display = 'none';
+    logEl.innerHTML = '';
+    preview.innerHTML = 'Loading...';
+    modal.style.display = 'flex';
+    try {
+        const data = await api('/api/slaves/sync-data/preview');
+        if (!data.files || !data.files.length) {
+            preview.innerHTML = '<div class="text-light">No CSV files in test data directory.</div>';
+            document.getElementById('syncBtn').disabled = true;
+            return;
+        }
+        if (!data.slaves || !data.slaves.length) {
+            preview.innerHTML = '<div class="text-light">No active slaves configured.</div>';
+            document.getElementById('syncBtn').disabled = true;
+            return;
+        }
+        document.getElementById('syncBtn').disabled = false;
+        let html = `<div class="text-sm mb-8"><strong>${data.files.length} file(s)</strong> will be copied to <strong>${data.slaves.length} slave(s)</strong>:</div>`;
+        html += '<ul style="margin:0;padding-left:20px;">';
+        data.files.forEach(f => { html += `<li class="text-sm">${escHtml(f.filename)} (${f.size || '?'})</li>`; });
+        html += '</ul>';
+        html += `<div class="text-sm text-light mt-8">Target slaves: ${data.slaves.map(escHtml).join(', ')}</div>`;
+        preview.innerHTML = html;
+    } catch (e) {
+        preview.innerHTML = '<div class="text-light">Failed to load preview.</div>';
+    }
+}
+
+function closeSyncModal() {
+    document.getElementById('syncModal').style.display = 'none';
+}
+
+async function runSyncData() {
+    const logEl = document.getElementById('syncLog');
+    const btn = document.getElementById('syncBtn');
+    btn.disabled = true;
+    btn.textContent = 'Syncing...';
+    logEl.style.display = '';
+    appendLog(logEl, 'Distributing files to slaves...', 'text-light');
+    try {
+        const data = await api('/api/slaves/sync-data', { method: 'POST' });
+        if (data.results) {
+            data.results.forEach(r => {
+                const icon = r.ok ? '\u2713' : '\u2717';
+                appendLog(logEl, `  ${icon} ${r.ip}: ${r.file} — ${r.detail || (r.ok ? 'OK' : 'FAILED')}`);
+            });
+        }
+        appendLog(logEl, `\n${data.summary || 'Done.'}`, 'text-light');
+        showToast(data.ok ? 'Data synced successfully' : 'Some transfers failed', data.ok ? 'success' : 'warning');
+    } catch (e) {
+        appendLog(logEl, `ERROR: ${e.message || 'Sync failed'}`, '');
+        showToast('Sync failed', 'error');
+    }
+    btn.textContent = 'Sync All';
+    btn.disabled = false;
+}
+
+// ===== View Slave Log (#22) =====
+let currentLogIp = '';
+
+async function viewLog(ip) {
+    currentLogIp = ip;
+    const modal = document.getElementById('logModal');
+    const content = document.getElementById('logContent');
+    const title = document.getElementById('logModalTitle');
+    const pathEl = document.getElementById('logPath');
+    title.textContent = `Log: ${ip}`;
+    content.textContent = 'Loading...';
+    pathEl.textContent = '';
+    modal.style.display = 'flex';
+    try {
+        const data = await api(`/api/slaves/${encodeURIComponent(ip)}/log`);
+        const r = data.result;
+        if (r.ok) {
+            content.textContent = r.log || '(empty log)';
+            content.scrollTop = content.scrollHeight;
+        } else {
+            content.textContent = `Error: ${r.error || 'Failed to fetch log'}`;
+        }
+        pathEl.textContent = r.path || '';
+    } catch (e) {
+        content.textContent = `Failed to fetch log: ${e.message || 'network error'}`;
+    }
+}
+
+function closeLogModal() {
+    document.getElementById('logModal').style.display = 'none';
+    currentLogIp = '';
+}
+
+async function refreshLog() {
+    if (currentLogIp) await viewLog(currentLogIp);
+}
+
+// ===== Clean Data (#32) =====
+function confirmCleanData(ip) {
+    if (!confirm(`Delete all CSV files in test_data/ on ${ip}?`)) return;
+    cleanData(ip);
+}
+
+async function cleanData(ip) {
+    showToast(`Cleaning data on ${ip}...`, 'info');
+    try {
+        const data = await api(`/api/slaves/${encodeURIComponent(ip)}/clean-data`, { method: 'POST' });
+        const r = data.result;
+        showToast(r.ok ? `Cleaned ${r.files_removed} file(s) on ${ip}` : `Clean failed on ${ip}: ${r.error || 'Unknown'}`, r.ok ? 'success' : 'error');
+    } catch (e) {
+        showToast(`Clean failed for ${ip}`, 'error');
+    }
+}
+
+async function bulkCleanData() {
+    const ips = [...selected].filter(ip => {
+        const s = slaveData.find(sl => sl.ip === ip);
+        return s && s.enabled !== false;
+    });
+    if (!ips.length) { showToast('No enabled slaves selected', 'warning'); return; }
+    if (!confirm(`Delete all CSV files in test_data/ on ${ips.length} slave(s)?`)) return;
+    showToast(`Cleaning data on ${ips.length} slaves...`, 'info');
+    try {
+        const data = await api('/api/slaves/bulk-clean-data', { method: 'POST', body: { ips } });
+        const ok = data.results.filter(r => r.ok).length;
+        showToast(`Cleaned data: ${ok}/${data.results.length} succeeded`, ok === data.results.length ? 'success' : 'warning');
+    } catch (e) {
+        showToast('Bulk clean failed', 'error');
+    }
+}
+
+// ===== Clean Logs (#33) =====
+function confirmCleanLog(ip) {
+    if (!confirm(`Truncate jmeter-slave.log on ${ip}?`)) return;
+    cleanLog(ip);
+}
+
+async function cleanLog(ip) {
+    showToast(`Cleaning log on ${ip}...`, 'info');
+    try {
+        const data = await api(`/api/slaves/${encodeURIComponent(ip)}/clean-log`, { method: 'POST' });
+        const r = data.result;
+        const size = r.bytes_cleared > 1024 ? `${(r.bytes_cleared / 1024).toFixed(1)} KB` : `${r.bytes_cleared} bytes`;
+        showToast(r.ok ? `Log cleared on ${ip} (${size})` : `Clean log failed on ${ip}: ${r.error || 'Unknown'}`, r.ok ? 'success' : 'error');
+    } catch (e) {
+        showToast(`Clean log failed for ${ip}`, 'error');
+    }
+}
+
+async function bulkCleanLogs() {
+    const ips = [...selected].filter(ip => {
+        const s = slaveData.find(sl => sl.ip === ip);
+        return s && s.enabled !== false;
+    });
+    if (!ips.length) { showToast('No enabled slaves selected', 'warning'); return; }
+    if (!confirm(`Truncate jmeter-slave.log on ${ips.length} slave(s)?`)) return;
+    showToast(`Cleaning logs on ${ips.length} slaves...`, 'info');
+    try {
+        const data = await api('/api/slaves/bulk-clean-logs', { method: 'POST', body: { ips } });
+        const ok = data.results.filter(r => r.ok).length;
+        showToast(`Cleaned logs: ${ok}/${data.results.length} succeeded`, ok === data.results.length ? 'success' : 'warning');
+    } catch (e) {
+        showToast('Bulk clean logs failed', 'error');
     }
 }
 

@@ -150,7 +150,10 @@ from services.slaves import (  # noqa: E402
     start_jmeter_server, stop_jmeter_server, build_ssh_configs,
     test_ssh_connection, test_rmi_port,
     provision_slave, check_provision_status,
+    distribute_files, fetch_slave_log,
+    clean_slave_data, clean_slave_log,
 )
+from services.data import list_csv_files
 
 # Cache last slave status check for dashboard health dots (E2)
 _last_slave_status: list[dict] = []
@@ -325,3 +328,126 @@ async def api_provision_status(request: Request, ip: str):
         return JSONResponse(status_code=404, content={"error": f"Slave {ip} not found"})
     result = await check_provision_status(ip, ssh_configs[ip])
     return {"result": result}
+
+
+# --- Sync Data (#29) ---
+
+@router.post("/api/slaves/sync-data")
+async def api_sync_data(request: Request):
+    """Distribute test data files to all active slaves (#29).
+
+    Copies all CSV files from test_data/ to each active slave's dest_path.
+    """
+    denied = _check_access(request)
+    if denied:
+        return denied
+    project = request.app.state.project
+    data_dir = resolve_path(project, "test_data_dir")
+    csv_files = list_csv_files(data_dir)
+    if not csv_files:
+        return JSONResponse(status_code=400, content={"error": "No CSV files in test data directory"})
+
+    slaves, active_ips, ssh_configs = _get_slaves(project)
+    if not active_ips:
+        return JSONResponse(status_code=400, content={"error": "No active slaves configured"})
+
+    items = [{"file_path": data_dir / f["filename"], "mode": "copy", "offset": 0, "size": 0} for f in csv_files]
+    results = await distribute_files(active_ips, ssh_configs, items, data_dir)
+
+    ok_count = sum(1 for r in results if r.get("ok"))
+    total = len(results)
+    return {"ok": ok_count == total, "results": results, "summary": f"{ok_count}/{total} transfers succeeded"}
+
+
+@router.get("/api/slaves/sync-data/preview")
+async def api_sync_data_preview(request: Request):
+    """List files that would be synced and target slaves (#29)."""
+    project = request.app.state.project
+    data_dir = resolve_path(project, "test_data_dir")
+    csv_files = list_csv_files(data_dir)
+    slaves, active_ips, ssh_configs = _get_slaves(project)
+    return {"files": csv_files, "slaves": active_ips}
+
+
+# --- View Slave Log (#22) ---
+
+@router.get("/api/slaves/{ip}/log")
+async def api_slave_log(request: Request, ip: str, tail: int = 200):
+    """Fetch jmeter-slave.log from a slave via SSH (#22)."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    project = request.app.state.project
+    slaves, active_ips, ssh_configs = _get_slaves(project)
+    if ip not in ssh_configs:
+        return JSONResponse(status_code=404, content={"error": f"Slave {ip} not found"})
+    result = await fetch_slave_log(ip, ssh_configs[ip], tail=tail)
+    return {"result": result}
+
+
+# --- Clean Data (#32) ---
+
+@router.post("/api/slaves/{ip}/clean-data")
+async def api_clean_data(request: Request, ip: str):
+    """Delete CSV files in slave's test_data/ directory (#32)."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    project = request.app.state.project
+    slaves, active_ips, ssh_configs = _get_slaves(project)
+    if ip not in ssh_configs:
+        return JSONResponse(status_code=404, content={"error": f"Slave {ip} not found"})
+    result = await clean_slave_data(ip, ssh_configs[ip])
+    return {"result": result}
+
+
+@router.post("/api/slaves/bulk-clean-data")
+async def api_bulk_clean_data(request: Request):
+    """Delete CSV files on multiple slaves (#32)."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    body = await request.json()
+    ips = body.get("ips", [])
+    if not ips:
+        return JSONResponse(status_code=400, content={"error": "No slaves specified"})
+    project = request.app.state.project
+    slaves, active_ips, ssh_configs = _get_slaves(project)
+    import asyncio as _asyncio
+    tasks = [clean_slave_data(ip, ssh_configs[ip]) for ip in ips if ip in ssh_configs]
+    results = await _asyncio.gather(*tasks)
+    return {"results": list(results)}
+
+
+# --- Clean Logs (#33) ---
+
+@router.post("/api/slaves/{ip}/clean-log")
+async def api_clean_log(request: Request, ip: str):
+    """Truncate jmeter-slave.log on a slave (#33)."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    project = request.app.state.project
+    slaves, active_ips, ssh_configs = _get_slaves(project)
+    if ip not in ssh_configs:
+        return JSONResponse(status_code=404, content={"error": f"Slave {ip} not found"})
+    result = await clean_slave_log(ip, ssh_configs[ip])
+    return {"result": result}
+
+
+@router.post("/api/slaves/bulk-clean-logs")
+async def api_bulk_clean_logs(request: Request):
+    """Truncate logs on multiple slaves (#33)."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    body = await request.json()
+    ips = body.get("ips", [])
+    if not ips:
+        return JSONResponse(status_code=400, content={"error": "No slaves specified"})
+    project = request.app.state.project
+    slaves, active_ips, ssh_configs = _get_slaves(project)
+    import asyncio as _asyncio
+    tasks = [clean_slave_log(ip, ssh_configs[ip]) for ip in ips if ip in ssh_configs]
+    results = await _asyncio.gather(*tasks)
+    return {"results": list(results)}

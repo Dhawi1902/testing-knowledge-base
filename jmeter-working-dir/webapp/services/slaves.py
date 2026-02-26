@@ -539,3 +539,84 @@ async def distribute_files(
         _executor, _distribute_items,
         slave_ips, ssh_configs, items, data_dir,
     )
+
+
+# --- View Slave Log (#22) ---
+
+def _fetch_slave_log(ip: str, ssh_config: dict, tail: int = 200) -> dict:
+    """Fetch the last N lines of jmeter-slave.log via SSH (#22)."""
+    slave_dir = ssh_config.get("slave_dir", "~/jmeter-slave")
+    log_path = f"{slave_dir}/jmeter-slave.log"
+    try:
+        client = _ssh_connect(ip, ssh_config, timeout=10)
+        cmd = f"tail -n {tail} {log_path} 2>/dev/null || echo '[Log file not found]'"
+        stdin, stdout, stderr = client.exec_command(cmd, timeout=15)
+        output = stdout.read().decode("utf-8", errors="replace")
+        stdout.channel.recv_exit_status()
+        client.close()
+        return {"ip": ip, "ok": True, "log": output, "path": log_path}
+    except Exception as e:
+        return {"ip": ip, "ok": False, "log": "", "path": log_path, "error": str(e)}
+
+
+async def fetch_slave_log(ip: str, ssh_config: dict, tail: int = 200) -> dict:
+    """Async wrapper for fetching slave log."""
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(_executor, _fetch_slave_log, ip, ssh_config, tail)
+
+
+# --- Clean Data (#32) ---
+
+def _clean_slave_data(ip: str, ssh_config: dict) -> dict:
+    """Delete CSV files in slave's test_data/ directory via SSH (#32)."""
+    slave_dir = ssh_config.get("slave_dir", "~/jmeter-slave")
+    data_path = f"{slave_dir}/test_data"
+    try:
+        client = _ssh_connect(ip, ssh_config, timeout=10)
+        # List files before deletion for reporting
+        stdin, stdout, stderr = client.exec_command(f"ls {data_path}/*.csv 2>/dev/null | wc -l", timeout=10)
+        count = stdout.read().decode().strip()
+        stdout.channel.recv_exit_status()
+        # Delete CSV files
+        stdin, stdout, stderr = client.exec_command(f"rm -f {data_path}/*.csv 2>/dev/null && echo ok", timeout=15)
+        out = stdout.read().decode().strip()
+        stdout.channel.recv_exit_status()
+        client.close()
+        return {"ip": ip, "ok": "ok" in out, "files_removed": int(count) if count.isdigit() else 0}
+    except Exception as e:
+        return {"ip": ip, "ok": False, "error": str(e), "files_removed": 0}
+
+
+async def clean_slave_data(ip: str, ssh_config: dict) -> dict:
+    """Async wrapper for cleaning slave data."""
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(_executor, _clean_slave_data, ip, ssh_config)
+
+
+# --- Clean Logs (#33) ---
+
+def _clean_slave_log(ip: str, ssh_config: dict) -> dict:
+    """Truncate jmeter-slave.log on a slave via SSH (#33)."""
+    slave_dir = ssh_config.get("slave_dir", "~/jmeter-slave")
+    log_path = f"{slave_dir}/jmeter-slave.log"
+    try:
+        client = _ssh_connect(ip, ssh_config, timeout=10)
+        # Get size before truncation
+        stdin, stdout, stderr = client.exec_command(f"stat -c%s {log_path} 2>/dev/null || echo 0", timeout=10)
+        size_str = stdout.read().decode().strip()
+        stdout.channel.recv_exit_status()
+        # Truncate
+        stdin, stdout, stderr = client.exec_command(f"> {log_path} 2>/dev/null && echo ok", timeout=10)
+        out = stdout.read().decode().strip()
+        stdout.channel.recv_exit_status()
+        client.close()
+        size_bytes = int(size_str) if size_str.isdigit() else 0
+        return {"ip": ip, "ok": "ok" in out, "bytes_cleared": size_bytes}
+    except Exception as e:
+        return {"ip": ip, "ok": False, "error": str(e), "bytes_cleared": 0}
+
+
+async def clean_slave_log(ip: str, ssh_config: dict) -> dict:
+    """Async wrapper for cleaning slave log."""
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(_executor, _clean_slave_log, ip, ssh_config)

@@ -208,6 +208,34 @@ class TestViewerDenied:
         r = viewer_client.post(f"{bp}/api/slaves/10.0.0.1/provision-status")
         assert r.status_code == 403
 
+    # -- #29: Sync data --
+    def test_sync_data(self, viewer_client, bp):
+        r = viewer_client.post(f"{bp}/api/slaves/sync-data")
+        assert r.status_code == 403
+
+    # -- #22: Slave log --
+    def test_slave_log(self, viewer_client, bp):
+        r = viewer_client.get(f"{bp}/api/slaves/10.0.0.1/log")
+        assert r.status_code == 403
+
+    # -- #32: Clean data --
+    def test_slave_clean_data(self, viewer_client, bp):
+        r = viewer_client.post(f"{bp}/api/slaves/10.0.0.1/clean-data")
+        assert r.status_code == 403
+
+    def test_bulk_clean_data(self, viewer_client, bp):
+        r = viewer_client.post(f"{bp}/api/slaves/bulk-clean-data", json={"ips": ["10.0.0.1"]})
+        assert r.status_code == 403
+
+    # -- #33: Clean logs --
+    def test_slave_clean_log(self, viewer_client, bp):
+        r = viewer_client.post(f"{bp}/api/slaves/10.0.0.1/clean-log")
+        assert r.status_code == 403
+
+    def test_bulk_clean_logs(self, viewer_client, bp):
+        r = viewer_client.post(f"{bp}/api/slaves/bulk-clean-logs", json={"ips": ["10.0.0.1"]})
+        assert r.status_code == 403
+
     # -- F11: Bulk regenerate --
     def test_bulk_regenerate(self, viewer_client, bp):
         r = viewer_client.post(f"{bp}/api/results/bulk-regenerate", json={"folders": []})
