@@ -256,6 +256,15 @@ class TestViewerDenied:
         r = viewer_client.put(f"{bp}/api/config/properties", json={"properties": {}})
         assert r.status_code == 403
 
+    # -- JMeter properties --
+    def test_jmeter_properties_master_put(self, viewer_client, bp):
+        r = viewer_client.put(f"{bp}/api/config/jmeter-properties/master", json={"properties": {}})
+        assert r.status_code == 403
+
+    def test_jmeter_properties_slave_put(self, viewer_client, bp):
+        r = viewer_client.put(f"{bp}/api/config/jmeter-properties/slave", json={"properties": {}})
+        assert r.status_code == 403
+
     # -- Plans CRUD --
     def test_plans_delete(self, viewer_client, bp):
         r = viewer_client.delete(f"{bp}/api/plans/test.jmx")
