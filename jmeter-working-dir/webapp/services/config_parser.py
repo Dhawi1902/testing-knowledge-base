@@ -255,8 +255,13 @@ def parse_jmeter_properties_catalog(path: Path) -> list[dict]:
                 # Check if the previous description line is a category name
                 if description_lines:
                     candidate = description_lines[-1].strip()
-                    # Category names are short, don't contain '=' and aren't property descriptions
-                    if candidate and "=" not in candidate and len(candidate) < 80:
+                    # Category names are short, title-like, no '=' or '/' or digits at start
+                    # Skip file header noise like "THIS FILE SHOULD NOT BE MODIFIED"
+                    if (candidate and "=" not in candidate and len(candidate) < 80
+                            and not candidate[0].isdigit()
+                            and "/" not in candidate
+                            and "SHOULD NOT" not in candidate
+                            and "should not" not in candidate):
                         current_category = candidate
                         description_lines = []
                 continue
@@ -264,14 +269,25 @@ def parse_jmeter_properties_catalog(path: Path) -> list[dict]:
             # Collect comment lines as potential descriptions
             if stripped.startswith("#"):
                 content = stripped.lstrip("#").strip()
-                # Skip license headers and empty comments
-                if content and not content.startswith("Licensed to") and not content.startswith("http://"):
+                # Skip license headers, empty comments, and URLs
+                if content and not content.startswith("Licensed to") and not content.startswith("http://") and not content.startswith("https://"):
                     # Check if this is a commented-out property: #key=value
-                    if "=" in content and not content.startswith(" ") and not any(c == " " for c in content.split("=", 1)[0]):
+                    if "=" in content and not content.startswith(" "):
                         key, _, value = content.partition("=")
                         key = key.strip()
                         value = value.strip()
-                        if key and not key.startswith("Example") and not key.startswith("//"):
+                        # Valid JMeter property keys: no spaces, look like identifiers
+                        # Must contain dots or underscores (e.g. server.rmi.ssl.disable)
+                        # Skip: examples (prefix=Namespace), short words (ns=...), URLs
+                        is_property_key = (
+                            key
+                            and " " not in key
+                            and not key.startswith("Example")
+                            and not key.startswith("//")
+                            and not key.startswith("See ")
+                            and ("." in key or "_" in key)
+                        )
+                        if is_property_key:
                             desc = " ".join(description_lines[-3:]) if description_lines else ""
                             catalog.append({
                                 "key": key,

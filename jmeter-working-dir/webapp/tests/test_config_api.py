@@ -605,7 +605,7 @@ class TestJmeterPropertiesCatalog:
             "# Unrelated comment\n"
             "\n"
             "# Direct description\n"
-            "#key=val\n",
+            "#test.key=val\n",
             encoding="utf-8",
         )
         catalog = parse_jmeter_properties_catalog(sample)
