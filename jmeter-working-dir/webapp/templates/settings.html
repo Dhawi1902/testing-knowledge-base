@@ -9,21 +9,21 @@
         <span class="card-title">App Settings</span>
         <div class="flex gap-8">
             {% if access_level != 'viewer' %}
-            <button class="btn btn-outline btn-sm" onclick="exportSettings()" title="Export settings as JSON">{{ icon('download', 14) }} Export</button>
-            <button class="btn btn-outline btn-sm" onclick="document.getElementById('importInput').click()" title="Import settings from JSON">{{ icon('upload', 14) }} Import</button>
+            <button class="btn btn-outline btn-sm" onclick="exportSettings()" title="Export settings as JSON">{{ icon('download', 14) }} <span class="btn-label">Export</span></button>
+            <button class="btn btn-outline btn-sm" onclick="document.getElementById('importInput').click()" title="Import settings from JSON">{{ icon('upload', 14) }} <span class="btn-label">Import</span></button>
             <input type="file" id="importInput" accept=".json" style="display:none;" onchange="importSettings(this)">
-            <button class="btn btn-primary btn-sm" onclick="saveAllSettings()">{{ icon('save', 14) }} Save</button>
+            <button class="btn btn-primary btn-sm" onclick="saveAllSettings()">{{ icon('save', 14) }} <span class="btn-label">Save</span></button>
             {% endif %}
         </div>
     </div>
 
     <div class="tabs" role="tablist">
-        <button class="tab-btn active" data-tab="tab-general" role="tab" aria-selected="true" aria-controls="tab-general">{{ icon('settings', 14) }} General</button>
-        <button class="tab-btn" data-tab="tab-project" role="tab" aria-selected="false" aria-controls="tab-project">{{ icon('folder-open', 14) }} Project</button>
-        <button class="tab-btn" data-tab="tab-report" role="tab" aria-selected="false" aria-controls="tab-report">{{ icon('bar-chart-3', 14) }} Report</button>
-        <button class="tab-btn" data-tab="tab-integrations" role="tab" aria-selected="false" aria-controls="tab-integrations">{{ icon('zap', 14) }} Integrations</button>
-        <button class="tab-btn" data-tab="tab-jmeter" role="tab" aria-selected="false" aria-controls="tab-jmeter">{{ icon('terminal', 14) }} JMeter</button>
-        <button class="tab-btn" data-tab="tab-system" role="tab" aria-selected="false" aria-controls="tab-system">{{ icon('hard-drive', 14) }} System</button>
+        <button class="tab-btn active" data-tab="tab-general" role="tab" aria-selected="true" aria-controls="tab-general" title="General">{{ icon('settings', 14) }} <span class="tab-label">General</span></button>
+        <button class="tab-btn" data-tab="tab-project" role="tab" aria-selected="false" aria-controls="tab-project" title="Project">{{ icon('folder-open', 14) }} <span class="tab-label">Project</span></button>
+        <button class="tab-btn" data-tab="tab-report" role="tab" aria-selected="false" aria-controls="tab-report" title="Report">{{ icon('bar-chart-3', 14) }} <span class="tab-label">Report</span></button>
+        <button class="tab-btn" data-tab="tab-integrations" role="tab" aria-selected="false" aria-controls="tab-integrations" title="Integrations">{{ icon('zap', 14) }} <span class="tab-label">Integrations</span></button>
+        <button class="tab-btn" data-tab="tab-jmeter" role="tab" aria-selected="false" aria-controls="tab-jmeter" title="JMeter">{{ icon('terminal', 14) }} <span class="tab-label">JMeter</span></button>
+        <button class="tab-btn" data-tab="tab-system" role="tab" aria-selected="false" aria-controls="tab-system" title="System">{{ icon('hard-drive', 14) }} <span class="tab-label">System</span></button>
     </div>
 
     <!-- ==================== General Tab ==================== -->
@@ -325,21 +325,19 @@
 
     <!-- Add Property Modal -->
     <div id="addPropModal" class="modal-overlay">
-        <div class="modal" style="max-width:600px;padding:0;">
+        <div class="modal" style="max-width:600px;">
             <div class="modal-header">
                 <h3>Add JMeter Property</h3>
                 <button class="modal-close" onclick="closeAddPropertyModal()">&times;</button>
             </div>
-            <div class="p-16">
-                <input class="form-input mb-8" id="propSearchInput" type="text" placeholder="Search properties... (e.g. rmi, http, timeout)" oninput="filterPropertyList(this.value)">
-                <div id="propSearchResults" style="max-height:400px;overflow-y:auto;"></div>
-                <div style="margin-top:12px;border-top:1px solid var(--color-border);padding-top:12px;">
-                    <div class="text-sm text-bold mb-4">Custom Property</div>
-                    <div class="flex gap-8">
-                        <input class="form-input form-input-mono" id="customPropKey" placeholder="key" style="flex:1;">
-                        <input class="form-input form-input-mono" id="customPropVal" placeholder="value" style="flex:1;">
-                        <button class="btn btn-primary btn-sm" onclick="addCustomProperty()">Add</button>
-                    </div>
+            <input class="form-input mb-8" id="propSearchInput" type="text" placeholder="Search properties..." oninput="filterPropertyList(this.value); document.getElementById('addPropModal').classList.toggle('has-query', this.value.length > 0)">
+            <div id="propSearchResults" style="max-height:400px;overflow-y:auto;"></div>
+            <div style="margin-top:12px;border-top:1px solid var(--color-border);padding-top:12px;">
+                <div class="text-sm text-bold mb-4">Custom Property</div>
+                <div class="flex gap-8 prop-custom-form">
+                    <input class="form-input form-input-mono" id="customPropKey" placeholder="key" style="flex:1;">
+                    <input class="form-input form-input-mono" id="customPropVal" placeholder="value" style="flex:1;">
+                    <button class="btn btn-primary btn-sm" onclick="addCustomProperty()">Add</button>
                 </div>
             </div>
         </div>
@@ -362,6 +360,14 @@
 const ACCESS_LEVEL = '{{ access_level | default("viewer") }}';
 const isAdmin = ACCESS_LEVEL !== 'viewer';
 let currentSettings = {};
+
+const ICONS = {
+    activity: `{{ icon('activity', 16) }}`,
+    cpu: `{{ icon('cpu', 16) }}`,
+    terminal: `{{ icon('terminal', 16) }}`,
+    server: `{{ icon('server', 16) }}`,
+    'hard-drive': `{{ icon('hard-drive', 16) }}`,
+};
 
 async function loadSettings() {
     const data = await api('/api/settings');
@@ -588,16 +594,19 @@ async function loadSystemInfo() {
         const container = document.getElementById('systemInfoCards');
         const disk = data.disk || {};
         const items = [
-            { label: 'JMeter', value: data.jmeter || 'N/A' },
-            { label: 'Java', value: data.java || 'N/A' },
-            { label: 'Python', value: data.python || 'N/A' },
-            { label: 'OS', value: data.os || 'N/A' },
-            { label: 'Disk', value: `${disk.free_gb || '?'} GB free / ${disk.total_gb || '?'} GB (${disk.percent || '?'}% used)` },
+            { label: 'JMeter', value: data.jmeter || 'N/A', icon: 'activity' },
+            { label: 'Java', value: data.java || 'N/A', icon: 'cpu' },
+            { label: 'Python', value: data.python || 'N/A', icon: 'terminal' },
+            { label: 'OS', value: data.os || 'N/A', icon: 'server' },
+            { label: 'Disk', value: `${disk.free_gb || '?'} GB free / ${disk.total_gb || '?'} GB (${disk.percent || '?'}% used)`, icon: 'hard-drive' },
         ];
         container.innerHTML = items.map(i =>
-            `<div class="surface-card form-col" style="min-width:180px;">
-                <div class="text-light text-sm">${i.label}</div>
-                <div class="text-sm text-mono" style="margin-top:4px;word-break:break-word;">${i.value}</div>
+            `<div class="surface-card form-col sys-info-card">
+                <div class="sys-info-header">
+                    <span class="sys-info-icon">${ICONS[i.icon] || ''}</span>
+                    <span class="text-light text-sm">${i.label}</span>
+                </div>
+                <div class="text-sm text-mono" style="margin-top:6px;word-break:break-word;">${i.value}</div>
             </div>`
         ).join('');
     } catch(e) {
@@ -765,8 +774,8 @@ function renderJmeterProperties() {
     const renderedKeys = new Set();
 
     for (const [section, keys] of Object.entries(CURATED_MASTER)) {
-        html += `<div class="mb-16">`;
-        html += `<div class="text-sm text-bold mb-4" style="color:var(--color-text-secondary);">${escHtml(section)}</div>`;
+        html += `<div class="surface-card mb-12 p-12">`;
+        html += `<div class="text-sm text-bold mb-8" style="color:var(--color-text-secondary);">${escHtml(section)}</div>`;
         html += `<div class="props-grid">`;
         keys.forEach(key => {
             renderedKeys.add(key);
@@ -796,8 +805,8 @@ function renderJmeterProperties() {
 
     const customKeys = Object.keys(jpropsOverrides).filter(k => !renderedKeys.has(k));
     if (customKeys.length) {
-        html += `<div class="mb-16">`;
-        html += `<div class="text-sm text-bold mb-4" style="color:var(--color-text-secondary);">Custom Overrides</div>`;
+        html += `<div class="surface-card mb-12 p-12">`;
+        html += `<div class="text-sm text-bold mb-8" style="color:var(--color-text-secondary);">Custom Overrides</div>`;
         customKeys.forEach(key => {
             renderedKeys.add(key);
             html += `<div class="prop-row flex gap-8 mb-4" style="align-items:center;">`;

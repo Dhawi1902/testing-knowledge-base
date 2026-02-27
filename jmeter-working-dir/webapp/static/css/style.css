@@ -900,6 +900,12 @@ th.sort-desc::after { content: ' \25BC'; font-size: 0.7em; }
 }
 .section-title { font-weight: 600; }
 
+/* ===== System Info Cards (Settings) ===== */
+.sys-info-card { min-width: 180px; }
+.sys-info-header { display: flex; align-items: center; gap: 6px; }
+.sys-info-icon { display: flex; color: var(--color-primary); }
+.sys-info-icon svg { width: 16px; height: 16px; }
+
 /* ===== Config Properties Table ===== */
 .props-table { width:100%; border-collapse:collapse; }
 .props-table th { text-align:left; font-size:11px; font-weight:600; color:var(--color-text-light); padding:4px 8px 8px; border-bottom:1px solid var(--color-border); }
@@ -1249,6 +1255,24 @@ th.sort-desc::after { content: ' \25BC'; font-size: 0.7em; }
     .prop-row .form-label { min-width: 100% !important; margin-bottom: 2px; }
     .prop-row .jprop-key { min-width: 100% !important; margin-bottom: 2px; }
     .prop-row .jprop-input { flex: 1 1 100% !important; min-width: 0; }
+
+    /* ----- Settings page mobile ----- */
+    .tab-btn .tab-label { display: none; }
+    .tab-btn { padding: 10px 14px; }
+
+    /* Settings form rows — stack on mobile */
+    .form-row {
+        flex-direction: column;
+    }
+    .form-row .form-group,
+    .form-row .form-col {
+        min-width: 0 !important;
+        flex: 1 1 100% !important;
+    }
+
+    /* System info cards — 1 column on mobile */
+    #systemInfoCards { flex-direction: column; }
+    .sys-info-card { min-width: 0 !important; }
 }
 
 /* ============================================================
