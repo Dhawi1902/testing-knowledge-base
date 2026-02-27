@@ -244,7 +244,7 @@ class TestStatsPreview:
         assert o["error_pct"] == 0.0
         assert o["throughput"] == 2.0
         assert o["duration_sec"] == 1.0
-        assert o["peak_vus"] == 1
+        assert o["total_vus"] == 1
 
     def test_known_transaction_stats(self, admin_client, bp, sample_result):
         """Verify per-transaction stats from known fixture data."""
@@ -381,7 +381,7 @@ class TestJtlParserUnit:
         assert o["max"] == 500
         assert o["error_count"] == 1
         assert round(o["error_pct"], 2) == 33.33
-        assert o["peak_vus"] == 3
+        assert o["total_vus"] == 3
 
     def test_parse_jtl_empty_file(self, tmp_path):
         from services.jtl_parser import parse_jtl

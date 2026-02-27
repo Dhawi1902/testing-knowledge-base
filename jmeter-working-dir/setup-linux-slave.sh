@@ -21,11 +21,11 @@ PROJECT_DIR="${OPC_HOME}/jmeter-PT/linux"
 # -----------------------------------------------------------
 echo ""
 echo "[1/6] Installing Java 17..."
-if java -version 2>&1 | grep -q "17"; then
-    echo "  -> Java 17 already installed, skipping."
+if java -version 2>&1 | grep -q "21"; then
+    echo "  -> Java 21 already installed, skipping."
 else
-    dnf install -y java-17-openjdk java-17-openjdk-devel
-    echo "  -> Java 17 installed."
+    dnf install -y java-21-openjdk java-21-openjdk-devel
+    echo "  -> Java 21 installed."
 fi
 java -version 2>&1 | head -1
 
@@ -88,16 +88,25 @@ cat > "${PROJECT_DIR}/start-slave.sh" << 'SCRIPT'
 #!/bin/bash
 # Start JMeter in server (slave) mode
 JMETER_HOME="/opt/jmeter"
-HOST_IP=$(hostname -I | awk '{print $1}')
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# Use Tailscale IP if available (for cross-network master), otherwise system IP
+if command -v tailscale &> /dev/null && tailscale status &> /dev/null; then
+    HOST_IP=$(tailscale ip -4)
+else
+    HOST_IP=$(hostname -I | awk '{print $1}')
+fi
 
 # Apply heap settings
 export JVM_ARGS="-Xms512m -Xmx1g -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:G1ReservePercent=20"
+
+# Set working directory so JMeter's user.dir resolves relative paths correctly
+cd "$SCRIPT_DIR"
 
 # Kill any existing jmeter-server process
 pkill -f "jmeter-server" 2>/dev/null || true
 sleep 1
 
-echo "Starting JMeter slave on ${HOST_IP}..."
+echo "Starting JMeter slave on ${HOST_IP} (user.dir=$SCRIPT_DIR)..."
 nohup ${JMETER_HOME}/bin/jmeter-server \
     -Djava.rmi.server.hostname=${HOST_IP} \
     -Dserver.rmi.localport=50000 \

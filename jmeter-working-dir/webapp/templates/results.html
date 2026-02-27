@@ -226,7 +226,7 @@ function renderResults() {
         const jtlNames = (f.jtl_files || []).join(', ');
         return `<tr>
             <td><label class="check"><input type="checkbox" class="result-check" value="${aName}" onchange="syncCheckboxes(this);updateSelectionBtns()"><span class="check-box"></span></label></td>
-            <td class="text-mono"><span class="result-name" data-folder="${aName}" onclick="editLabel(this)" title="Click to set label">${f.label ? `<span class="badge badge-info mr-4">${escHtml(f.label)}</span>` : ''}${eName}</span></td>
+            <td class="text-mono"><span class="result-name" data-folder="${aName}" onclick="editLabel(this)" title="Click to set label">${eName}${f.label ? ` <span class="badge badge-info ml-4">${escHtml(f.label)}</span>` : ''}</span></td>
             <td class="text-sm">${new Date(f.date).toLocaleString()}</td>
             <td>${formatSize(f.size)}</td>
             <td>${f.has_report ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-danger">No</span>'}</td>
@@ -259,7 +259,7 @@ function renderResults() {
         return `<div class="result-card" data-name="${aName}">
             <div class="result-card-header">
                 <label class="check"><input type="checkbox" class="result-card-check" value="${aName}" onchange="syncCheckboxes(this);updateSelectionBtns()"><span class="check-box"></span></label>
-                <span class="result-card-name">${f.label ? `<span class="badge badge-info mr-4">${escHtml(f.label)}</span>` : ''}${eName}</span>
+                <span class="result-card-name" data-folder="${aName}" onclick="editLabel(this)">${eName}${f.label ? ` <span class="badge badge-info ml-4">${escHtml(f.label)}</span>` : ''}</span>
                 <div class="dropdown">
                     <button class="btn btn-sm btn-icon btn-ghost" onclick="toggleDropdown(this)">${icons.moreHorizontal}</button>
                     <div class="dropdown-menu">${mobileDropdownItems}</div>
@@ -506,15 +506,20 @@ async function compareSelected() {
 
 // ===== Stats Preview (F10) =====
 async function toggleStats(folder) {
+    // Support both desktop (tr#stats-) and mobile (div#m-stats-)
     const row = document.getElementById('stats-' + folder);
-    if (!row) return;
-    if (!row.classList.contains('hidden')) {
-        row.classList.add('hidden');
+    const mRow = document.getElementById('m-stats-' + folder);
+    const target = row || mRow;
+    if (!target) return;
+    if (!target.classList.contains('hidden')) {
+        target.classList.add('hidden');
+        if (row) row.classList.add('hidden');
+        if (mRow) mRow.classList.add('hidden');
         return;
     }
-    const cell = row.querySelector('td');
+    const cell = row ? row.querySelector('td') : mRow;
     cell.innerHTML = '<div class="p-12"><span class="text-light">Loading stats...</span></div>';
-    row.classList.remove('hidden');
+    target.classList.remove('hidden');
     try {
         const data = await api(`/api/results/${encodeURIComponent(folder)}/stats`);
         if (data.error) { cell.innerHTML = `<div class="p-12 text-light">${escHtml(data.error)}</div>`; return; }
@@ -522,6 +527,7 @@ async function toggleStats(folder) {
         const errClass = o.error_pct > 0 ? 'stat-card-tint-danger' : '';
         let html = `<div class="p-12" style="border-top:1px solid var(--color-border);background:var(--color-bg);">
             <div class="live-stats-grid mb-8">
+                <div class="surface-card"><span class="text-sm text-light">Total VUs</span><div class="text-bold">${o.total_vus ? o.total_vus.toLocaleString() : '-'}</div></div>
                 <div class="surface-card"><span class="text-sm text-light">Samples</span><div class="text-bold">${o.total_samples.toLocaleString()}</div></div>
                 <div class="surface-card"><span class="text-sm text-light">Avg RT</span><div class="text-bold">${o.avg.toFixed(0)} ms</div></div>
                 <div class="surface-card"><span class="text-sm text-light">P95</span><div class="text-bold">${o.p95.toFixed(0)} ms</div></div>
@@ -541,6 +547,9 @@ async function toggleStats(folder) {
         }
         html += '</div>';
         cell.innerHTML = html;
+        // Sync both views
+        if (row && mRow && target === row) { mRow.innerHTML = html; mRow.classList.remove('hidden'); }
+        if (row && mRow && target === mRow) { row.querySelector('td').innerHTML = html; row.classList.remove('hidden'); }
     } catch(e) {
         cell.innerHTML = `<div class="p-12 text-light">Failed to load stats</div>`;
     }
@@ -655,5 +664,26 @@ document.addEventListener('click', e => {
 });
 
 loadResults();
+
+// Auto-refresh: watch runner via WebSocket — reload results when test finishes
+(function() {
+    let retryTimer = null;
+    function watchRunner() {
+        const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const ws = new WebSocket(`${proto}//${location.host}/ws/runner/logs`);
+        ws.onclose = function(e) {
+            if (e.code === 4001) {
+                // No active test — retry in 5s in case one starts
+                retryTimer = setTimeout(watchRunner, 5000);
+            } else {
+                // Test finished (normal close) — refresh results
+                loadResults();
+                retryTimer = setTimeout(watchRunner, 2000);
+            }
+        };
+        ws.onerror = function() { retryTimer = setTimeout(watchRunner, 5000); };
+    }
+    watchRunner();
+})();
 </script>
 {% endblock %}

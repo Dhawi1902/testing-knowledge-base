@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from fastapi import APIRouter, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
@@ -236,6 +236,7 @@ from services.slaves import (  # noqa: E402
     distribute_files, fetch_slave_log,
     clean_slave_data, clean_slave_log,
     get_slave_resources, get_all_slave_resources,
+    fetch_all_agent_metrics,
 )
 from services.data import list_csv_files
 from services.health_history import load_health_history, record_status_check
@@ -523,6 +524,88 @@ async def api_clean_log(request: Request, ip: str):
     return {"result": result}
 
 
+@router.post("/api/slaves/collect-logs")
+async def api_collect_logs(request: Request):
+    """Fetch logs from active slaves and save to local disk."""
+    denied = _check_access(request)
+    if denied:
+        return denied
+    body = await request.json()
+    requested_ips = body.get("ips", [])
+    tail = int(body.get("tail", 0))  # 0 = full log
+
+    project = request.app.state.project
+    slaves, active_ips, ssh_configs = _get_slaves(project)
+    ips = [ip for ip in requested_ips if ip in ssh_configs] if requested_ips else [ip for ip in active_ips if ip in ssh_configs]
+    if not ips:
+        return JSONResponse(status_code=400, content={"error": "No slaves available"})
+
+    # Save directory: {project_root}/results/slave-logs/
+    from services.config_parser import get_project_root
+    log_dir = get_project_root(project) / "results" / "slave-logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+
+    import asyncio as _asyncio
+    # Fetch full logs (tail=0 means cat the whole file)
+    tasks = [fetch_slave_log(ip, ssh_configs[ip], tail=tail) for ip in ips]
+    results = await _asyncio.gather(*tasks)
+
+    saved = []
+    for r in results:
+        ip = r["ip"]
+        safe_ip = ip.replace(":", "_")  # handle IPv6
+        fname = f"{safe_ip}_jmeter-slave.log"
+        fpath = log_dir / fname
+        if r.get("ok") and r.get("log"):
+            fpath.write_text(r["log"], encoding="utf-8")
+            saved.append({"ip": ip, "ok": True, "file": fname, "size": len(r["log"])})
+        else:
+            saved.append({"ip": ip, "ok": False, "error": r.get("error", "Empty log")})
+
+    ok_count = sum(1 for s in saved if s["ok"])
+    return {
+        "ok": ok_count == len(saved),
+        "results": saved,
+        "dest": str(log_dir),
+        "summary": f"{ok_count}/{len(saved)} logs saved",
+    }
+
+
+@router.get("/api/slaves/saved-logs")
+async def api_list_saved_logs(request: Request):
+    """List locally saved slave log files."""
+    project = request.app.state.project
+    from services.config_parser import get_project_root
+    log_dir = get_project_root(project) / "results" / "slave-logs"
+    if not log_dir.is_dir():
+        return {"files": []}
+    files = []
+    for p in sorted(log_dir.glob("*_jmeter-slave.log")):
+        stat = p.stat()
+        files.append({
+            "filename": p.name,
+            "ip": p.stem.replace("_jmeter-slave", "").replace("_", ":"),
+            "size": stat.st_size,
+            "modified": stat.st_mtime,
+        })
+    return {"files": files, "dest": str(log_dir)}
+
+
+@router.get("/api/slaves/saved-logs/{filename}")
+async def api_view_saved_log(request: Request, filename: str):
+    """View or download a saved slave log file."""
+    project = request.app.state.project
+    from services.config_parser import get_project_root
+    from services.auth import safe_join
+    log_dir = get_project_root(project) / "results" / "slave-logs"
+    file_path = safe_join(log_dir, filename)
+    if file_path is None:
+        return JSONResponse(status_code=403, content={"error": "Access denied"})
+    if not file_path.exists():
+        return JSONResponse(status_code=404, content={"error": "File not found"})
+    return FileResponse(file_path, filename=filename, media_type="text/plain")
+
+
 @router.post("/api/slaves/bulk-clean-logs")
 async def api_bulk_clean_logs(request: Request):
     """Truncate logs on multiple slaves (#33)."""
@@ -568,6 +651,26 @@ async def api_all_slave_resources(request: Request):
     if not active_ips:
         return {"results": []}
     results = await get_all_slave_resources(active_ips, ssh_configs)
+    return {"results": list(results)}
+
+
+# --- Agent Metrics (HTTP-based monitoring) ---
+
+@router.get("/api/slaves/metrics")
+async def api_all_slave_metrics(request: Request):
+    """Fetch metrics from all slaves via HTTP agent (lightweight, no SSH)."""
+    project = request.app.state.project
+    vm_config = read_json_config(resolve_path(project, "config_dir") / "vm_config.json")
+    agent_port = vm_config.get("agent_port", 9100)
+    slaves_raw = read_slaves(resolve_path(project, "slaves_file"))
+    active_ips = [
+        (s if isinstance(s, str) else s["ip"])
+        for s in slaves_raw
+        if isinstance(s, str) or s.get("enabled", True)
+    ]
+    if not active_ips:
+        return {"results": []}
+    results = await fetch_all_agent_metrics(active_ips, port=agent_port)
     return {"results": list(results)}
 
 

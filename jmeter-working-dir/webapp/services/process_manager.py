@@ -128,6 +128,24 @@ class ProcessManager:
         # Enter post-processing state
         self._post_processing = True
 
+        # Skip post-commands if the main process failed
+        main_rc = proc.returncode
+        if main_rc and main_rc != 0 and self._post_commands:
+            self._output_buffer.append(
+                f"\n--- Skipping post-commands (JMeter exited with code {main_rc}) ---"
+            )
+            self._post_commands = []
+            # Clean up empty result folder from failed run
+            result_dir = self._run_info.get("result_dir")
+            if result_dir:
+                rd = Path(result_dir)
+                if rd.is_dir() and not any(rd.glob("*.jtl")):
+                    import shutil
+                    shutil.rmtree(str(rd), ignore_errors=True)
+                    self._output_buffer.append(
+                        f"--- Removed empty result folder: {rd.name} ---"
+                    )
+
         # Run post-commands sequentially (with timeout matching regeneration: 600s)
         for post_cmd in self._post_commands:
             self._output_buffer.append(f"\n--- Running: {' '.join(post_cmd)} ---")
@@ -169,8 +187,10 @@ class ProcessManager:
             except Exception as e:
                 self._output_buffer.append(f"--- Report HTML cleanup error: {e} ---")
 
-        # Exit post-processing state
+        # Exit post-processing state and clean up process reference
         self._post_processing = False
+        self._active_process = None
+        self._active_label = ""
 
     async def subscribe_output(self, start_index: int = 0):
         """Async generator: yields buffered lines from start_index, then tails new ones until drain completes."""

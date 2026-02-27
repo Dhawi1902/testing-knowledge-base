@@ -97,7 +97,7 @@ async def api_list_results(request: Request, page: int = 0, per_page: int = 0, q
                 "p95": s.get("p95"),
                 "error_pct": s.get("error_pct"),
                 "throughput": s.get("throughput"),
-                "peak_vus": s.get("peak_vus"),
+                "total_vus": s.get("total_vus"),
                 "total_samples": s.get("total_samples"),
             }
 

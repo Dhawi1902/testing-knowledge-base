@@ -92,7 +92,7 @@ async def api_recent_runs(request: Request):
                     "p95": stats["overall"]["p95"],
                     "error_pct": stats["overall"]["error_pct"],
                     "throughput": stats["overall"]["throughput"],
-                    "peak_vus": stats["overall"].get("peak_vus", 0),
+                    "total_vus": stats["overall"].get("total_vus", 0),
                 }
         runs.append(run)
     return {"runs": runs}

@@ -132,17 +132,24 @@ def build_jmeter_command(
     today = datetime.now().strftime("%Y%m%d")
     date_group_dir = results_dir / today
 
+    def _next_run_number(group_dir: Path, prefix: str) -> int:
+        """Find the next run number based on highest existing number, not count."""
+        max_n = 0
+        if group_dir.is_dir():
+            for d in group_dir.iterdir():
+                if d.is_dir() and d.name.startswith(prefix + "_"):
+                    try:
+                        num = int(d.name.split("_", 1)[1])
+                        max_n = max(max_n, num)
+                    except (ValueError, IndexError):
+                        pass
+        return max_n + 1
+
     if dry_run:
-        # Estimate next folder number without creating anything
-        if date_group_dir.is_dir():
-            existing = [d.name for d in date_group_dir.iterdir() if d.is_dir() and d.name.startswith(today)]
-            n = len(existing) + 1
-        else:
-            n = 1
+        n = _next_run_number(date_group_dir, today)
     else:
         date_group_dir.mkdir(parents=True, exist_ok=True)
-        existing = [d.name for d in date_group_dir.iterdir() if d.is_dir() and d.name.startswith(today)]
-        n = len(existing) + 1
+        n = _next_run_number(date_group_dir, today)
 
     result_folder = f"{today}_{n}"
     result_dir = date_group_dir / result_folder

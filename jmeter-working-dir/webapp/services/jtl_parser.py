@@ -255,7 +255,7 @@ def parse_jtl(jtl_path: str | Path) -> dict:
             "total_samples": 0, "avg": 0, "median": 0,
             "p90": 0, "p95": 0, "p99": 0, "min": 0, "max": 0,
             "error_count": 0, "error_pct": 0, "throughput": 0,
-            "duration_sec": 0, "start_time": 0, "end_time": 0, "peak_vus": 0,
+            "duration_sec": 0, "start_time": 0, "end_time": 0, "total_vus": 0,
         }
         result = {"overall": empty_overall, "transactions": []}
         try:
@@ -286,11 +286,14 @@ def parse_jtl(jtl_path: str | Path) -> dict:
         duration_sec = 0
         throughput = 0
 
-    # Peak concurrent virtual users
-    peak_vus = 0
-    if "allThreads" in df.columns:
+    # Total virtual users — count distinct thread names to handle distributed mode
+    # (allThreads only shows per-slave count, not the aggregate)
+    total_vus = 0
+    if "threadName" in df.columns:
+        total_vus = int(df["threadName"].nunique())
+    elif "allThreads" in df.columns:
         at = df["allThreads"].dropna()
-        peak_vus = int(at.max()) if len(at) > 0 else 0
+        total_vus = int(at.max()) if len(at) > 0 else 0
 
     overall = {
         "total_samples": int(total),
@@ -307,7 +310,7 @@ def parse_jtl(jtl_path: str | Path) -> dict:
         "duration_sec": round(duration_sec, 1),
         "start_time": start_time,
         "end_time": end_time,
-        "peak_vus": peak_vus,
+        "total_vus": total_vus,
     }
 
     # Per-transaction breakdown
