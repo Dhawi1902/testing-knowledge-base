@@ -1226,6 +1226,29 @@ th.sort-desc::after { content: ' \25BC'; font-size: 0.7em; }
     .slave-list .slave-row .slave-actions { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
     .slave-config-panel { flex-direction: column; }
     .slave-config-panel .form-group { min-width: 100%; }
+
+    /* ----- Add Property modal mobile ----- */
+    #addPropModal { z-index: 210; }
+    #addPropModal #propSearchResults { display: none; max-height: 35vh; overflow-x: hidden; }
+    #addPropModal.has-query #propSearchResults { display: block; }
+    #addPropModal .prop-search-item {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 2px !important;
+        padding: 8px !important;
+    }
+    #addPropModal .prop-search-item code:first-child { min-width: 0 !important; font-size: 12px; }
+    #addPropModal .prop-search-item .text-light { font-size: 11px; }
+    #addPropModal .prop-custom-form { flex-direction: column; gap: 8px; }
+    #addPropModal .prop-custom-form .btn { align-self: flex-end; min-width: 80px; }
+
+    /* ----- Slave Properties list mobile ----- */
+    .prop-row {
+        flex-wrap: wrap !important;
+    }
+    .prop-row .form-label { min-width: 100% !important; margin-bottom: 2px; }
+    .prop-row .jprop-key { min-width: 100% !important; margin-bottom: 2px; }
+    .prop-row .jprop-input { flex: 1 1 100% !important; min-width: 0; }
 }
 
 /* ============================================================

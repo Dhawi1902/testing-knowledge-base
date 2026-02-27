@@ -156,21 +156,19 @@
 
 <!-- Add Property Modal -->
 <div id="addPropModal" class="modal-overlay">
-    <div class="modal" style="max-width:600px;padding:0;">
+    <div class="modal" style="max-width:600px;">
         <div class="modal-header">
             <h3>Add JMeter Property</h3>
             <button class="modal-close" onclick="closeAddPropertyModal()">&times;</button>
         </div>
-        <div style="padding:16px;">
-            <input class="form-input mb-8" id="propSearchInput" type="text" placeholder="Search properties... (e.g. rmi, http, timeout)" oninput="filterPropertyList(this.value)">
-            <div id="propSearchResults" style="max-height:400px;overflow-y:auto;"></div>
-            <div style="margin-top:12px;border-top:1px solid var(--color-border);padding-top:12px;">
-                <div class="text-sm text-bold mb-4">Custom Property</div>
-                <div class="flex gap-8">
-                    <input class="form-input form-input-mono" id="customPropKey" placeholder="key" style="flex:1;">
-                    <input class="form-input form-input-mono" id="customPropVal" placeholder="value" style="flex:1;">
-                    <button class="btn btn-primary btn-sm" onclick="addCustomProperty()">Add</button>
-                </div>
+        <input class="form-input mb-8" id="propSearchInput" type="text" placeholder="Search properties..." oninput="filterPropertyList(this.value); document.getElementById('addPropModal').classList.toggle('has-query', this.value.length > 0)">
+        <div id="propSearchResults" style="max-height:400px;overflow-y:auto;"></div>
+        <div style="margin-top:12px;border-top:1px solid var(--color-border);padding-top:12px;">
+            <div class="text-sm text-bold mb-4">Custom Property</div>
+            <div class="flex gap-8 prop-custom-form">
+                <input class="form-input form-input-mono" id="customPropKey" placeholder="key" style="flex:1;">
+                <input class="form-input form-input-mono" id="customPropVal" placeholder="value" style="flex:1;">
+                <button class="btn btn-primary btn-sm" onclick="addCustomProperty()">Add</button>
             </div>
         </div>
     </div>
@@ -1154,9 +1152,9 @@ function filterPropertyList(query) {
             html += `<div class="prop-search-item flex gap-8 mb-2" style="align-items:center;padding:4px 8px;border-radius:4px;cursor:pointer;${already ? 'opacity:0.4;' : ''}" `;
             html += `data-pkey="${escAttr(e.key)}" data-pdefault="${escAttr(e.default)}" `;
             html += `onclick="${already ? '' : 'addCatalogPropertyFromEl(this)'}">`;
-            html += `<code style="min-width:240px;font-size:12px;">${escHtml(e.key)}</code>`;
+            html += `<code style="font-size:12px;white-space:nowrap;">${escHtml(e.key)}</code>`;
             html += `<span class="text-light text-sm" style="flex:1;">${escHtml(e.description).substring(0, 80)}</span>`;
-            html += `<code class="text-light" style="font-size:11px;">${escHtml(e.default)}</code>`;
+            if (e.default) html += `<code class="text-light" style="font-size:11px;white-space:nowrap;">${escHtml(e.default)}</code>`;
             html += `</div>`;
         });
     }
