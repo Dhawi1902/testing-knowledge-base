@@ -51,8 +51,12 @@
             <button class="menu-btn" id="menuBtn" title="Open menu" aria-label="Open menu">{{ icon('layers', 20) }}</button>
             <h1 class="page-title">{% block page_title %}Dashboard{% endblock %}</h1>
             <div class="topbar-actions">
-                <a href="#" target="_blank" class="btn-icon monitoring-link hidden" id="grafanaLink" data-tooltip="Grafana">{{ icon('activity', 16) }}</a>
-                <a href="#" target="_blank" class="btn-icon monitoring-link hidden" id="influxdbLink" data-tooltip="InfluxDB">{{ icon('database', 16) }}</a>
+                <div class="dropdown hidden" id="monitoringDropdown">
+                    <button class="btn-icon" data-tooltip="Monitoring" onclick="this.nextElementSibling.classList.toggle('open')">
+                        {{ icon('activity', 16) }}
+                    </button>
+                    <div class="dropdown-menu" id="monitoringMenu"></div>
+                </div>
                 <button class="btn-icon" id="themeToggle" onclick="toggleTheme()" data-tooltip="Toggle theme">
                     {{ icon('sun', 18) }}
                     {{ icon('moon', 18) }}

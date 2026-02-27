@@ -303,12 +303,27 @@ class WSManager {
 
 /* ===== Monitoring Links (global, cached via localStorage) ===== */
 (function initMonitoringLinks() {
-    const grafana = localStorage.getItem('monitoring_grafana');
-    const influxdb = localStorage.getItem('monitoring_influxdb');
-    const grafanaEl = document.getElementById('grafanaLink');
-    const influxdbEl = document.getElementById('influxdbLink');
-    if (grafana && grafanaEl) { grafanaEl.href = grafana; grafanaEl.classList.remove('hidden'); }
-    if (influxdb && influxdbEl) { influxdbEl.href = influxdb; influxdbEl.classList.remove('hidden'); }
+    const links = [
+        { key: 'monitoring_grafana', label: 'Grafana', icon: 'activity' },
+        { key: 'monitoring_influxdb', label: 'InfluxDB', icon: 'database' },
+    ];
+    const menu = document.getElementById('monitoringMenu');
+    const wrapper = document.getElementById('monitoringDropdown');
+    if (!menu || !wrapper) return;
+    let count = 0;
+    links.forEach(({ key, label }) => {
+        const url = localStorage.getItem(key);
+        if (!url) return;
+        const a = document.createElement('a');
+        a.className = 'dropdown-item';
+        a.href = url;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        a.textContent = label;
+        menu.appendChild(a);
+        count++;
+    });
+    if (count > 0) wrapper.classList.remove('hidden');
 })();
 
 /* ===== Shared Utilities ===== */

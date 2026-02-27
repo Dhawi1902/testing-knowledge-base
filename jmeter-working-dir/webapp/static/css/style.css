@@ -236,6 +236,11 @@ body.sidebar-collapsed .menu-btn { display: block; }
 #themeToggle .icon:last-child { display: none; }
 [data-theme="dark"] #themeToggle .icon:first-child { display: none; }
 [data-theme="dark"] #themeToggle .icon:last-child { display: inline-block; }
+[data-theme="dark"] #themeToggle { color: var(--color-warning); background: rgba(234, 179, 8, 0.12); border-radius: var(--radius); }
+[data-theme="dark"] #monitoringDropdown .btn-icon { background: rgba(59, 130, 246, 0.12); border-radius: var(--radius); }
+
+/* Topbar action tooltips — show below (not above) since buttons are at top of page */
+.topbar-actions [data-tooltip]::after { bottom: auto; top: 100%; margin-bottom: 0; margin-top: 6px; }
 
 .content { padding: 24px; }
 
@@ -529,7 +534,7 @@ th.sort-desc::after { content: ' \25BC'; font-size: 0.7em; }
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
     background: rgba(0,0,0,0.5);
-    z-index: 200;
+    z-index: 300;
     align-items: center;
     justify-content: center;
 }
@@ -1084,7 +1089,9 @@ th.sort-desc::after { content: ' \25BC'; font-size: 0.7em; }
     .sidebar-backdrop.active { display: block; }
 
     /* ----- Topbar ----- */
-    .topbar { padding: 0 16px; gap: 12px; }
+    .topbar { padding: 0 16px; gap: 12px; overflow: visible; }
+    /* Hide hover tooltips on touch devices */
+    [data-tooltip]::after { display: none !important; }
     .menu-btn {
         display: block !important;
         min-width: 44px;
@@ -1260,13 +1267,22 @@ th.sort-desc::after { content: ' \25BC'; font-size: 0.7em; }
     .modal {
         width: 100% !important;
         max-width: 100% !important;
-        max-height: 90vh;
+        max-height: calc(90vh - 56px);
         border-radius: 16px 16px 0 0;
-        padding: 20px 16px;
+        padding: 20px 16px calc(20px + env(safe-area-inset-bottom, 0px));
         margin: 0;
+        margin-bottom: 56px;
     }
     .modal-lg { max-width: 100% !important; }
-    #reportModal .modal { height: 90vh; max-height: 90vh; }
+    #reportModal .modal { height: calc(90vh - 56px); max-height: calc(90vh - 56px); }
+
+    /* iOS: prevent auto-zoom on input focus (requires font-size >= 16px) */
+    .form-input,
+    select,
+    textarea { font-size: 16px; }
+
+    /* Smooth keyboard handling */
+    .modal { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 
     /* ----- Toasts — above bottom nav ----- */
     .toast-container {
