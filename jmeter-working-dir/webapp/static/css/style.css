@@ -906,6 +906,108 @@ th.sort-desc::after { content: ' \25BC'; font-size: 0.7em; }
 .sys-info-icon { display: flex; color: var(--color-primary); }
 .sys-info-icon svg { width: 16px; height: 16px; }
 
+/* ===== Dashboard Stats Strip ===== */
+.dash-stats {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+}
+.stat-card-accent {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-align: left;
+    border-left: 3px solid var(--accent, var(--color-primary));
+}
+.stat-card-accent .stat-value { font-size: 20px; }
+.stat-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    color: var(--accent);
+    flex-shrink: 0;
+}
+.stat-icon svg { width: 18px; height: 18px; }
+
+/* ===== Last Test Run ===== */
+.last-run-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+}
+.last-run-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+}
+.last-run-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.last-run-meta-item svg { width: 14px; height: 14px; }
+
+/* ===== Performance Bars (Run History) ===== */
+.perf-bar-cell { display: flex; flex-direction: column; gap: 2px; }
+.perf-bar {
+    height: 3px;
+    background: var(--color-border);
+    border-radius: 2px;
+    overflow: hidden;
+}
+.perf-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+/* ===== Run History Cards (mobile) ===== */
+.run-history-cards { display: none; }
+.run-card {
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 8px;
+}
+.run-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.run-card-name {
+    font-weight: 600;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.run-card-metrics {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+.run-card-metric { flex: 1; }
+.run-card-metric-val { font-size: 0.9rem; font-weight: 600; display: block; }
+.run-card-metric-lbl { font-size: 0.7rem; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.3px; }
+.run-card-footer {
+    display: flex;
+    gap: 12px;
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    border-top: 1px solid var(--color-border);
+    padding-top: 6px;
+}
+
 /* ===== Config Properties Table ===== */
 .props-table { width:100%; border-collapse:collapse; }
 .props-table th { text-align:left; font-size:11px; font-weight:600; color:var(--color-text-light); padding:4px 8px 8px; border-bottom:1px solid var(--color-border); }
@@ -1006,6 +1108,23 @@ th.sort-desc::after { content: ' \25BC'; font-size: 0.7em; }
     .card table { width: 100%; table-layout: fixed; }
     .card table td { overflow: hidden; text-overflow: ellipsis; }
     .stat-card .stat-value { font-size: 1.6rem; }
+
+    /* ----- Dashboard mobile ----- */
+    .dash-stats { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .dash-stats .stat-card:last-child { grid-column: span 2; }
+    .stat-card-accent { padding: 10px; gap: 8px; }
+    .stat-card-accent .stat-value { font-size: 1.2rem; }
+    .stat-icon { width: 28px; height: 28px; }
+    .stat-icon svg { width: 14px; height: 14px; }
+    .grid-sidebar { grid-template-columns: 1fr; gap: 8px; }
+    .last-run-metrics { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .last-run-metrics .stat-card { padding: 6px; }
+    .last-run-metrics .stat-value { font-size: 0.9rem !important; }
+    .last-run-meta { font-size: 0.8rem; gap: 8px; }
+
+    /* Run History — table hidden, cards shown on mobile */
+    .run-history-table { display: none; }
+    .run-history-cards { display: block; }
 
     /* ----- Tables — always horizontal scroll ----- */
     .table-wrapper {

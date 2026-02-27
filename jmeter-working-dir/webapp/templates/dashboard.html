@@ -5,26 +5,26 @@
 
 {% block content %}
 <!-- Row 1: Stats strip -->
-<div class="grid grid-5 mb-12">
-    <div class="stat-card">
-        <div class="stat-value" id="jmxCount">-</div>
-        <div class="stat-label">Test Plans</div>
+<div class="dash-stats mb-12">
+    <div class="stat-card stat-card-accent" style="--accent: var(--color-primary);">
+        <div class="stat-icon">{{ icon('file-text', 18) }}</div>
+        <div><div class="stat-value" id="jmxCount">-</div><div class="stat-label">Test Plans</div></div>
     </div>
-    <div class="stat-card">
-        <div class="stat-value" id="resultsCount">-</div>
-        <div class="stat-label">Results</div>
+    <div class="stat-card stat-card-accent" style="--accent: var(--color-success);">
+        <div class="stat-icon">{{ icon('bar-chart-3', 18) }}</div>
+        <div><div class="stat-value" id="resultsCount">-</div><div class="stat-label">Results</div></div>
     </div>
-    <div class="stat-card">
-        <div class="stat-value" id="slavesCount">-</div>
-        <div class="stat-label">Slaves</div>
+    <div class="stat-card stat-card-accent" style="--accent: var(--color-text-secondary);">
+        <div class="stat-icon">{{ icon('server', 18) }}</div>
+        <div><div class="stat-value" id="slavesCount">-</div><div class="stat-label">Slaves</div></div>
     </div>
-    <div class="stat-card">
-        <div class="stat-value" id="modeLabel">-</div>
-        <div class="stat-label">Mode</div>
+    <div class="stat-card stat-card-accent" style="--accent: var(--color-warning);">
+        <div class="stat-icon">{{ icon('wifi', 18) }}</div>
+        <div><div class="stat-value" id="modeLabel">-</div><div class="stat-label">Mode</div></div>
     </div>
-    <div class="stat-card">
-        <div class="stat-value" id="diskValue">-</div>
-        <div class="stat-label" id="diskLabel">Disk Usage</div>
+    <div class="stat-card stat-card-accent" style="--accent: var(--color-danger);">
+        <div class="stat-icon">{{ icon('hard-drive', 18) }}</div>
+        <div><div class="stat-value" id="diskValue">-</div><div class="stat-label" id="diskLabel">Disk Usage</div></div>
     </div>
 </div>
 
@@ -65,9 +65,10 @@
         <span class="card-title">{{ icon('bar-chart-3', 16) }} Run History</span>
         <span class="text-sm text-light">Last 10 runs</span>
     </div>
-    <div id="runHistory">
+    <div id="runHistory" class="run-history-table">
         <p class="text-light">Loading...</p>
     </div>
+    <div id="runHistoryCards" class="run-history-cards"></div>
     <div class="empty-state hidden" id="runsEmpty">
         {{ icon('play', 48) }}
         <div class="empty-state-title">No test runs yet</div>
@@ -84,6 +85,8 @@
 <script>
 const ICON_ALERT = `{{ icon('alert-triangle', 16) }}`;
 const ICON_INFO = `{{ icon('info', 16) }}`;
+const ICON_CLOCK = `{{ icon('clock', 14) }}`;
+const ICON_FOLDER = `{{ icon('folder-open', 14) }}`;
 
 function trendArrow(current, previous, lowerIsBetter) {
     if (previous === null || previous === undefined) return '';
@@ -197,7 +200,7 @@ async function loadDashboard() {
         if (lr.stats) {
             const s = lr.stats;
             statsHtml = `
-                <div class="card-grid mb-12" style="grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px;">
+                <div class="last-run-metrics">
                     <div class="stat-card p-8">
                         <div class="stat-value text-lg">${s.peak_vus ? s.peak_vus.toLocaleString() : '-'}</div>
                         <div class="stat-label text-xs">Peak VUs</div>
@@ -220,14 +223,15 @@ async function loadDashboard() {
                     </div>
                 </div>`;
         }
+        const reportBadge = lr.has_report ? '<span class="badge badge-success">Report</span>' : '<span class="badge badge-danger">No Report</span>';
         el.innerHTML = `
             ${statsHtml}
-            <table>
-                <tr><td class="text-light" style="width:100px;">Folder</td><td class="text-mono">${escAttr(lr.name)}</td></tr>
-                <tr><td class="text-light">Date</td><td>${new Date(lr.date).toLocaleString()}</td></tr>
-                <tr><td class="text-light">Size</td><td>${formatSize(lr.size)}</td></tr>
-                <tr><td class="text-light">Report</td><td>${lr.has_report ? '<span class="badge badge-success">Available</span>' : '<span class="badge badge-danger">N/A</span>'}</td></tr>
-            </table>`;
+            <div class="last-run-meta">
+                <span class="last-run-meta-item">${ICON_FOLDER} <span class="text-mono">${escAttr(lr.name)}</span></span>
+                <span class="last-run-meta-item">${ICON_CLOCK} ${new Date(lr.date).toLocaleString()}</span>
+                <span class="last-run-meta-item">${formatSize(lr.size)}</span>
+                ${reportBadge}
+            </div>`;
         let actHtml = '';
         if (lr.has_report) actHtml += `<a href="${BASE_PATH}/results" class="btn btn-outline btn-sm">View Report</a>`;
         if (lr.has_jtl) actHtml += `<a href="${BASE_PATH}/results" class="btn btn-outline btn-sm">View Stats</a>`;
@@ -236,44 +240,95 @@ async function loadDashboard() {
 
     // Run History
     const histEl = document.getElementById('runHistory');
+    const cardsEl = document.getElementById('runHistoryCards');
     const runsEmptyEl = document.getElementById('runsEmpty');
     const runs = recentData ? (recentData.runs || []) : [];
     if (runs.length === 0) {
         histEl.innerHTML = '';
+        cardsEl.innerHTML = '';
         runsEmptyEl.classList.remove('hidden');
     } else {
         runsEmptyEl.classList.add('hidden');
+
+        // Compute max values for performance bars
+        const maxAvg = Math.max(...runs.filter(r => r.stats).map(r => r.stats.avg), 1);
+        const maxP95 = Math.max(...runs.filter(r => r.stats).map(r => r.stats.p95), 1);
+
+        // Desktop table
         let html = `<div style="overflow-x:auto;"><table style="width:100%;">
             <thead><tr>
                 <th>Run</th><th>Date</th><th>VUs</th><th>Samples</th>
                 <th>Avg RT</th><th>P95</th><th>Error %</th><th>Throughput</th>
             </tr></thead><tbody>`;
+        // Mobile cards
+        let cardHtml = '';
+
         for (let i = 0; i < runs.length; i++) {
             const r = runs[i];
             const prev = (i + 1 < runs.length && runs[i + 1].stats) ? runs[i + 1].stats : null;
             if (r.stats) {
                 const s = r.stats;
+                const avgPct = Math.min(100, (s.avg / maxAvg) * 100);
+                const p95Pct = Math.min(100, (s.p95 / maxP95) * 100);
+                const avgColor = s.avg > 3000 ? 'var(--color-danger)' : s.avg > 1500 ? 'var(--color-warning)' : 'var(--color-success)';
+                const p95Color = s.p95 > 10000 ? 'var(--color-danger)' : s.p95 > 5000 ? 'var(--color-warning)' : 'var(--color-success)';
+                const errColor = s.error_pct > 0 ? 'color:var(--color-danger);' : '';
+
                 html += `<tr>
                     <td class="text-mono">${escAttr(r.name)}</td>
                     <td>${new Date(r.date).toLocaleDateString()}</td>
                     <td>${s.peak_vus ? s.peak_vus.toLocaleString() : '-'}</td>
                     <td>${s.total_samples.toLocaleString()}</td>
-                    <td>${s.avg.toFixed(0)} ms ${trendArrow(s.avg, prev?.avg, true)}</td>
-                    <td>${s.p95.toFixed(0)} ms ${trendArrow(s.p95, prev?.p95, true)}</td>
-                    <td style="${s.error_pct > 0 ? 'color:var(--color-danger);' : ''}">${s.error_pct}% ${trendArrow(s.error_pct, prev?.error_pct, true)}</td>
+                    <td><div class="perf-bar-cell"><span>${s.avg.toFixed(0)} ms ${trendArrow(s.avg, prev?.avg, true)}</span><div class="perf-bar"><div class="perf-bar-fill" style="width:${avgPct}%;background:${avgColor};"></div></div></div></td>
+                    <td><div class="perf-bar-cell"><span>${s.p95.toFixed(0)} ms ${trendArrow(s.p95, prev?.p95, true)}</span><div class="perf-bar"><div class="perf-bar-fill" style="width:${p95Pct}%;background:${p95Color};"></div></div></div></td>
+                    <td style="${errColor}">${s.error_pct}% ${trendArrow(s.error_pct, prev?.error_pct, true)}</td>
                     <td>${s.throughput.toFixed(1)}/s ${trendArrow(s.throughput, prev?.throughput, false)}</td>
                 </tr>`;
+
+                // Mobile card
+                cardHtml += `<div class="run-card">
+                    <div class="run-card-header">
+                        <span class="run-card-name">${escAttr(r.name)}</span>
+                        <span class="text-sm text-secondary">${new Date(r.date).toLocaleDateString()}</span>
+                    </div>
+                    <div class="run-card-metrics">
+                        <div class="run-card-metric">
+                            <span class="run-card-metric-val">${s.avg.toFixed(0)} ms ${trendArrow(s.avg, prev?.avg, true)}</span>
+                            <span class="run-card-metric-lbl">Avg RT</span>
+                            <div class="perf-bar"><div class="perf-bar-fill" style="width:${avgPct}%;background:${avgColor};"></div></div>
+                        </div>
+                        <div class="run-card-metric">
+                            <span class="run-card-metric-val">${s.p95.toFixed(0)} ms ${trendArrow(s.p95, prev?.p95, true)}</span>
+                            <span class="run-card-metric-lbl">P95</span>
+                            <div class="perf-bar"><div class="perf-bar-fill" style="width:${p95Pct}%;background:${p95Color};"></div></div>
+                        </div>
+                    </div>
+                    <div class="run-card-footer">
+                        <span>${s.peak_vus || '-'} VUs</span>
+                        <span>${s.total_samples.toLocaleString()} samples</span>
+                        <span style="${errColor}">${s.error_pct}% err</span>
+                        <span>${s.throughput.toFixed(1)}/s</span>
+                    </div>
+                </div>`;
             } else {
                 html += `<tr>
                     <td class="text-mono">${escAttr(r.name)}</td>
                     <td>${new Date(r.date).toLocaleDateString()}</td>
                     <td colspan="6" class="text-light">No JTL data</td>
                 </tr>`;
+                cardHtml += `<div class="run-card">
+                    <div class="run-card-header">
+                        <span class="run-card-name">${escAttr(r.name)}</span>
+                        <span class="text-sm text-secondary">${new Date(r.date).toLocaleDateString()}</span>
+                    </div>
+                    <div class="text-sm text-secondary" style="padding:4px 0;">No JTL data</div>
+                </div>`;
             }
         }
         html += '</tbody></table></div>';
-        html += `<div class="mt-12" style="text-align:center;"><a href="${BASE_PATH}/results" class="btn btn-outline btn-sm">View All Results</a></div>`;
-        histEl.innerHTML = html;
+        const viewAll = `<div class="mt-12" style="text-align:center;"><a href="${BASE_PATH}/results" class="btn btn-outline btn-sm">View All Results</a></div>`;
+        histEl.innerHTML = html + viewAll;
+        cardsEl.innerHTML = cardHtml + viewAll;
     }
 
     // Alerts
