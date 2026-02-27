@@ -9,6 +9,7 @@
     "results_dir": "results/jmeter-report",
     "test_data_dir": "test_data",
     "slaves_file": "slaves.txt",
+    "extensions_dir": "extensions",
     "scripts_dirs": [
       "bin",
       "utils"

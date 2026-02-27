@@ -257,7 +257,7 @@ async def restart_server():
 
 
 # Import and include routers
-from routers import dashboard, config, test_data, test_plans, results, settings  # noqa: E402
+from routers import dashboard, config, test_data, test_plans, results, settings, extensions  # noqa: E402
 
 
 # --- Patch templates to auto-inject auth context ---
@@ -278,7 +278,7 @@ def _patch_template_response(tmpl):
 
 # Set bp (base path) global and auth context on all template instances
 _patch_template_response(templates)
-for _mod in [dashboard, config, test_data, test_plans, results, settings]:
+for _mod in [dashboard, config, test_data, test_plans, results, settings, extensions]:
     if hasattr(_mod, 'templates'):
         _mod.templates.env.globals["bp"] = BASE_PATH
         _mod.templates.env.globals["asset_v"] = _asset_version
@@ -290,6 +290,7 @@ app.include_router(test_data.router, prefix=BASE_PATH)
 app.include_router(test_plans.router, prefix=BASE_PATH)
 app.include_router(results.router, prefix=BASE_PATH)
 app.include_router(settings.router, prefix=BASE_PATH)
+app.include_router(extensions.router, prefix=BASE_PATH)
 
 
 # --- Root redirect when base_path is set ---
