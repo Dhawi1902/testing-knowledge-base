@@ -8,22 +8,22 @@
 <div class="card">
     <div class="card-header flex-wrap gap-8">
         <div class="flex gap-16 items-center">
-            <span class="card-title" style="cursor:pointer;" onclick="toggleSlaveList()"><span class="collapse-icon" id="slaveCollapseIcon">&#9660;</span> Slave List</span>
-            <span class="text-sm flex gap-4" id="slaveSummary">Loading...</span>
+            <span class="card-title" style="cursor:pointer;" onclick="toggleSlaveList()">{{ icon('server', 16) }} <span class="collapse-icon" id="slaveCollapseIcon">&#9660;</span> Slave List</span>
+            <span class="text-sm text-light" id="lastCheckedLabel"></span>
         </div>
         <!-- Default actions (shown when nothing selected) -->
-        <div class="flex gap-8 items-center" id="defaultActions">
-            {% if access_level != 'viewer' %}<button class="btn btn-outline btn-sm" onclick="addSlave()">{{ icon('plus', 14) }} Add</button>{% endif %}
-            <button class="btn btn-outline btn-sm" onclick="refreshStatus()" id="refreshBtn" title="Check online status of all slaves">Check Status</button>
-            <button class="btn btn-outline btn-sm" onclick="refreshResources()" id="resourcesBtn" title="Check CPU/RAM on all slaves">Resources</button>
+        <div class="flex gap-4 items-center" id="defaultActions">
+            {% if access_level != 'viewer' %}<button class="btn btn-outline btn-sm" onclick="addSlave()" data-tooltip="Add slave">{{ icon('plus', 14) }}</button>{% endif %}
+            <button class="btn btn-outline btn-sm" onclick="refreshStatus()" id="refreshBtn" data-tooltip="Check status">{{ icon('refresh-cw', 14) }}</button>
+            <button class="btn btn-outline btn-sm" onclick="refreshResources()" id="resourcesBtn" data-tooltip="Check resources">{{ icon('cpu', 14) }}</button>
             {% if access_level != 'viewer' %}
-            <button class="btn btn-primary btn-sm" onclick="startAll()" id="startAllBtn">{{ icon('power', 14) }} Start All</button>
-            <button class="btn btn-outline btn-sm" onclick="stopAll()" id="stopAllBtn" style="color:var(--color-danger);border-color:var(--color-danger);">{{ icon('stop-circle', 14) }} Stop All</button>
-            <button class="btn btn-outline btn-sm" onclick="syncData()" title="Distribute test data to all active slaves">Sync Data</button>
+            <button class="btn btn-primary btn-sm" onclick="startAll()" id="startAllBtn" data-tooltip="Start all">{{ icon('power', 14) }}</button>
+            <button class="btn btn-danger-outline btn-sm" onclick="stopAll()" id="stopAllBtn" data-tooltip="Stop all">{{ icon('stop-circle', 14) }}</button>
+            <button class="btn btn-outline btn-sm" onclick="syncData()" data-tooltip="Sync data">{{ icon('upload', 14) }}</button>
             {% endif %}
             <span class="divider-v"></span>
-            <button class="btn btn-outline btn-sm view-toggle" id="viewListBtn" onclick="setView('list')" title="List view">{{ icon('layers', 14) }}</button>
-            <button class="btn btn-outline btn-sm view-toggle" id="viewGridBtn" onclick="setView('grid')" title="Grid view">{{ icon('hard-drive', 14) }}</button>
+            <button class="btn btn-outline btn-sm view-toggle" id="viewListBtn" onclick="setView('list')" data-tooltip="List view">{{ icon('layers', 14) }}</button>
+            <button class="btn btn-outline btn-sm view-toggle" id="viewGridBtn" onclick="setView('grid')" data-tooltip="Grid view">{{ icon('hard-drive', 14) }}</button>
         </div>
         {% if access_level != 'viewer' %}
         <!-- Bulk actions (shown when slaves selected) -->
@@ -34,10 +34,16 @@
             <button class="btn btn-outline btn-sm" onclick="bulkProvision()">Provision</button>
             <button class="btn btn-outline btn-sm" onclick="bulkCleanData()">Clean Data</button>
             <button class="btn btn-outline btn-sm" onclick="bulkCleanLogs()">Clean Logs</button>
-            <button class="btn btn-sm" onclick="bulkRemove()" style="color:var(--color-danger);border:1px solid var(--color-danger);background:transparent;">Remove</button>
+            <button class="btn btn-danger-outline btn-sm" onclick="bulkRemove()">Remove</button>
             <button class="btn btn-outline btn-sm" onclick="clearSelection()">Clear</button>
         </div>
         {% endif %}
+    </div>
+    <div class="grid grid-4 mb-12" id="fleetStats" style="display:none;padding:0 16px;">
+        <div class="stat-card"><div class="stat-value" id="statVMs">-</div><div class="stat-label">Total VMs</div></div>
+        <div class="stat-card"><div class="stat-value" id="statOnline">-</div><div class="stat-label">Online</div></div>
+        <div class="stat-card"><div class="stat-value" id="statOffline">-</div><div class="stat-label">Offline</div></div>
+        <div class="stat-card"><div class="stat-value" id="statDisabled">-</div><div class="stat-label">Disabled</div></div>
     </div>
     <div id="slaveBody">
         <div id="slaveContainer">
@@ -180,6 +186,11 @@ let checking = false;
 let selected = new Set();
 let expandedConfigs = new Set();
 let currentView = localStorage.getItem('slave_view') || 'list';
+const ICON_MORE = `{{ icon('more-horizontal', 16) }}`;
+
+function gearIcon(expanded) {
+    return '<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>';
+}
 
 // ===== Load slaves (config only, no status check) =====
 async function loadSlaves() {
@@ -206,7 +217,6 @@ async function refreshStatus() {
     checking = true;
     const btn = document.getElementById('refreshBtn');
     btn.disabled = true;
-    btn.textContent = 'Checking...';
 
     // Show checking state
     slaveData.forEach(s => { if (s.enabled !== false) s.status = 'checking'; });
@@ -231,7 +241,6 @@ async function refreshStatus() {
     render();
     updateSummary();
     btn.disabled = false;
-    btn.textContent = 'Check Status';
     checking = false;
     // Reload health history to pick up the new recorded entry (#31)
     loadHealthHistory().then(() => render());
@@ -311,17 +320,23 @@ function renderList() {
                     ${statusBadge(s)}
                     ${provisionBadges(s)}
                     ${resourceBadges(s)}
-                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="testSsh('${aIp}')" title="Test SSH connection">SSH</button>` : ''}
-                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="testRmi('${aIp}')" title="Test RMI port 1099">RMI</button>` : ''}
-                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="provisionSingle('${aIp}')" title="Provision slave">Provision</button>` : ''}
-                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="startSingle('${aIp}')" title="Start JMeter server">&#9654;</button>` : ''}
-                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;color:var(--color-danger);border-color:var(--color-danger);" onclick="stopSingle('${aIp}')" title="Stop JMeter server">&#9632;</button>` : ''}
-                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="restartSingle('${aIp}')" title="Restart JMeter server">&#8635;</button>` : ''}
-                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="viewLog('${aIp}')" title="View slave log">Log</button>` : ''}
-                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="confirmCleanData('${aIp}')" title="Clean test data">Clean</button>` : ''}
-                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="confirmCleanLog('${aIp}')" title="Clean log file">ClnLog</button>` : ''}
-                    ${isAdmin ? `<button class="gear-btn${expanded ? ' active' : ''}" onclick="toggleConfig('${aIp}')" title="SSH overrides"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>${expanded ? '<svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>' : '<svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>'}</button>` : ''}
-                    ${isAdmin ? `<button class="del-btn" onclick="removeSlave('${aIp}')" title="Remove">&times;</button>` : ''}
+                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-xs" onclick="startSingle('${aIp}')" data-tooltip="Start">&#9654;</button>` : ''}
+                    ${isAdmin && enabled ? `<button class="btn btn-danger-outline btn-xs" onclick="stopSingle('${aIp}')" data-tooltip="Stop">&#9632;</button>` : ''}
+                    ${isAdmin && enabled ? `<div class="dropdown">
+                        <button class="btn btn-outline btn-xs" onclick="toggleDropdown(this)">${ICON_MORE}</button>
+                        <div class="dropdown-menu">
+                            <button class="dropdown-item" onclick="testSsh('${aIp}')">SSH Test</button>
+                            <button class="dropdown-item" onclick="testRmi('${aIp}')">RMI Test</button>
+                            <button class="dropdown-item" onclick="provisionSingle('${aIp}')">Provision</button>
+                            <button class="dropdown-item" onclick="restartSingle('${aIp}')">Restart</button>
+                            <button class="dropdown-item" onclick="viewLog('${aIp}')">View Log</button>
+                            <button class="dropdown-item" onclick="confirmCleanData('${aIp}')">Clean Data</button>
+                            <button class="dropdown-item" onclick="confirmCleanLog('${aIp}')">Clean Log</button>
+                            <div class="dropdown-sep"></div>
+                            <button class="dropdown-item" style="color:var(--color-danger)" onclick="removeSlave('${aIp}')">Remove</button>
+                        </div>
+                    </div>` : ''}
+                    ${isAdmin ? `<button class="gear-btn${expanded ? ' active' : ''}" onclick="toggleConfig('${aIp}')" data-tooltip="SSH overrides">${gearIcon(expanded)}</button>` : ''}
                     ${isAdmin ? `<label class="toggle" title="${enabled ? 'Disable' : 'Enable'}">
                         <input type="checkbox" ${enabled ? 'checked' : ''} onchange="toggleSlave('${aIp}', this.checked)">
                         <span class="toggle-track"></span>
@@ -357,17 +372,23 @@ function renderGrid() {
                     ${statusBadge(s)}
                     ${provisionBadges(s)}
                     ${resourceBadges(s)}
-                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="testSsh('${aIp}')" title="Test SSH">SSH</button>` : ''}
-                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="testRmi('${aIp}')" title="Test RMI">RMI</button>` : ''}
-                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="provisionSingle('${aIp}')" title="Provision">Provision</button>` : ''}
-                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="startSingle('${aIp}')" title="Start">&#9654;</button>` : ''}
-                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;color:var(--color-danger);border-color:var(--color-danger);" onclick="stopSingle('${aIp}')" title="Stop">&#9632;</button>` : ''}
-                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="restartSingle('${aIp}')" title="Restart">&#8635;</button>` : ''}
-                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="viewLog('${aIp}')" title="Log">Log</button>` : ''}
-                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="confirmCleanData('${aIp}')" title="Clean data">Clean</button>` : ''}
-                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-sm" style="padding:2px 6px;font-size:11px;" onclick="confirmCleanLog('${aIp}')" title="Clean log">ClnLog</button>` : ''}
-                    ${isAdmin ? `<button class="gear-btn${expanded ? ' active' : ''}" onclick="toggleConfig('${aIp}')" title="SSH overrides"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>${expanded ? '<svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>' : '<svg class="icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>'}</button>` : ''}
-                    ${isAdmin ? `<button class="del-btn" onclick="removeSlave('${aIp}')" title="Remove">&times;</button>` : ''}
+                    ${isAdmin && enabled ? `<button class="btn btn-outline btn-xs" onclick="startSingle('${aIp}')" data-tooltip="Start">&#9654;</button>` : ''}
+                    ${isAdmin && enabled ? `<button class="btn btn-danger-outline btn-xs" onclick="stopSingle('${aIp}')" data-tooltip="Stop">&#9632;</button>` : ''}
+                    ${isAdmin && enabled ? `<div class="dropdown">
+                        <button class="btn btn-outline btn-xs" onclick="toggleDropdown(this)">${ICON_MORE}</button>
+                        <div class="dropdown-menu">
+                            <button class="dropdown-item" onclick="testSsh('${aIp}')">SSH Test</button>
+                            <button class="dropdown-item" onclick="testRmi('${aIp}')">RMI Test</button>
+                            <button class="dropdown-item" onclick="provisionSingle('${aIp}')">Provision</button>
+                            <button class="dropdown-item" onclick="restartSingle('${aIp}')">Restart</button>
+                            <button class="dropdown-item" onclick="viewLog('${aIp}')">View Log</button>
+                            <button class="dropdown-item" onclick="confirmCleanData('${aIp}')">Clean Data</button>
+                            <button class="dropdown-item" onclick="confirmCleanLog('${aIp}')">Clean Log</button>
+                            <div class="dropdown-sep"></div>
+                            <button class="dropdown-item" style="color:var(--color-danger)" onclick="removeSlave('${aIp}')">Remove</button>
+                        </div>
+                    </div>` : ''}
+                    ${isAdmin ? `<button class="gear-btn${expanded ? ' active' : ''}" onclick="toggleConfig('${aIp}')" data-tooltip="SSH overrides">${gearIcon(expanded)}</button>` : ''}
                     ${isAdmin ? `<label class="toggle" title="${enabled ? 'Disable' : 'Enable'}">
                         <input type="checkbox" ${enabled ? 'checked' : ''} onchange="toggleSlave('${aIp}', this.checked)">
                         <span class="toggle-track"></span>
@@ -553,15 +574,24 @@ function updateSummary() {
     const total = slaveData.length;
     const enabled = slaveData.filter(s => s.enabled !== false).length;
     const disabled = total - enabled;
-    const checked = slaveData.filter(s => s.status !== null).length;
+    const checked = slaveData.filter(s => s.status !== null && s.enabled !== false).length;
     const up = slaveData.filter(s => s.enabled !== false && s.status === 'up').length;
-    let html = `<span class="badge badge-info">${total} VMs</span> `;
-    html += `<span class="badge badge-success">${enabled} Enabled</span> `;
-    if (disabled > 0) html += `<span class="badge" style="background:var(--color-border);color:var(--color-text-light);">${disabled} Disabled</span> `;
-    if (checked > 0) html += `<span class="badge" style="background:var(--color-border);color:var(--color-text-light);">${up}/${enabled} Online</span>`;
+    const down = checked - up;
+
+    const statsEl = document.getElementById('fleetStats');
+    if (total > 0) {
+        statsEl.style.display = '';
+        document.getElementById('statVMs').textContent = total;
+        document.getElementById('statOnline').textContent = up;
+        document.getElementById('statOffline').textContent = down;
+        document.getElementById('statDisabled').textContent = disabled;
+    } else {
+        statsEl.style.display = 'none';
+    }
+
     const lc = formatLastChecked();
-    if (lc) html += ` <span class="text-light text-sm">checked ${lc}</span>`;
-    document.getElementById('slaveSummary').innerHTML = html;
+    const lcEl = document.getElementById('lastCheckedLabel');
+    if (lcEl) lcEl.textContent = lc ? 'checked ' + lc : '';
 }
 
 // ===== Per-slave config overrides =====
@@ -633,7 +663,6 @@ async function startAll() {
     if (!await confirmAction('Start JMeter servers on all enabled slave VMs?')) return;
     const btn = document.getElementById('startAllBtn');
     btn.disabled = true;
-    btn.textContent = 'Starting...';
     try {
         const data = await api('/api/slaves/start', { method: 'POST' });
         const results = data.results || [];
@@ -644,7 +673,6 @@ async function startAll() {
         showToast('Failed to start servers', 'error');
     }
     btn.disabled = false;
-    btn.textContent = 'Start All';
     setTimeout(refreshStatus, 3000);
 }
 
@@ -652,7 +680,6 @@ async function stopAll() {
     if (!await confirmAction('Stop JMeter servers on all slave VMs?', { danger: true })) return;
     const btn = document.getElementById('stopAllBtn');
     btn.disabled = true;
-    btn.textContent = 'Stopping...';
     try {
         const data = await api('/api/slaves/stop', { method: 'POST' });
         const results = data.results || [];
@@ -662,7 +689,6 @@ async function stopAll() {
         showToast('Failed to stop servers', 'error');
     }
     btn.disabled = false;
-    btn.textContent = 'Stop All';
     setTimeout(refreshStatus, 2000);
 }
 
@@ -1379,7 +1405,6 @@ function resourceBadges(s) {
 async function refreshResources() {
     const btn = document.getElementById('resourcesBtn');
     btn.disabled = true;
-    btn.textContent = 'Checking...';
     try {
         const data = await api('/api/slaves/resources');
         (data.results || []).forEach(r => {
@@ -1403,7 +1428,6 @@ async function refreshResources() {
         showToast('Failed to check resources', 'error');
     }
     btn.disabled = false;
-    btn.textContent = 'Resources';
 }
 
 // ===== Init =====
