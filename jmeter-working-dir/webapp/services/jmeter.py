@@ -56,7 +56,7 @@ def extract_jmx_params(jmx_path: str | Path) -> list[dict]:
     return [{"name": k, "default": v} for k, v in params.items()]
 
 
-def open_in_jmeter(jmeter_path: str, jmx_path: str) -> bool:
+def open_in_jmeter(jmeter_path: str, jmx_path: str, cwd: str | None = None) -> bool:
     """Launch JMeter GUI with a test plan (non-blocking)."""
     if not jmeter_path:
         return False
@@ -66,6 +66,7 @@ def open_in_jmeter(jmeter_path: str, jmx_path: str) -> bool:
     try:
         subprocess.Popen(
             [jmeter_path, "-t", jmx_path],
+            cwd=cwd,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             creationflags=getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0),

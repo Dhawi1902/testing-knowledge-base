@@ -85,7 +85,8 @@ async def api_open_plan(request: Request, filename: str):
     if jmx_path is None:
         return JSONResponse(status_code=403, content={"error": "Access denied"})
     jmeter_path = project.get("jmeter_path", "") or "jmeter"
-    ok = open_in_jmeter(jmeter_path, str(jmx_path))
+    project_root = get_project_root(project)
+    ok = open_in_jmeter(jmeter_path, str(jmx_path), cwd=str(project_root))
     if not ok:
         return JSONResponse(status_code=500, content={"error": "Failed to launch JMeter"})
     return {"ok": True}
