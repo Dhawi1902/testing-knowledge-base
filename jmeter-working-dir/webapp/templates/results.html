@@ -6,31 +6,31 @@
 {% block content %}
 <div class="card mb-16">
     <div class="card-header">
-        <span class="card-title">Test Results</span>
+        <span class="card-title">{{ icon('bar-chart-3', 16) }} Test Results</span>
         <div class="flex gap-8">
-            <button class="btn btn-sm hidden" id="stopRegenBtn" onclick="stopRegenerate()" style="color:var(--color-danger);border:1px solid var(--color-danger);">Stop Regeneration</button>
-            <button class="btn btn-outline btn-sm" id="downloadBundleBtn" onclick="downloadBundle()" disabled>Download Selected</button>
-            <button class="btn btn-outline btn-sm" id="bulkRegenBtn" onclick="bulkRegenerate()" disabled style="display:none;">Regenerate Selected</button>
-            <button class="btn btn-outline btn-sm" id="compareBtn" onclick="compareSelected()" disabled>Compare Selected</button>
-            <button class="btn btn-outline btn-sm" id="bulkDeleteBtn" onclick="bulkDelete()" disabled style="display:none;color:var(--color-danger);border-color:var(--color-danger);">Delete Selected</button>
-            <button class="btn btn-outline btn-sm" onclick="loadResults()">Refresh</button>
+            <button class="btn btn-sm btn-outline-danger hidden" id="stopRegenBtn" onclick="stopRegenerate()" data-tooltip="Stop Regeneration">{{ icon('square', 14) }} <span class="btn-label">Stop Regeneration</span></button>
+            <button class="btn btn-outline btn-sm" id="downloadBundleBtn" onclick="downloadBundle()" disabled data-tooltip="Download Selected">{{ icon('download', 14) }} <span class="btn-label">Download Selected</span></button>
+            <button class="btn btn-outline btn-sm hidden" id="bulkRegenBtn" onclick="bulkRegenerate()" disabled data-tooltip="Regenerate Selected">{{ icon('refresh-cw', 14) }} <span class="btn-label">Regenerate Selected</span></button>
+            <button class="btn btn-outline btn-sm" id="compareBtn" onclick="compareSelected()" disabled data-tooltip="Compare Selected">{{ icon('git-compare', 14) }} <span class="btn-label">Compare Selected</span></button>
+            <button class="btn btn-sm btn-outline-danger hidden" id="bulkDeleteBtn" onclick="bulkDelete()" disabled data-tooltip="Delete Selected">{{ icon('trash-2', 14) }} <span class="btn-label">Delete Selected</span></button>
+            <button class="btn btn-outline btn-sm" onclick="loadResults()" data-tooltip="Refresh">{{ icon('refresh-cw', 14) }} <span class="btn-label">Refresh</span></button>
         </div>
     </div>
-    <div class="flex gap-8 mb-16" style="align-items:center;">
-        <input class="form-input" id="resultSearch" placeholder="Search results..." oninput="debouncedSearch()" style="max-width:300px;">
+    <div class="flex gap-8 items-center mb-16">
+        <input class="form-input input-search" id="resultSearch" placeholder="Search results..." oninput="debouncedSearch()">
         <span class="text-sm text-light" id="resultCount"></span>
     </div>
-    <div class="table-wrapper">
-        <table>
+    <div class="table-wrapper" id="resultsTableWrap">
+        <table class="results-table">
             <thead>
                 <tr>
-                    <th style="width:30px;"><label class="check"><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"><span class="check-box"></span></label></th>
+                    <th class="col-checkbox"><label class="check"><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"><span class="check-box"></span></label></th>
                     <th class="sortable" data-sort="name" onclick="sortBy('name')" onkeydown="if(event.key==='Enter')sortBy('name')" tabindex="0" scope="col" aria-sort="none">Folder</th>
-                    <th class="sortable" data-sort="date" onclick="sortBy('date')" onkeydown="if(event.key==='Enter')sortBy('date')" tabindex="0" scope="col" aria-sort="none">Date</th>
-                    <th class="sortable" data-sort="size" onclick="sortBy('size')" onkeydown="if(event.key==='Enter')sortBy('size')" tabindex="0" scope="col" aria-sort="none">Size</th>
-                    <th scope="col">Report</th>
-                    <th scope="col">JTL</th>
-                    <th scope="col">Actions</th>
+                    <th class="sortable col-date" data-sort="date" onclick="sortBy('date')" onkeydown="if(event.key==='Enter')sortBy('date')" tabindex="0" scope="col" aria-sort="none">Date</th>
+                    <th class="sortable col-size" data-sort="size" onclick="sortBy('size')" onkeydown="if(event.key==='Enter')sortBy('size')" tabindex="0" scope="col" aria-sort="none">Size</th>
+                    <th class="col-report" scope="col">Report</th>
+                    <th class="col-jtl" scope="col">JTL</th>
+                    <th class="col-actions" scope="col">Actions</th>
                 </tr>
             </thead>
             <tbody id="resultsList">
@@ -38,20 +38,21 @@
             </tbody>
         </table>
     </div>
-    <div class="empty-state" id="resultsEmpty" style="display:none">
+    <div id="resultCards" class="result-cards"></div>
+    <div class="empty-state hidden" id="resultsEmpty">
         {{ icon('bar-chart-3', 48) }}
         <div class="empty-state-title">No test results yet</div>
         <div class="empty-state-desc">Run a test from the Test Plans page to see results here.</div>
-        <a href="{{ base_path }}/plans" class="btn btn-primary">Go to Test Plans</a>
+        <a href="{{ base_path }}/plans" class="btn btn-primary">{{ icon('play', 14) }} Go to Test Plans</a>
     </div>
-    <div id="paginationControls" class="mt-8" style="display:none;padding:12px 0;border-top:1px solid var(--color-border);"></div>
+    <div id="paginationControls" class="pagination-controls mt-8 hidden"></div>
 </div>
 
 <!-- Compare Panel -->
 <div class="card hidden" id="comparePanel">
     <div class="card-header">
-        <span class="card-title">Comparison</span>
-        <button class="btn btn-sm btn-outline" onclick="document.getElementById('comparePanel').classList.add('hidden')">Close</button>
+        <span class="card-title">{{ icon('git-compare', 16) }} Comparison</span>
+        <button class="btn btn-sm btn-outline" onclick="document.getElementById('comparePanel').classList.add('hidden')">{{ icon('x', 14) }} Close</button>
     </div>
     <div id="compareContent"></div>
 </div>
@@ -60,13 +61,13 @@
 <div class="modal-overlay" id="regenModal" role="dialog" aria-modal="true" aria-labelledby="regenModalTitle">
     <div class="modal modal-md">
         <div class="modal-header">
-            <span class="modal-title" id="regenModalTitle">Regenerate Report</span>
+            <span class="modal-title" id="regenModalTitle">{{ icon('refresh-cw', 16) }} Regenerate Report</span>
             <button onclick="closeModal('regenModal')" class="modal-close" aria-label="Close">&times;</button>
         </div>
         <div class="modal-body">
             <div class="text-sm mb-16" id="regenModalInfo"></div>
 
-            <h4 class="text-sm mb-8 section-title">Filtering</h4>
+            <h4 class="text-sm mb-8 section-title">{{ icon('filter', 14) }} Filtering</h4>
             <div class="flex-col gap-12 mb-16">
                 <label class="toggle">
                     <input type="checkbox" id="regen_filter_sub" checked>
@@ -77,28 +78,28 @@
                     <label class="form-label">Label pattern (regex, optional)</label>
                     <input class="form-input form-input-mono" id="regen_label_pattern" placeholder="e.g. ^(A|B|C) -.*">
                     <span class="text-light text-sm">Only keep labels matching this pattern. Leave empty for no filter.</span>
-                    <div class="flex gap-8 mt-8" style="flex-wrap:wrap;">
-                        <span class="text-sm text-light" style="line-height:26px;">Presets:</span>
+                    <div class="flex gap-8 flex-wrap mt-8">
+                        <span class="text-sm text-light items-center">Presets:</span>
                         <button type="button" class="btn btn-outline btn-sm" onclick="setLabelPreset('^\\d{2}\\w? - ')" title="00 - Login, 22a - Poll, etc.">Numbered (00-xx)</button>
                         <button type="button" class="btn btn-outline btn-sm" onclick="setLabelPreset('^[A-Z] - ')" title="A - Login Page, B - Click Login, etc.">Lettered (A-Z)</button>
                         <button type="button" class="btn btn-outline btn-sm" onclick="setLabelPreset('^(\\d{2}\\w? - |[A-Z] - )')" title="Both numbered and lettered — filters out usernames/IDs">All Transactions</button>
                         <button type="button" class="btn btn-outline btn-sm" onclick="setLabelPreset('')" title="Clear pattern">Clear</button>
                     </div>
-                    <span class="text-light text-sm mt-8" style="display:block;">Tip: Use &quot;All Transactions&quot; to filter out username/ID rows (e.g. ABR000001).</span>
-                    <div id="labelPicker" style="display:none;margin-top:8px;">
+                    <span class="text-light text-sm mt-8">Tip: Use &quot;All Transactions&quot; to filter out username/ID rows (e.g. ABR000001).</span>
+                    <div id="labelPicker" class="hidden mt-8">
                         <span class="text-sm text-bold">Labels in JTL:</span>
-                        <div id="labelPickerList" style="max-height:150px;overflow-y:auto;border:1px solid var(--color-border);border-radius:6px;padding:4px 8px;margin-top:4px;font-size:12px;"></div>
-                        <button type="button" class="btn btn-outline btn-sm" style="margin-top:4px;" onclick="buildPatternFromPicker()">Build pattern from selected</button>
+                        <div id="labelPickerList" class="label-picker-list mt-4"></div>
+                        <button type="button" class="btn btn-outline btn-sm mt-4" onclick="buildPatternFromPicker()">Build pattern from selected</button>
                     </div>
                 </div>
             </div>
 
-            <h4 class="text-sm mb-8 section-title">Graph settings</h4>
-            <span class="text-light text-sm">Uses graph configuration from <a href="settings" style="color:var(--color-primary);">Settings &gt; Report</a> tab.</span>
+            <h4 class="text-sm mb-8 section-title">{{ icon('bar-chart-3', 14) }} Graph settings</h4>
+            <span class="text-light text-sm">Uses graph configuration from <a href="settings" class="text-primary">Settings &gt; Report</a> tab.</span>
         </div>
         <div class="modal-footer">
             <button class="btn btn-outline btn-sm" onclick="closeModal('regenModal')">Cancel</button>
-            <button class="btn btn-primary btn-sm" id="regenModalBtn" onclick="doRegenerate()">Regenerate</button>
+            <button class="btn btn-primary btn-sm" id="regenModalBtn" onclick="doRegenerate()">{{ icon('refresh-cw', 14) }} Regenerate</button>
         </div>
     </div>
 </div>
@@ -146,15 +147,17 @@ function sortBy(key) {
 
 function renderResults() {
     const tbody = document.getElementById('resultsList');
+    const cardsEl = document.getElementById('resultCards');
     const emptyEl = document.getElementById('resultsEmpty');
-    const tableEl = document.querySelector('.table-wrapper');
+    const tableEl = document.getElementById('resultsTableWrap');
     const q = (document.getElementById('resultSearch').value || '').trim();
     if (!allFolders.length && !q) {
-        emptyEl.style.display = '';
-        tableEl.style.display = 'none';
+        emptyEl.classList.remove('hidden');
+        tableEl.classList.add('hidden');
+        cardsEl.innerHTML = '';
     } else {
-        emptyEl.style.display = 'none';
-        tableEl.style.display = '';
+        emptyEl.classList.add('hidden');
+        tableEl.classList.remove('hidden');
     }
     let filtered = [...allFolders];
     // Client-side sort on the current page
@@ -190,15 +193,21 @@ function renderResults() {
         const eName = escHtml(f.name);
         const aName = escAttr(f.name);
 
-        // Primary visible buttons: Stats + Report
+        // Primary visible buttons: Stats + Report (or Generate if no report)
         let primaryBtns = '';
         if (f.has_jtl) primaryBtns += `<button class="btn btn-outline btn-sm" onclick="toggleStats('${aName}')" data-tooltip="Preview stats">${icons.barChart} Stats</button>`;
-        if (f.has_report) primaryBtns += `<button class="btn btn-outline btn-sm" onclick="openReport('${aName}')" data-tooltip="Open report">${icons.externalLink} Report</button>`;
+        if (f.has_report) {
+            primaryBtns += `<button class="btn btn-outline btn-sm" onclick="openReport('${aName}')" data-tooltip="Open report">${icons.externalLink} Report</button>`;
+        } else if (f.has_jtl && isAdmin) {
+            primaryBtns += `<button class="btn btn-outline btn-sm" id="regen-${eName}" onclick="regenerateReport('${aName}')" data-tooltip="Generate report">${icons.refreshCw} Generate</button>`;
+        }
 
         // Overflow dropdown items: Download, Regenerate, Open Folder, Delete
         let dropdownItems = '';
-        if (f.has_report) dropdownItems += `<button class="dropdown-item" onclick="downloadReport('${aName}')">${icons.download} Download Report</button>`;
-        if (f.has_jtl && isAdmin) dropdownItems += `<button class="dropdown-item" id="regen-${eName}" onclick="regenerateReport('${aName}')">${icons.refreshCw} Regenerate</button>`;
+        if (f.has_report) {
+            dropdownItems += `<button class="dropdown-item" onclick="downloadReport('${aName}')">${icons.download} Download Report</button>`;
+            if (f.has_jtl && isAdmin) dropdownItems += `<button class="dropdown-item" id="regen-${eName}" onclick="regenerateReport('${aName}')">${icons.refreshCw} Regenerate</button>`;
+        }
         if (isLocalhost) dropdownItems += `<button class="dropdown-item" onclick="openFolder('${aName}')">${icons.folderOpen} Open Folder</button>`;
         if (isAdmin) {
             if (dropdownItems) dropdownItems += '<div class="dropdown-divider"></div>';
@@ -208,7 +217,7 @@ function renderResults() {
         let dropdownHtml = '';
         if (dropdownItems) {
             dropdownHtml = `<div class="dropdown">
-                <button class="btn btn-sm btn-icon" onclick="toggleDropdown(this)" data-tooltip="More actions">${icons.moreHorizontal}</button>
+                <button class="btn btn-sm btn-icon btn-ghost" onclick="toggleDropdown(this)" data-tooltip="More actions">${icons.moreHorizontal}</button>
                 <div class="dropdown-menu">${dropdownItems}</div>
             </div>`;
         }
@@ -216,26 +225,61 @@ function renderResults() {
         const actions = primaryBtns + dropdownHtml;
         const jtlNames = (f.jtl_files || []).join(', ');
         return `<tr>
-            <td><label class="check"><input type="checkbox" class="result-check" value="${aName}" onchange="updateSelectionBtns()"><span class="check-box"></span></label></td>
-            <td class="text-mono"><span class="result-name" data-folder="${aName}" onclick="editLabel(this)" title="Click to set label">${f.label ? `<span class="badge badge-info" style="margin-right:4px;">${escHtml(f.label)}</span>` : ''}${eName}</span></td>
+            <td><label class="check"><input type="checkbox" class="result-check" value="${aName}" onchange="syncCheckboxes(this);updateSelectionBtns()"><span class="check-box"></span></label></td>
+            <td class="text-mono"><span class="result-name" data-folder="${aName}" onclick="editLabel(this)" title="Click to set label">${f.label ? `<span class="badge badge-info mr-4">${escHtml(f.label)}</span>` : ''}${eName}</span></td>
             <td class="text-sm">${new Date(f.date).toLocaleString()}</td>
             <td>${formatSize(f.size)}</td>
             <td>${f.has_report ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-danger">No</span>'}</td>
             <td>${f.has_jtl ? `<span class="badge badge-success" title="${escAttr(jtlNames)}">Yes</span>` : '<span class="badge badge-danger">No</span>'}</td>
-            <td class="table-actions"><div class="flex gap-8" style="align-items:center;">${actions}</div></td>
+            <td class="table-actions"><div class="flex gap-8 items-center">${actions}</div></td>
         </tr>
         <tr class="stats-row hidden" id="stats-${eName}"><td colspan="7" style="padding:0;"></td></tr>`;
+    }).join('');
+
+    // Mobile card view
+    let mobileDropdownItems = '';
+    cardsEl.innerHTML = filtered.map(f => {
+        const eName = escHtml(f.name);
+        const aName = escAttr(f.name);
+        // All actions go in the 3-dot dropdown on mobile
+        mobileDropdownItems = '';
+        if (f.has_jtl) mobileDropdownItems += `<button class="dropdown-item" onclick="toggleStats('${aName}')">${icons.barChart} Stats</button>`;
+        if (f.has_report) {
+            mobileDropdownItems += `<button class="dropdown-item" onclick="openReport('${aName}')">${icons.externalLink} Open Report</button>`;
+            mobileDropdownItems += `<button class="dropdown-item" onclick="downloadReport('${aName}')">${icons.download} Download Report</button>`;
+            if (f.has_jtl && isAdmin) mobileDropdownItems += `<button class="dropdown-item" onclick="regenerateReport('${aName}')">${icons.refreshCw} Regenerate</button>`;
+        } else if (f.has_jtl && isAdmin) {
+            mobileDropdownItems += `<button class="dropdown-item" onclick="regenerateReport('${aName}')">${icons.refreshCw} Generate Report</button>`;
+        }
+        if (isLocalhost) mobileDropdownItems += `<button class="dropdown-item" onclick="openFolder('${aName}')">${icons.folderOpen} Open Folder</button>`;
+        if (isAdmin) {
+            if (mobileDropdownItems) mobileDropdownItems += '<div class="dropdown-divider"></div>';
+            mobileDropdownItems += `<button class="dropdown-item danger" onclick="deleteResult('${aName}')">${icons.trash} Delete</button>`;
+        }
+        return `<div class="result-card" data-name="${aName}">
+            <div class="result-card-header">
+                <label class="check"><input type="checkbox" class="result-card-check" value="${aName}" onchange="syncCheckboxes(this);updateSelectionBtns()"><span class="check-box"></span></label>
+                <span class="result-card-name">${f.label ? `<span class="badge badge-info mr-4">${escHtml(f.label)}</span>` : ''}${eName}</span>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-icon btn-ghost" onclick="toggleDropdown(this)">${icons.moreHorizontal}</button>
+                    <div class="dropdown-menu">${mobileDropdownItems}</div>
+                </div>
+            </div>
+            <div class="result-card-meta">${new Date(f.date).toLocaleString()} · ${formatSize(f.size)}</div>
+            <div class="result-card-badges">
+                Report: ${f.has_report ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-danger">No</span>'}
+                JTL: ${f.has_jtl ? '<span class="badge badge-success">Yes</span>' : '<span class="badge badge-danger">No</span>'}
+            </div>
+            <div class="stats-row hidden" id="m-stats-${eName}"></div>
+        </div>`;
     }).join('');
 }
 
 function renderPagination() {
     const el = document.getElementById('paginationControls');
     const totalPages = Math.ceil(totalResults / perPage);
-    if (totalPages <= 1) { el.style.display = 'none'; return; }
-    el.style.display = 'flex';
-    el.style.justifyContent = 'center';
-    el.style.alignItems = 'center';
-    el.style.gap = '4px';
+    if (totalPages <= 1) { el.classList.add('hidden'); return; }
+    el.classList.remove('hidden');
     let html = '';
     html += `<button class="btn btn-outline btn-sm" onclick="goToPage(1)" ${currentPage === 1 ? 'disabled' : ''}>First</button>`;
     html += `<button class="btn btn-outline btn-sm" onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>Prev</button>`;
@@ -263,8 +307,14 @@ function goToPage(page) {
 
 function toggleSelectAll() {
     const checked = document.getElementById('selectAll').checked;
-    document.querySelectorAll('.result-check').forEach(cb => cb.checked = checked);
+    document.querySelectorAll('.result-check, .result-card-check').forEach(cb => cb.checked = checked);
     updateSelectionBtns();
+}
+function syncCheckboxes(source) {
+    // Keep table and card checkboxes in sync
+    const val = source.value;
+    const checked = source.checked;
+    document.querySelectorAll(`.result-check[value="${val}"], .result-card-check[value="${val}"]`).forEach(cb => cb.checked = checked);
 }
 function updateSelectionBtns() {
     const count = document.querySelectorAll('.result-check:checked').length;
@@ -273,9 +323,9 @@ function updateSelectionBtns() {
     const bulkBtn = document.getElementById('bulkRegenBtn');
     const delBtn = document.getElementById('bulkDeleteBtn');
     if (isAdmin) {
-        bulkBtn.style.display = count > 0 ? '' : 'none';
+        bulkBtn.classList.toggle('hidden', count === 0);
         bulkBtn.disabled = count === 0;
-        delBtn.style.display = count > 0 ? '' : 'none';
+        delBtn.classList.toggle('hidden', count === 0);
         delBtn.disabled = count === 0;
     }
 }
@@ -332,7 +382,7 @@ function setLabelPreset(pattern) {
 async function regenerateReport(folder) {
     regenFolder = folder;
     document.getElementById('regenModalInfo').textContent = 'Folder: ' + folder;
-    document.getElementById('labelPicker').style.display = 'none';
+    document.getElementById('labelPicker').classList.add('hidden');
     // Pre-fill from saved filter info (regen_info.json or run_info.json)
     try {
         const info = await api(`/api/results/${encodeURIComponent(folder)}/filter-info`);
@@ -444,7 +494,7 @@ async function compareSelected() {
             const isBad = betterIfHigher ? v.change_pct < 0 : v.change_pct > 0;
             const cls = Math.abs(v.change_pct) < 1 ? '' : isGood ? 'badge-success' : isBad ? 'badge-danger' : '';
             const sign = v.change_pct > 0 ? '+' : '';
-            html += `<tr><td style="font-weight:500;">${key}</td><td>${v.a}</td><td>${v.b}</td>
+            html += `<tr><td class="text-bold">${key}</td><td>${v.a}</td><td>${v.b}</td>
                 <td>${cls ? `<span class="badge ${cls}">${sign}${v.change_pct}%</span>` : `${sign}${v.change_pct}%`}</td></tr>`;
         }
         html += '</tbody></table></div>';
@@ -469,21 +519,23 @@ async function toggleStats(folder) {
         const data = await api(`/api/results/${encodeURIComponent(folder)}/stats`);
         if (data.error) { cell.innerHTML = `<div class="p-12 text-light">${escHtml(data.error)}</div>`; return; }
         const o = data.overall;
-        let html = `<div class="surface-card p-12" style="border-radius:0;border-top:1px solid var(--color-border);">
-            <div class="form-row mb-8">
+        const errClass = o.error_pct > 0 ? 'stat-card-tint-danger' : '';
+        let html = `<div class="p-12" style="border-top:1px solid var(--color-border);background:var(--color-bg);">
+            <div class="live-stats-grid mb-8">
                 <div class="surface-card"><span class="text-sm text-light">Samples</span><div class="text-bold">${o.total_samples.toLocaleString()}</div></div>
                 <div class="surface-card"><span class="text-sm text-light">Avg RT</span><div class="text-bold">${o.avg.toFixed(0)} ms</div></div>
                 <div class="surface-card"><span class="text-sm text-light">P95</span><div class="text-bold">${o.p95.toFixed(0)} ms</div></div>
-                <div class="surface-card"><span class="text-sm text-light">Error %</span><div class="text-bold" style="${o.error_pct > 0 ? 'color:var(--color-danger)' : ''}">${o.error_pct}%</div></div>
-                <div class="surface-card"><span class="text-sm text-light">Throughput</span><div class="text-bold">${o.throughput.toFixed(1)}/s</div></div>
+                <div class="surface-card ${errClass}"><span class="text-sm text-light">Error %</span><div class="text-bold">${o.error_pct}%</div></div>
+                <div class="surface-card stat-card-tint-primary"><span class="text-sm text-light">Throughput</span><div class="text-bold">${o.throughput.toFixed(1)}/s</div></div>
                 <div class="surface-card"><span class="text-sm text-light">Duration</span><div class="text-bold">${o.duration_sec.toFixed(0)}s</div></div>
             </div>`;
         if (data.transactions && data.transactions.length > 0) {
             html += `<div class="table-wrapper"><table class="text-xs">
                 <thead><tr><th>Label</th><th>Samples</th><th>Avg</th><th>Median</th><th>P90</th><th>P95</th><th>Min</th><th>Max</th><th>Error %</th></tr></thead><tbody>`;
             data.transactions.forEach(t => {
+                const tErrCls = t.error_pct > 0 ? ' class="text-danger"' : '';
                 html += `<tr><td class="text-mono">${escHtml(t.label)}</td><td>${t.samples}</td><td>${t.avg}</td><td>${t.median}</td><td>${t.p90}</td><td>${t.p95}</td><td>${t.min}</td><td>${t.max}</td>
-                    <td style="${t.error_pct > 0 ? 'color:var(--color-danger)' : ''}">${t.error_pct}%</td></tr>`;
+                    <td${tErrCls}>${t.error_pct}%</td></tr>`;
             });
             html += '</tbody></table></div>';
         }
@@ -532,9 +584,9 @@ async function loadLabelsForPicker(folder) {
         if (pickerLabels.length > 0) {
             const picker = document.getElementById('labelPicker');
             const list = document.getElementById('labelPickerList');
-            picker.style.display = '';
+            picker.classList.remove('hidden');
             list.innerHTML = pickerLabels.map(l =>
-                `<label class="check" style="display:flex;padding:2px 0;"><input type="checkbox" class="label-pick" value="${escAttr(l)}" checked><span class="check-box"></span><span class="text-mono">${escHtml(l)}</span></label>`
+                `<label class="check flex py-8"><input type="checkbox" class="label-pick" value="${escAttr(l)}" checked><span class="check-box"></span><span class="text-mono">${escHtml(l)}</span></label>`
             ).join('');
         }
     } catch(e) { /* ignore */ }
