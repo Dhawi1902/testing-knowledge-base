@@ -1,0 +1,86 @@
+{% from 'icons.html' import icon %}
+<!-- Slaves Tab — Toolbar -->
+<div class="card-header flex-wrap gap-8">
+    <div class="flex gap-16 items-center">
+        <span class="card-title">{{ icon('server', 16) }} Slave List</span>
+        <span class="text-sm text-light" id="lastCheckedLabel"></span>
+    </div>
+    <!-- Default actions -->
+    <div class="flex gap-4 items-center flex-wrap" id="defaultActions">
+        {% if access_level != 'viewer' %}<button class="btn btn-outline btn-sm" onclick="addSlave()" data-tooltip="Add slave (a)">{{ icon('plus', 14) }}</button>{% endif %}
+        <button class="btn btn-outline btn-sm" onclick="refreshStatus()" id="refreshBtn" data-tooltip="Check status (r)">{{ icon('refresh-cw', 14) }}</button>
+        <button class="btn btn-outline btn-sm" onclick="toggleMonitoring(this)" id="monitorBtn" data-tooltip="Auto-monitor (m)">{{ icon('activity', 14) }}</button>
+        <select class="select select-sm" id="monitorInterval" onchange="onIntervalChange()" style="width:70px;padding:2px 4px;font-size:11px;" data-tooltip="Poll interval">
+            <option value="10000">10s</option>
+            <option value="30000" selected>30s</option>
+            <option value="60000">60s</option>
+            <option value="120000">2m</option>
+        </select>
+        {% if access_level != 'viewer' %}
+        <div class="dropdown">
+            <button class="btn btn-outline btn-sm" onclick="toggleDropdown(this)" data-tooltip="Actions">{{ icon('chevron-down', 12) }} Actions</button>
+            <div class="dropdown-menu">
+                <button class="dropdown-item" onclick="startAll()" id="startAllBtn">{{ icon('power', 14) }} Start All</button>
+                <button class="dropdown-item" onclick="stopAll()" id="stopAllBtn">{{ icon('stop-circle', 14) }} Stop All</button>
+                <div class="dropdown-sep"></div>
+                <button class="dropdown-item" onclick="refreshResources()" id="resourcesBtn">{{ icon('cpu', 14) }} Check Resources</button>
+                <button class="dropdown-item" onclick="syncData()">{{ icon('upload', 14) }} Sync Data</button>
+                <button class="dropdown-item" onclick="openSavedLogs()">{{ icon('file-text', 14) }} Saved Logs</button>
+            </div>
+        </div>
+        {% endif %}
+        <span class="divider-v"></span>
+        <button class="btn btn-outline btn-sm view-toggle" id="viewListBtn" onclick="setView('list')" data-tooltip="List view">{{ icon('layers', 14) }}</button>
+        <button class="btn btn-outline btn-sm view-toggle" id="viewGridBtn" onclick="setView('grid')" data-tooltip="Grid view">{{ icon('hard-drive', 14) }}</button>
+    </div>
+    {% if access_level != 'viewer' %}
+    <!-- Bulk actions -->
+    <div class="flex gap-8 items-center flex-wrap bulk-bar-sticky" style="display:none;" id="bulkActions">
+        <span class="text-sm" id="bulkCount" style="font-weight:600;">0 selected</span>
+        <button class="btn btn-outline btn-sm" onclick="bulkEnable(true)">Enable</button>
+        <button class="btn btn-outline btn-sm" onclick="bulkEnable(false)">Disable</button>
+        <button class="btn btn-danger-outline btn-sm" onclick="bulkRemove()">Remove</button>
+        <button class="btn btn-outline btn-sm" onclick="clearSelection()">Clear</button>
+        <div class="dropdown">
+            <button class="btn btn-outline btn-sm" onclick="toggleDropdown(this)">More {{ icon('chevron-down', 12) }}</button>
+            <div class="dropdown-menu">
+                <button class="dropdown-item" onclick="bulkProvision()">Provision</button>
+                <button class="dropdown-item" onclick="bulkCleanData()">Clean Data</button>
+                <button class="dropdown-item" onclick="bulkCleanLogs()">Clean Logs</button>
+                <button class="dropdown-item" onclick="collectLogs()">Collect Logs</button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Fleet stats -->
+<div class="grid grid-4 mb-12" id="fleetStats" style="display:none;padding:0 16px;">
+    <div class="stat-card"><div class="stat-value" id="statVMs">-</div><div class="stat-label">Total VMs</div></div>
+    <div class="stat-card"><div class="stat-value" id="statOnline">-</div><div class="stat-label">Online</div></div>
+    <div class="stat-card"><div class="stat-value" id="statOffline">-</div><div class="stat-label">Offline</div></div>
+    <div class="stat-card"><div class="stat-value" id="statDisabled">-</div><div class="stat-label">Disabled</div></div>
+</div>
+
+<!-- Slave container -->
+<div id="slaveBody">
+    <div id="slaveContainer">
+        <div class="text-light" style="text-align:center;padding:32px;">Loading...</div>
+    </div>
+    <div class="empty-state" id="slavesEmpty" style="display:none">
+        {{ icon('server', 48) }}
+        <div class="empty-state-title">No slave VMs configured</div>
+        <div class="empty-state-desc">Add a slave VM to start distributed testing.</div>
+        <button class="btn btn-primary" onclick="addSlave()">Add Slave</button>
+    </div>
+</div>
+
+<!-- Monitoring Panel -->
+<div class="monitoring-panel" id="monitoringPanel" style="display:none;">
+    <div class="monitoring-header">
+        <span class="live-indicator" id="liveIndicator"></span>
+        <strong>Resource Monitor</strong>
+        <span class="text-sm text-light" id="monitorIntervalLabel"></span>
+    </div>
+    <div id="monitoringBody"></div>
+</div>

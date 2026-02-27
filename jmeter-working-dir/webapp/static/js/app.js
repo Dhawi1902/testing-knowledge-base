@@ -123,7 +123,8 @@ async function api(url, options = {}) {
 }
 
 /* ===== Tab Switching ===== */
-function initTabs(container) {
+function initTabs(container, options) {
+    const opts = options || {};
     const el = typeof container === 'string' ? document.querySelector(container) : container;
     if (!el) return;
     // Panels live as siblings/in the parent card, not inside the tab bar
@@ -136,6 +137,7 @@ function initTabs(container) {
         if (btn) { btn.classList.add('active'); btn.setAttribute('aria-selected', 'true'); }
         const panel = scope.querySelector(`#${target}`);
         if (panel) panel.classList.add('active');
+        if (opts.onActivate) opts.onActivate(target);
     }
     buttons.forEach(btn => {
         btn.addEventListener('click', () => activateTab(btn.dataset.tab));

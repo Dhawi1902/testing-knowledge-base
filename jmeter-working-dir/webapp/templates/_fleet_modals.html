@@ -1,0 +1,94 @@
+{% from 'icons.html' import icon %}
+<!-- Provision Log Modal -->
+{% if access_level != 'viewer' %}
+<div class="modal-overlay" id="provisionModal" style="display:none;">
+    <div class="modal" style="max-width:700px;width:95vw;">
+        <div class="modal-header">
+            <h3 class="modal-title" id="provisionModalTitle">Provisioning...</h3>
+            <button class="modal-close" onclick="closeProvisionModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="provisionLog" style="background:var(--color-bg);border:1px solid var(--color-border);border-radius:6px;padding:12px;font-family:var(--font-mono);font-size:12px;max-height:400px;overflow-y:auto;white-space:pre-wrap;line-height:1.6;"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline btn-sm" onclick="closeProvisionModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Slave Log Modal -->
+<div class="modal-overlay" id="logModal" style="display:none;">
+    <div class="modal" style="max-width:800px;width:95vw;">
+        <div class="modal-header">
+            <h3 class="modal-title" id="logModalTitle">Slave Log</h3>
+            <button class="modal-close" onclick="closeLogModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="logContent" style="background:var(--color-bg);border:1px solid var(--color-border);border-radius:6px;padding:12px;font-family:var(--font-mono);font-size:11px;max-height:500px;overflow-y:auto;white-space:pre-wrap;line-height:1.5;"></div>
+        </div>
+        <div class="modal-footer" style="justify-content:space-between;">
+            <span class="text-sm text-light" id="logPath"></span>
+            <div class="flex gap-8">
+                <button class="btn btn-outline btn-sm" onclick="saveCurrentLog()">{{ icon('download', 14) }} Save</button>
+                <button class="btn btn-outline btn-sm" onclick="refreshLog()">Refresh</button>
+                <button class="btn btn-outline btn-sm" onclick="closeLogModal()">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Saved Logs Modal -->
+<div class="modal-overlay" id="savedLogsModal" style="display:none;">
+    <div class="modal" style="max-width:700px;width:95vw;">
+        <div class="modal-header">
+            <h3 class="modal-title">Saved Slave Logs</h3>
+            <button class="modal-close" onclick="closeSavedLogsModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="savedLogsContent">Loading...</div>
+        </div>
+        <div class="modal-footer" style="justify-content:space-between;">
+            <span class="text-sm text-light" id="savedLogsPath"></span>
+            <button class="btn btn-outline btn-sm" onclick="closeSavedLogsModal()">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Sync Data Modal -->
+<div class="modal-overlay" id="syncModal" style="display:none;">
+    <div class="modal" style="max-width:600px;width:95vw;">
+        <div class="modal-header">
+            <h3 class="modal-title">Sync Test Data</h3>
+            <button class="modal-close" onclick="closeSyncModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div id="syncPreview" style="margin-bottom:12px;">Loading...</div>
+            <div id="syncLog" style="background:var(--color-bg);border:1px solid var(--color-border);border-radius:6px;padding:12px;font-family:var(--font-mono);font-size:12px;max-height:300px;overflow-y:auto;white-space:pre-wrap;line-height:1.6;display:none;"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline btn-sm" onclick="closeSyncModal()">Close</button>
+            <button class="btn btn-primary btn-sm" onclick="runSyncData()" id="syncBtn">Sync All</button>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Add Property Modal -->
+<div id="addPropModal" class="modal-overlay">
+    <div class="modal" style="max-width:600px;">
+        <div class="modal-header">
+            <h3>Add JMeter Property</h3>
+            <button class="modal-close" onclick="closeAddPropertyModal()">&times;</button>
+        </div>
+        <input class="form-input mb-8" id="propSearchInput" type="text" placeholder="Search properties..." oninput="filterPropertyList(this.value); document.getElementById('addPropModal').classList.toggle('has-query', this.value.length > 0)">
+        <div id="propSearchResults" style="max-height:400px;overflow-y:auto;"></div>
+        <div style="margin-top:12px;border-top:1px solid var(--color-border);padding-top:12px;">
+            <div class="text-sm text-bold mb-4">Custom Property</div>
+            <div class="flex gap-8 prop-custom-form">
+                <input class="form-input form-input-mono" id="customPropKey" placeholder="key" style="flex:1;">
+                <input class="form-input form-input-mono" id="customPropVal" placeholder="value" style="flex:1;">
+                <button class="btn btn-primary btn-sm" onclick="addCustomProperty()">Add</button>
+            </div>
+        </div>
+    </div>
+</div>
