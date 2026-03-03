@@ -145,18 +145,19 @@ function renderGrid() {
         const hasOverrides = s.overrides && (s.overrides.user || s.overrides.password || s.overrides.dest_path);
         const aIp = escAttr(s.ip);
         const ipClick = Fleet.isAdmin ? `onclick="editSlaveIp('${aIp}', this)" title="Click to edit"` : '';
+        const hasMetrics = Fleet.resourceData[s.ip] && Fleet.resourceData[s.ip].cpu_percent != null;
+
         html += `<div class="vm-card${enabled ? '' : ' disabled'}${sel ? ' selected' : ''}">
             <div class="flex-between gap-8">
                 <div class="flex gap-8 items-center">
                     ${Fleet.isAdmin ? `<label class="check"><input type="checkbox" class="select-cb" ${sel ? 'checked' : ''} onchange="toggleSelect('${aIp}', this.checked)"><span class="check-box"></span></label>` : ''}
                     <span class="vm-ip" ${ipClick}>${escHtml(s.ip)}</span>
-                    ${hasOverrides ? '<span class="badge" style="font-size:10px;background:var(--color-border);color:var(--color-text-light);">custom</span>' : ''}
+                    ${hasOverrides ? '<span class="badge badge-sm">custom</span>' : ''}
                 </div>
                 <div class="flex gap-4 items-center flex-wrap">
-                    ${statusBadge(s)}
-                    ${provisionBadges(s)}
                     ${Fleet.isAdmin && enabled ? `<button class="btn btn-outline btn-xs" onclick="startSingle('${aIp}')" data-tooltip="Start">&#9654;</button>` : ''}
                     ${Fleet.isAdmin && enabled ? `<button class="btn btn-danger-outline btn-xs" onclick="stopSingle('${aIp}')" data-tooltip="Stop">&#9632;</button>` : ''}
+                    ${Fleet.isAdmin ? `<button class="gear-btn${expanded ? ' active' : ''}" onclick="toggleConfig('${aIp}')" data-tooltip="SSH overrides">${gearIcon()}</button>` : ''}
                     ${Fleet.isAdmin && enabled ? `<div class="dropdown">
                         <button class="btn btn-outline btn-xs" onclick="toggleDropdown(this)">${Fleet.ICON_MORE}</button>
                         <div class="dropdown-menu">
@@ -171,15 +172,20 @@ function renderGrid() {
                             <button class="dropdown-item" style="color:var(--color-danger)" onclick="removeSlave('${aIp}')">Remove</button>
                         </div>
                     </div>` : ''}
-                    ${Fleet.isAdmin ? `<button class="gear-btn${expanded ? ' active' : ''}" onclick="toggleConfig('${aIp}')" data-tooltip="SSH overrides">${gearIcon()}</button>` : ''}
                     ${Fleet.isAdmin ? `<label class="toggle" title="${enabled ? 'Disable' : 'Enable'}">
                         <input type="checkbox" ${enabled ? 'checked' : ''} onchange="toggleSlave('${aIp}', this.checked)">
                         <span class="toggle-track"></span>
                     </label>` : ''}
                 </div>
             </div>
-            <div class="vm-meta">${s.nickname ? escHtml(s.nickname) + ' &mdash; ' : ''}VM #${i + 1}${historySparkline(s)}</div>
-            ${s.error ? '<div class="vm-error">' + escHtml(s.error) + '</div>' : ''}
+            <div class="vm-card-meta">
+                VM #${i + 1}${s.nickname ? ` &mdash; <em>${escHtml(s.nickname)}</em>` : ''}
+                ${historySparkline(s)}
+            </div>
+            <div class="vm-card-status">
+                ${statusBadge(s)}${provisionBadges(s)}${s.error ? ' <span class="text-sm text-danger">' + escHtml(s.error) + '</span>' : ''}
+            </div>
+            ${hasMetrics ? inlineMetrics(s.ip) : ''}
             ${expanded ? renderConfigPanel(s) : ''}
         </div>`;
     });
