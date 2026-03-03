@@ -66,6 +66,56 @@ def get_ram():
         return {"ram_total_mb": None, "ram_used_mb": None, "ram_percent": None}
 
 
+def get_disk():
+    """Disk usage for / partition from df."""
+    try:
+        r = subprocess.run(
+            ["df", "-BM", "/"],
+            capture_output=True, text=True, timeout=3,
+        )
+        lines = r.stdout.strip().split("\n")
+        if len(lines) < 2:
+            return {"disk_percent": None, "disk_used_gb": None, "disk_total_gb": None}
+        parts = lines[1].split()
+        total_mb = int(parts[1].rstrip("M"))
+        used_mb = int(parts[2].rstrip("M"))
+        return {
+            "disk_total_gb": round(total_mb / 1024, 1),
+            "disk_used_gb": round(used_mb / 1024, 1),
+            "disk_percent": round(used_mb / total_mb * 100, 1) if total_mb > 0 else 0.0,
+        }
+    except Exception:
+        return {"disk_percent": None, "disk_used_gb": None, "disk_total_gb": None}
+
+
+def get_load():
+    """1-minute load average from /proc/loadavg."""
+    try:
+        with open("/proc/loadavg") as f:
+            return round(float(f.read().split()[0]), 2)
+    except Exception:
+        return None
+
+
+def get_network():
+    """Network bytes from /proc/net/dev (all interfaces except lo)."""
+    try:
+        rx_total = tx_total = 0
+        with open("/proc/net/dev") as f:
+            for line in f:
+                if ":" not in line:
+                    continue
+                iface, data = line.split(":", 1)
+                if iface.strip() == "lo":
+                    continue
+                parts = data.split()
+                rx_total += int(parts[0])
+                tx_total += int(parts[8])
+        return {"net_rx_bytes": rx_total, "net_tx_bytes": tx_total}
+    except Exception:
+        return {"net_rx_bytes": None, "net_tx_bytes": None}
+
+
 def get_jmeter_status():
     """Check if JMeter server is listening on port 1099."""
     try:
@@ -79,7 +129,7 @@ def get_jmeter_status():
 
 
 def get_jvm_stats():
-    """Get JVM memory usage from /proc if JMeter is running."""
+    """Get JVM memory usage and thread count from /proc if JMeter is running."""
     try:
         r = subprocess.run(
             ["pgrep", "-f", "ApacheJMeter"],
@@ -90,12 +140,14 @@ def get_jvm_stats():
             return None
         pid = pids[0]
         rss_kb = 0
+        threads = 0
         with open(f"/proc/{pid}/status") as f:
             for line in f:
                 if line.startswith("VmRSS:"):
                     rss_kb = int(line.split()[1])
-                    break
-        return {"jvm_pid": int(pid), "jvm_rss_mb": rss_kb // 1024}
+                elif line.startswith("Threads:"):
+                    threads = int(line.split()[1])
+        return {"jvm_pid": int(pid), "jvm_rss_mb": rss_kb // 1024, "jvm_threads": threads}
     except Exception:
         return None
 
@@ -103,10 +155,15 @@ def get_jvm_stats():
 def collect_metrics():
     """Collect all metrics into a single dict."""
     ram = get_ram()
+    disk = get_disk()
+    net = get_network()
     jmeter_up = get_jmeter_status()
     result = {
         "cpu_percent": get_cpu(),
         **ram,
+        **disk,
+        "load_1m": get_load(),
+        **net,
         "jmeter_running": jmeter_up,
     }
     if jmeter_up:
