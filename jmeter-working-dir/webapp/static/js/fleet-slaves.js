@@ -894,14 +894,25 @@ function startMetricsPolling() {
     if (Fleet._metricsTimer) return;
     _pollMetrics();
     Fleet._metricsTimer = setInterval(_pollMetrics, Fleet._metricsInterval);
+    Fleet._countdownTimer = setInterval(renderMonitoringPanel, 1000);
 }
 
 function stopMetricsPolling() {
-    if (Fleet._metricsTimer) { clearInterval(Fleet._metricsTimer); Fleet._metricsTimer = null; }
+    if (Fleet._metricsTimer) {
+        clearInterval(Fleet._metricsTimer);
+        Fleet._metricsTimer = null;
+    }
+    if (Fleet._countdownTimer) {
+        clearInterval(Fleet._countdownTimer);
+        Fleet._countdownTimer = null;
+    }
+    localStorage.removeItem('fleet_monitoring');
+    renderMonitoringPanel();
 }
 
 async function _pollMetrics() {
     try {
+        Fleet._lastPollTs = Date.now();
         const data = await api('/api/slaves/metrics');
         const results = data.results || [];
         if (results.some(r => r.ok && r.agent)) {
@@ -942,15 +953,15 @@ function onIntervalChange() {
 
 // ===== Monitoring Panel =====
 function renderMonitoringPanel() {
-    const panel = document.getElementById('monitoringPanel');
-    if (!panel) return;
+    const bar = document.getElementById('monitoringSummary');
+    if (!bar) return;
 
     const hasData = Object.keys(Fleet.resourceData).length > 0;
     if (!Fleet._metricsTimer || !hasData) {
-        panel.style.display = 'none';
+        bar.style.display = 'none';
         return;
     }
-    panel.style.display = '';
+    bar.style.display = '';
 
     // Update interval label
     const intervalLabel = document.getElementById('monitorIntervalLabel');
@@ -959,46 +970,33 @@ function renderMonitoringPanel() {
         intervalLabel.textContent = secs >= 60 ? `every ${secs/60}m` : `every ${secs}s`;
     }
 
-    // Update live indicator
-    const liveEl = document.getElementById('liveIndicator');
-    if (liveEl) liveEl.style.display = Fleet._metricsTimer ? '' : 'none';
-
-    const body = document.getElementById('monitoringBody');
-    let html = '<table class="table"><thead><tr><th>Slave</th><th style="min-width:160px;">CPU</th><th style="min-width:160px;">RAM</th><th style="width:100px;">JVM RSS</th></tr></thead><tbody>';
-
+    // Compute averages across enabled slaves
+    let cpuSum = 0, ramSum = 0, count = 0, jmeterUp = 0, totalEnabled = 0;
     Fleet.slaveData.forEach(s => {
         if (s.enabled === false) return;
+        totalEnabled++;
         const r = Fleet.resourceData[s.ip];
         if (!r) return;
-
-        html += '<tr>';
-        html += `<td><code>${escHtml(s.ip)}</code>${s.nickname ? ' <span class="text-light text-sm">(' + escHtml(s.nickname) + ')</span>' : ''}</td>`;
-
-        if (r.cpu_percent != null) {
-            html += `<td>${progressBar(r.cpu_percent, { warn: 60, danger: 80 })}</td>`;
-        } else {
-            html += '<td class="text-light">&mdash;</td>';
-        }
-
-        if (r.ram_percent != null) {
-            const ramDetail = r.ram_total_mb ? `${r.ram_used_mb}/${r.ram_total_mb} MB` : '';
-            html += `<td>${progressBar(r.ram_percent, { warn: 75, danger: 90 })}${ramDetail ? `<span class="text-xs text-light">${ramDetail}</span>` : ''}</td>`;
-        } else {
-            html += '<td class="text-light">&mdash;</td>';
-        }
-
-        if (r.jvm_rss_mb != null) {
-            const cls = r.jvm_rss_mb > 900 ? 'text-danger' : r.jvm_rss_mb > 600 ? 'text-warning' : '';
-            html += `<td class="${cls}" style="font-weight:600;">${r.jvm_rss_mb} MB</td>`;
-        } else {
-            html += '<td class="text-light">&mdash;</td>';
-        }
-
-        html += '</tr>';
+        if (r.cpu_percent != null) { cpuSum += r.cpu_percent; count++; }
+        if (r.ram_percent != null) { ramSum += r.ram_percent; }
+        if (r.jmeter_running) jmeterUp++;
     });
 
-    html += '</tbody></table>';
-    body.innerHTML = html;
+    const avgCpu = count > 0 ? Math.round(cpuSum / count) : '—';
+    const avgRam = count > 0 ? Math.round(ramSum / count) : '—';
+
+    const content = document.getElementById('summaryContent');
+    if (content) {
+        content.innerHTML = `Avg CPU: <strong>${avgCpu}%</strong> &nbsp;|&nbsp; Avg RAM: <strong>${avgRam}%</strong> &nbsp;|&nbsp; JMeter: <strong>${jmeterUp}/${totalEnabled}</strong> up`;
+    }
+
+    // Next poll countdown
+    const nextEl = document.getElementById('nextPollLabel');
+    if (nextEl && Fleet._lastPollTs) {
+        const elapsed = Date.now() - Fleet._lastPollTs;
+        const remaining = Math.max(0, Math.round((Fleet._metricsInterval - elapsed) / 1000));
+        nextEl.textContent = `next: ${remaining}s`;
+    }
 }
 
 // ===== Keyboard shortcuts =====
