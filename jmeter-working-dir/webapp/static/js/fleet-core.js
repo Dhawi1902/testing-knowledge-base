@@ -9,6 +9,9 @@ window.Fleet = {
     currentVmConfig: {},
     healthHistory: {},
     resourceData: {},
+    metricsHistory: {},  // { ip: [{ts, cpu, ram}, ...] } — last 20 data points
+    _lastPollTs: null,
+    _countdownTimer: null,
     provisionStatus: {},
     _metricsTimer: null,
     _metricsInterval: parseInt(localStorage.getItem('fleet_interval') || '30000'),
@@ -140,4 +143,54 @@ function progressBar(value, thresholds) {
     const t = thresholds || { warn: 60, danger: 80 };
     const cls = value > t.danger ? 'monitor-bar-danger' : value > t.warn ? 'monitor-bar-warn' : 'monitor-bar-ok';
     return `<div class="monitor-bar"><div class="monitor-bar-fill ${cls}" style="width:${Math.min(value, 100)}%"></div><span class="monitor-bar-label">${value}%</span></div>`;
+}
+
+function recordMetrics(ip, cpu, ram) {
+    if (!Fleet.metricsHistory[ip]) Fleet.metricsHistory[ip] = [];
+    const h = Fleet.metricsHistory[ip];
+    h.push({ ts: Date.now(), cpu: cpu, ram: ram });
+    if (h.length > 20) h.shift();
+}
+
+function miniSparkline(values, color) {
+    if (!values || values.length < 2) return '';
+    const w = 60, h = 16, max = 100;
+    const step = w / (values.length - 1);
+    const pts = values.map((v, i) => `${(i * step).toFixed(1)},${(h - (v / max) * h).toFixed(1)}`).join(' ');
+    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="vertical-align:middle;margin-left:4px;">` +
+        `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>` +
+        `</svg>`;
+}
+
+function inlineMetrics(ip) {
+    const r = Fleet.resourceData[ip];
+    if (!r || r.cpu_percent == null) return '';
+    const hist = Fleet.metricsHistory[ip] || [];
+    const cpuVals = hist.map(h => h.cpu);
+    const ramVals = hist.map(h => h.ram);
+    let html = '<div class="slave-metrics">';
+    // CPU
+    html += `<span class="metric-item">CPU ${progressBar(r.cpu_percent, { warn: 60, danger: 80 })}${miniSparkline(cpuVals, 'var(--color-primary)')}</span>`;
+    // RAM
+    const ramDetail = r.ram_total_mb ? ` <span class="text-xs text-light">${r.ram_used_mb}/${r.ram_total_mb}MB</span>` : '';
+    html += `<span class="metric-item">RAM ${progressBar(r.ram_percent, { warn: 75, danger: 90 })}${miniSparkline(ramVals, 'var(--color-info, #3b82f6)')}${ramDetail}</span>`;
+    // JVM RSS
+    if (r.jvm_rss_mb != null) {
+        const cls = r.jvm_rss_mb > 900 ? 'text-danger' : r.jvm_rss_mb > 600 ? 'text-warning' : '';
+        html += `<span class="metric-item"><span class="${cls}" style="font-weight:600;">JVM ${r.jvm_rss_mb}MB</span></span>`;
+    }
+    // Disk
+    if (r.disk_percent != null) {
+        html += `<span class="metric-item">Disk ${progressBar(r.disk_percent, { warn: 80, danger: 90 })}</span>`;
+    }
+    // Load
+    if (r.load_1m != null) {
+        html += `<span class="metric-item text-sm">Load ${r.load_1m}</span>`;
+    }
+    // JMeter threads
+    if (r.jvm_threads != null) {
+        html += `<span class="metric-item text-sm">${r.jvm_threads} threads</span>`;
+    }
+    html += '</div>';
+    return html;
 }
