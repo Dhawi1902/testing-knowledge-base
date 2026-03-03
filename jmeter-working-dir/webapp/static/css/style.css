@@ -714,27 +714,6 @@ th.sort-desc::after { content: ' \25BC'; font-size: 0.7em; }
     gap: 8px;
     flex-wrap: wrap;
 }
-.slave-metrics {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    flex-wrap: wrap;
-    font-size: 12px;
-}
-.slave-metrics .metric-item {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    white-space: nowrap;
-}
-.slave-metrics .monitor-bar {
-    width: 80px;
-    height: 14px;
-    min-width: 80px;
-}
-.slave-metrics .monitor-bar-label {
-    font-size: 10px;
-}
 
 .select-cb { width:16px; height:16px; cursor:pointer; accent-color:var(--color-primary); flex-shrink:0; }
 
@@ -781,15 +760,141 @@ th.sort-desc::after { content: ' \25BC'; font-size: 0.7em; }
 .tab-panel.active { animation:tabFadeIn 0.2s ease; }
 @keyframes tabFadeIn { from{opacity:0;transform:translateY(4px);} to{opacity:1;transform:translateY(0);} }
 
-/* Fleet Summary Bar */
-.fleet-summary-bar {
+/* ===== Fleet Dashboard ===== */
+.fleet-dashboard {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--color-border);
+}
+.dash-header {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 8px 16px;
+    gap: 16px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+.dash-heatmap {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+}
+.heatmap-cell {
+    width: 20px;
+    height: 20px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.heatmap-cell:hover {
+    transform: scale(1.3);
+    box-shadow: 0 0 6px rgba(0,0,0,0.3);
+    z-index: 1;
+}
+.dash-averages {
+    display: flex;
+    gap: 12px;
+    font-size: 12px;
+    flex-wrap: wrap;
+}
+.dash-averages span { white-space: nowrap; }
+.dash-live {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+}
+.dash-charts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+.dash-chart-wrap {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+}
+.dash-chart-wrap canvas {
+    width: 100%;
+    height: 160px;
+    display: block;
+}
+
+/* Metrics summary in slave row */
+.metrics-summary {
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--color-text-secondary);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 8px;
+    transition: background 0.15s;
+}
+.metrics-summary:hover {
+    background: var(--color-bg-alt, color-mix(in srgb, var(--color-border) 30%, var(--color-surface)));
+}
+.metrics-summary strong {
+    color: var(--color-text);
+}
+.drill-arrow {
+    font-size: 8px;
+    transition: transform 0.2s;
+    display: inline-block;
+}
+.drill-arrow.open {
+    transform: rotate(180deg);
+}
+
+/* Drill-down panel */
+.drill-down-panel {
+    padding: 8px 0;
     border-top: 1px solid var(--color-border);
-    font-size: 13px;
-    background: color-mix(in srgb, var(--color-primary) 4%, var(--color-surface));
+    margin-top: 4px;
+}
+.drill-charts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.drill-chart-wrap {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+.drill-chart-wrap canvas {
+    width: 100%;
+    height: 120px;
+    display: block;
+}
+.drill-stats {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    flex-wrap: wrap;
+}
+.drill-stat {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.drill-stat .monitor-bar {
+    width: 80px;
+    min-width: 80px;
+    height: 14px;
+}
+
+/* Heatmap scroll-to flash */
+@keyframes flashHighlight {
+    0% { box-shadow: 0 0 0 3px var(--color-primary); }
+    100% { box-shadow: 0 0 0 0 transparent; }
+}
+.flash-highlight {
+    animation: flashHighlight 1.5s ease-out;
 }
 .live-indicator { width:8px; height:8px; border-radius:50%; background:var(--color-success, #22c55e); animation:livePulse 2s ease-in-out infinite; flex-shrink:0; }
 @keyframes livePulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
@@ -811,11 +916,6 @@ th.sort-desc::after { content: ' \25BC'; font-size: 0.7em; }
     align-items: center;
     gap: 6px;
     flex-wrap: wrap;
-}
-.vm-card .slave-metrics {
-    border-top: 1px solid var(--color-border);
-    padding-top: 8px;
-    margin-top: 4px;
 }
 
 /* ===== Test Data Page ===== */
@@ -1457,9 +1557,11 @@ th.sort-desc::after { content: ' \25BC'; font-size: 0.7em; }
     .slave-config-panel .form-group { min-width: 100%; }
     .monitor-bar { min-width: 80px; }
     .slave-row-details { padding: 0 12px 8px; }
-    .slave-metrics { gap: 8px; }
-    .slave-metrics .monitor-bar { width: 60px; min-width: 60px; }
-    .fleet-summary-bar { flex-wrap: wrap; font-size: 12px; }
+    .dash-charts { grid-template-columns: 1fr; }
+    .dash-chart-wrap canvas { height: 120px; }
+    .drill-charts { grid-template-columns: 1fr; }
+    .dash-header { gap: 8px; }
+    .heatmap-cell { width: 16px; height: 16px; }
 
     /* ----- Add Property modal mobile ----- */
     #addPropModal { z-index: 210; }
