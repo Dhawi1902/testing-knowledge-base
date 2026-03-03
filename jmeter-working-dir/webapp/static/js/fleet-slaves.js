@@ -842,7 +842,18 @@ function _applyMetricsResults(results) {
                 ram_total_mb: r.ram_total_mb,
                 jmeter_running: r.jmeter_running,
                 jvm_rss_mb: r.jvm_rss_mb || null,
+                jvm_threads: r.jvm_threads || null,
+                disk_percent: r.disk_percent || null,
+                disk_used_gb: r.disk_used_gb || null,
+                disk_total_gb: r.disk_total_gb || null,
+                load_1m: r.load_1m || null,
+                net_rx_bytes: r.net_rx_bytes || null,
+                net_tx_bytes: r.net_tx_bytes || null,
             };
+            // Record for sparklines
+            if (r.cpu_percent != null && r.ram_percent != null) {
+                recordMetrics(r.ip, r.cpu_percent, r.ram_percent);
+            }
             const slave = Fleet.slaveData.find(s => s.ip === r.ip);
             if (slave) slave.jmeter = r.jmeter_running ? 'running' : 'stopped';
         }
