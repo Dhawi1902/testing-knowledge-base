@@ -91,18 +91,18 @@ function renderList() {
         const hasOverrides = s.overrides && (s.overrides.user || s.overrides.password || s.overrides.dest_path);
         const aIp = escAttr(s.ip);
         const ipClick = Fleet.isAdmin ? `onclick="editSlaveIp('${aIp}', this)" title="Click to edit"` : '';
+        const hasMetrics = Fleet.resourceData[s.ip] && Fleet.resourceData[s.ip].cpu_percent != null;
+
         html += `<div class="slave-entry${enabled ? '' : ' disabled'}${sel ? ' selected' : ''}">
             <div class="slave-row">
                 ${Fleet.isAdmin ? `<label class="check"><input type="checkbox" class="select-cb" ${sel ? 'checked' : ''} onchange="toggleSelect('${aIp}', this.checked)"><span class="check-box"></span></label>` : ''}
                 ${statusDot(s)}
                 <span class="slave-ip" ${ipClick}>${escHtml(s.ip)}</span>
-                ${s.nickname ? `<span class="text-sm text-light">(${escHtml(s.nickname)})</span>` : ''}
-                <span class="slave-meta">VM #${i + 1}${hasOverrides ? ' <span class="badge" style="font-size:10px;background:var(--color-border);color:var(--color-text-light);">custom</span>' : ''}${historySparkline(s)}${s.error ? ' &mdash; <span style="color:var(--color-danger);">' + escHtml(s.error) + '</span>' : ''}</span>
+                <span class="slave-meta">VM #${i + 1}${s.nickname ? ` <em>${escHtml(s.nickname)}</em>` : ''}${hasOverrides ? ' <span class="badge badge-sm">custom</span>' : ''}${historySparkline(s)}</span>
                 <div class="slave-actions">
-                    ${statusBadge(s)}
-                    ${provisionBadges(s)}
                     ${Fleet.isAdmin && enabled ? `<button class="btn btn-outline btn-xs" onclick="startSingle('${aIp}')" data-tooltip="Start">&#9654;</button>` : ''}
                     ${Fleet.isAdmin && enabled ? `<button class="btn btn-danger-outline btn-xs" onclick="stopSingle('${aIp}')" data-tooltip="Stop">&#9632;</button>` : ''}
+                    ${Fleet.isAdmin ? `<button class="gear-btn${expanded ? ' active' : ''}" onclick="toggleConfig('${aIp}')" data-tooltip="SSH overrides">${gearIcon()}</button>` : ''}
                     ${Fleet.isAdmin && enabled ? `<div class="dropdown">
                         <button class="btn btn-outline btn-xs" onclick="toggleDropdown(this)">${Fleet.ICON_MORE}</button>
                         <div class="dropdown-menu">
@@ -117,12 +117,15 @@ function renderList() {
                             <button class="dropdown-item" style="color:var(--color-danger)" onclick="removeSlave('${aIp}')">Remove</button>
                         </div>
                     </div>` : ''}
-                    ${Fleet.isAdmin ? `<button class="gear-btn${expanded ? ' active' : ''}" onclick="toggleConfig('${aIp}')" data-tooltip="SSH overrides">${gearIcon()}</button>` : ''}
                     ${Fleet.isAdmin ? `<label class="toggle" title="${enabled ? 'Disable' : 'Enable'}">
                         <input type="checkbox" ${enabled ? 'checked' : ''} onchange="toggleSlave('${aIp}', this.checked)">
                         <span class="toggle-track"></span>
                     </label>` : ''}
                 </div>
+            </div>
+            <div class="slave-row-details">
+                ${hasMetrics ? inlineMetrics(s.ip) : `<div class="slave-status-row">${statusBadge(s)}${provisionBadges(s)}${s.error ? ' <span class="text-sm text-danger">' + escHtml(s.error) + '</span>' : ''}</div>`}
+                ${hasMetrics ? `<div class="slave-status-row">${statusBadge(s)}${provisionBadges(s)}</div>` : ''}
             </div>
             ${expanded ? renderConfigPanel(s) : ''}
         </div>`;
