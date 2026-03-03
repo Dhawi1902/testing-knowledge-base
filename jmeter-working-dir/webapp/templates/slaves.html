@@ -36,6 +36,7 @@ Fleet.ICON_MORE = `{{ icon('more-horizontal', 16) }}`;
 Fleet.ICON_DOWNLOAD = `{{ icon('download', 14) }}`;
 Fleet.ICON_TRASH = `{{ icon('trash-2', 14) }}`;
 </script>
+<script src="{{ bp }}/static/js/fleet-charts.js?v={{ asset_v }}"></script>
 <script src="{{ bp }}/static/js/fleet-slaves.js?v={{ asset_v }}"></script>
 <script src="{{ bp }}/static/js/fleet-config.js?v={{ asset_v }}"></script>
 <script src="{{ bp }}/static/js/fleet-extensions.js?v={{ asset_v }}"></script>
@@ -53,6 +54,7 @@ loadHealthHistory();
 const _intSel = document.getElementById('monitorInterval');
 if (_intSel) _intSel.value = String(Fleet._metricsInterval);
 if (localStorage.getItem('fleet_monitoring') === 'on') {
+    FleetDashboard.init();
     startMetricsPolling();
     const mb = document.getElementById('monitorBtn');
     if (mb) { mb.classList.remove('btn-outline'); mb.classList.add('btn-primary'); }

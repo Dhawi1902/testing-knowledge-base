@@ -67,7 +67,7 @@ function render() {
     }
     if (Fleet.currentView === 'grid') renderGrid();
     else renderList();
-    renderMonitoringPanel();
+    renderDashboard();
 }
 
 function renderList() {
@@ -93,7 +93,7 @@ function renderList() {
         const ipClick = Fleet.isAdmin ? `onclick="editSlaveIp('${aIp}', this)" title="Click to edit"` : '';
         const hasMetrics = Fleet.resourceData[s.ip] && Fleet.resourceData[s.ip].cpu_percent != null;
 
-        html += `<div class="slave-entry${enabled ? '' : ' disabled'}${sel ? ' selected' : ''}">
+        html += `<div class="slave-entry${enabled ? '' : ' disabled'}${sel ? ' selected' : ''}" data-ip="${aIp}">
             <div class="slave-row">
                 ${Fleet.isAdmin ? `<label class="check"><input type="checkbox" class="select-cb" ${sel ? 'checked' : ''} onchange="toggleSelect('${aIp}', this.checked)"><span class="check-box"></span></label>` : ''}
                 ${statusDot(s)}
@@ -124,8 +124,17 @@ function renderList() {
                 </div>
             </div>
             <div class="slave-row-details">
-                ${hasMetrics ? inlineMetrics(s.ip) : `<div class="slave-status-row">${statusBadge(s)}${provisionBadges(s)}${s.error ? ' <span class="text-sm text-danger">' + escHtml(s.error) + '</span>' : ''}</div>`}
-                ${hasMetrics ? `<div class="slave-status-row">${statusBadge(s)}${provisionBadges(s)}</div>` : ''}
+                <div class="slave-status-row">
+                    ${statusBadge(s)}${provisionBadges(s)}
+                    ${hasMetrics ? `<span class="metrics-summary" onclick="toggleDrillDown('${aIp}')">
+                        CPU <strong>${Fleet.resourceData[s.ip].cpu_percent}%</strong>
+                        RAM <strong>${Fleet.resourceData[s.ip].ram_percent}%</strong>
+                        ${Fleet.resourceData[s.ip].jvm_rss_mb != null ? `JVM <strong>${Fleet.resourceData[s.ip].jvm_rss_mb}MB</strong>` : ''}
+                        <span class="drill-arrow ${Fleet.drillDownIp === s.ip ? 'open' : ''}">\u25BC</span>
+                    </span>` : ''}
+                    ${s.error ? `<span class="text-sm text-danger">${escHtml(s.error)}</span>` : ''}
+                </div>
+                ${Fleet.drillDownIp === s.ip ? renderDrillDown(s.ip) : ''}
             </div>
             ${expanded ? renderConfigPanel(s) : ''}
         </div>`;
@@ -147,7 +156,7 @@ function renderGrid() {
         const ipClick = Fleet.isAdmin ? `onclick="editSlaveIp('${aIp}', this)" title="Click to edit"` : '';
         const hasMetrics = Fleet.resourceData[s.ip] && Fleet.resourceData[s.ip].cpu_percent != null;
 
-        html += `<div class="vm-card${enabled ? '' : ' disabled'}${sel ? ' selected' : ''}">
+        html += `<div class="vm-card${enabled ? '' : ' disabled'}${sel ? ' selected' : ''}" data-ip="${aIp}">
             <div class="flex-between gap-8">
                 <div class="flex gap-8 items-center">
                     ${Fleet.isAdmin ? `<label class="check"><input type="checkbox" class="select-cb" ${sel ? 'checked' : ''} onchange="toggleSelect('${aIp}', this.checked)"><span class="check-box"></span></label>` : ''}
@@ -185,7 +194,13 @@ function renderGrid() {
             <div class="vm-card-status">
                 ${statusBadge(s)}${provisionBadges(s)}${s.error ? ' <span class="text-sm text-danger">' + escHtml(s.error) + '</span>' : ''}
             </div>
-            ${hasMetrics ? inlineMetrics(s.ip) : ''}
+            ${hasMetrics ? `<div class="metrics-summary" onclick="toggleDrillDown('${aIp}')">
+                CPU <strong>${Fleet.resourceData[s.ip].cpu_percent}%</strong>
+                RAM <strong>${Fleet.resourceData[s.ip].ram_percent}%</strong>
+                ${Fleet.resourceData[s.ip].jvm_rss_mb != null ? `JVM <strong>${Fleet.resourceData[s.ip].jvm_rss_mb}MB</strong>` : ''}
+                <span class="drill-arrow ${Fleet.drillDownIp === s.ip ? 'open' : ''}">\u25BC</span>
+            </div>` : ''}
+            ${Fleet.drillDownIp === s.ip ? renderDrillDown(s.ip) : ''}
             ${expanded ? renderConfigPanel(s) : ''}
         </div>`;
     });
@@ -859,9 +874,20 @@ function _applyMetricsResults(results) {
                 net_rx_bytes: r.net_rx_bytes || null,
                 net_tx_bytes: r.net_tx_bytes || null,
             };
-            // Record for sparklines
+            // Record for charts
             if (r.cpu_percent != null && r.ram_percent != null) {
-                recordMetrics(r.ip, r.cpu_percent, r.ram_percent);
+                recordMetrics(r.ip, {
+                    cpu_percent: r.cpu_percent,
+                    ram_percent: r.ram_percent,
+                    ram_used_mb: r.ram_used_mb,
+                    ram_total_mb: r.ram_total_mb,
+                    jvm_rss_mb: r.jvm_rss_mb || null,
+                    disk_percent: r.disk_percent || null,
+                    load_1m: r.load_1m || null,
+                    net_rx_bytes: r.net_rx_bytes || null,
+                    net_tx_bytes: r.net_tx_bytes || null,
+                    jvm_threads: r.jvm_threads || null,
+                });
             }
             const slave = Fleet.slaveData.find(s => s.ip === r.ip);
             if (slave) slave.jmeter = r.jmeter_running ? 'running' : 'stopped';
@@ -870,31 +896,12 @@ function _applyMetricsResults(results) {
     render();
 }
 
-async function refreshResources() {
-    const btn = document.getElementById('resourcesBtn');
-    if (btn) btn.disabled = true;
-    try {
-        const data = await api('/api/slaves/metrics');
-        const results = data.results || [];
-        const anyAgent = results.some(r => r.ok && r.agent);
-        if (anyAgent) {
-            _applyMetricsResults(results);
-        } else {
-            const sshData = await api('/api/slaves/resources');
-            _applyMetricsResults(sshData.results);
-        }
-        showToast('Resource check complete', 'success');
-    } catch (e) {
-        showToast('Failed to check resources', 'error');
-    }
-    if (btn) btn.disabled = false;
-}
 
 function startMetricsPolling() {
     if (Fleet._metricsTimer) return;
     _pollMetrics();
     Fleet._metricsTimer = setInterval(_pollMetrics, Fleet._metricsInterval);
-    Fleet._countdownTimer = setInterval(renderMonitoringPanel, 1000);
+    Fleet._countdownTimer = setInterval(renderDashboard, 1000);
 }
 
 function stopMetricsPolling() {
@@ -907,7 +914,10 @@ function stopMetricsPolling() {
         Fleet._countdownTimer = null;
     }
     localStorage.removeItem('fleet_monitoring');
-    renderMonitoringPanel();
+    FleetDashboard.hide();
+    FleetDashboard.destroyDrillDown();
+    Fleet.drillDownIp = null;
+    renderDashboard();
 }
 
 async function _pollMetrics() {
@@ -937,7 +947,7 @@ function toggleMonitoring(btn) {
         const secs = Fleet._metricsInterval < 60000 ? `${Fleet._metricsInterval/1000}s` : `${Fleet._metricsInterval/60000}m`;
         showToast(`Monitoring started (${secs} interval)`, 'success');
     }
-    renderMonitoringPanel();
+    renderDashboard();
 }
 
 function onIntervalChange() {
@@ -948,30 +958,60 @@ function onIntervalChange() {
         stopMetricsPolling();
         startMetricsPolling();
     }
-    renderMonitoringPanel();
+    renderDashboard();
 }
 
-// ===== Monitoring Panel =====
-function renderMonitoringPanel() {
-    const bar = document.getElementById('monitoringSummary');
-    if (!bar) return;
-
+// ===== Dashboard Panel =====
+function renderDashboard() {
+    const dashboard = document.getElementById('fleetDashboard');
+    if (!dashboard) return;
     const hasData = Object.keys(Fleet.resourceData).length > 0;
     if (!Fleet._metricsTimer || !hasData) {
-        bar.style.display = 'none';
+        FleetDashboard.hide();
         return;
     }
-    bar.style.display = '';
-
-    // Update interval label
+    FleetDashboard.show();
+    renderHeatmap();
+    renderDashAverages();
+    // Interval + countdown
     const intervalLabel = document.getElementById('monitorIntervalLabel');
     if (intervalLabel) {
         const secs = Fleet._metricsInterval / 1000;
         intervalLabel.textContent = secs >= 60 ? `every ${secs/60}m` : `every ${secs}s`;
     }
+    const nextEl = document.getElementById('nextPollLabel');
+    if (nextEl && Fleet._lastPollTs) {
+        const elapsed = Date.now() - Fleet._lastPollTs;
+        const remaining = Math.max(0, Math.round((Fleet._metricsInterval - elapsed) / 1000));
+        nextEl.textContent = `next: ${remaining}s`;
+    }
+}
 
-    // Compute averages across enabled slaves
-    let cpuSum = 0, ramSum = 0, count = 0, jmeterUp = 0, totalEnabled = 0;
+function renderHeatmap() {
+    const el = document.getElementById('dashHeatmap');
+    if (!el) return;
+    let html = '';
+    Fleet.slaveData.forEach(s => {
+        if (s.enabled === false) return;
+        const r = Fleet.resourceData[s.ip];
+        const cpu = r ? r.cpu_percent : null;
+        let color;
+        if (cpu == null) color = 'var(--color-border)';
+        else if (cpu > 80) color = '#ef4444';
+        else if (cpu > 50) color = '#f59e0b';
+        else color = '#22c55e';
+        const label = s.nickname || s.ip;
+        const title = cpu != null ? `${label}: CPU ${cpu}%` : `${label}: no data`;
+        html += `<span class="heatmap-cell" style="background:${color}" title="${title}" onclick="scrollToSlave('${escAttr(s.ip)}')" data-ip="${escAttr(s.ip)}"></span>`;
+    });
+    el.innerHTML = html;
+}
+
+function renderDashAverages() {
+    const el = document.getElementById('dashAverages');
+    if (!el) return;
+    let cpuSum = 0, ramSum = 0, diskSum = 0, loadSum = 0;
+    let count = 0, jmeterUp = 0, totalEnabled = 0;
     Fleet.slaveData.forEach(s => {
         if (s.enabled === false) return;
         totalEnabled++;
@@ -979,24 +1019,67 @@ function renderMonitoringPanel() {
         if (!r) return;
         if (r.cpu_percent != null) { cpuSum += r.cpu_percent; count++; }
         if (r.ram_percent != null) { ramSum += r.ram_percent; }
+        if (r.disk_percent != null) { diskSum += r.disk_percent; }
+        if (r.load_1m != null) { loadSum += r.load_1m; }
         if (r.jmeter_running) jmeterUp++;
     });
+    if (count === 0) { el.innerHTML = '<span class="text-light">Waiting for data...</span>'; return; }
+    const avgCpu = Math.round(cpuSum / count);
+    const avgRam = Math.round(ramSum / count);
+    const avgDisk = Math.round(diskSum / count);
+    const avgLoad = (loadSum / count).toFixed(2);
+    el.innerHTML = `<span>CPU: <strong>${avgCpu}%</strong></span>` +
+        `<span>RAM: <strong>${avgRam}%</strong></span>` +
+        `<span>Disk: <strong>${avgDisk}%</strong></span>` +
+        `<span>Load: <strong>${avgLoad}</strong></span>` +
+        `<span>JMeter: <strong>${jmeterUp}/${totalEnabled}</strong> up</span>`;
+}
 
-    const avgCpu = count > 0 ? Math.round(cpuSum / count) : '—';
-    const avgRam = count > 0 ? Math.round(ramSum / count) : '—';
-
-    const content = document.getElementById('summaryContent');
-    if (content) {
-        content.innerHTML = `Avg CPU: <strong>${avgCpu}%</strong> &nbsp;|&nbsp; Avg RAM: <strong>${avgRam}%</strong> &nbsp;|&nbsp; JMeter: <strong>${jmeterUp}/${totalEnabled}</strong> up`;
+function scrollToSlave(ip) {
+    const el = document.querySelector(`.slave-entry[data-ip="${ip}"], .vm-card[data-ip="${ip}"]`);
+    if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('flash-highlight');
+        setTimeout(() => el.classList.remove('flash-highlight'), 1500);
     }
+}
 
-    // Next poll countdown
-    const nextEl = document.getElementById('nextPollLabel');
-    if (nextEl && Fleet._lastPollTs) {
-        const elapsed = Date.now() - Fleet._lastPollTs;
-        const remaining = Math.max(0, Math.round((Fleet._metricsInterval - elapsed) / 1000));
-        nextEl.textContent = `next: ${remaining}s`;
+// ===== Drill-Down =====
+function toggleDrillDown(ip) {
+    if (Fleet.drillDownIp === ip) {
+        Fleet.drillDownIp = null;
+        FleetDashboard.destroyDrillDown();
+    } else {
+        Fleet.drillDownIp = ip;
     }
+    render();
+    if (Fleet.drillDownIp) {
+        setTimeout(() => FleetDashboard.initDrillDown(ip), 50);
+    }
+}
+
+function renderDrillDown(ip) {
+    const r = Fleet.resourceData[ip];
+    if (!r) return '';
+    const aIp = escAttr(ip);
+    const diskInfo = r.disk_percent != null
+        ? `<div class="drill-stat">Disk: ${r.disk_used_gb}/${r.disk_total_gb} GB ${progressBar(r.disk_percent, {warn:80,danger:90})}</div>` : '';
+    const loadInfo = r.load_1m != null ? `<div class="drill-stat">Load: <strong>${r.load_1m}</strong></div>` : '';
+    const jvmInfo = r.jvm_rss_mb != null
+        ? `<div class="drill-stat">JVM: <strong>${r.jvm_rss_mb} MB</strong> RSS${r.jvm_threads != null ? ` | ${r.jvm_threads} threads` : ''}</div>` : '';
+    const netPrev = Fleet._prevNetBytes?.[ip];
+    let netInfo = '';
+    if (netPrev && netPrev.kbps != null) {
+        const val = netPrev.kbps > 1024 ? (netPrev.kbps / 1024).toFixed(1) + ' MB/s' : Math.round(netPrev.kbps) + ' KB/s';
+        netInfo = `<div class="drill-stat">Net: <strong>${val}</strong></div>`;
+    }
+    return `<div class="drill-down-panel">
+        <div class="drill-charts">
+            <div class="drill-chart-wrap"><canvas id="drillCpuChart_${aIp}"></canvas></div>
+            <div class="drill-chart-wrap"><canvas id="drillRamChart_${aIp}"></canvas></div>
+        </div>
+        <div class="drill-stats">${diskInfo}${loadInfo}${jvmInfo}${netInfo}</div>
+    </div>`;
 }
 
 // ===== Keyboard shortcuts =====
