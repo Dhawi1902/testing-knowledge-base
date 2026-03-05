@@ -170,6 +170,11 @@ document.addEventListener('click', (e) => {
 /* ===== Confirm Dialog ===== */
 let _confirmResolve = null;
 function confirmAction(message, { title = 'Confirm', detail = '', danger = false } = {}) {
+    // Guard: if a confirm is already active, resolve it as cancelled first
+    if (_confirmResolve) {
+        _confirmResolve(false);
+        _confirmResolve = null;
+    }
     return new Promise(resolve => {
         _confirmResolve = resolve;
         document.getElementById('confirmTitle').textContent = title;
@@ -201,6 +206,11 @@ document.addEventListener('keydown', e => {
 let _promptResolve = null;
 let _promptValidate = null;
 function promptAction(title, { placeholder = '', defaultValue = '', description = '', validate = null } = {}) {
+    // Guard: if a prompt is already active, resolve it as cancelled first
+    if (_promptResolve) {
+        _promptResolve(null);
+        _promptResolve = null;
+    }
     return new Promise(resolve => {
         _promptResolve = resolve;
         _promptValidate = validate;
