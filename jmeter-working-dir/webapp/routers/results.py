@@ -25,6 +25,7 @@ from services.analysis import (
     load_cached_analysis,
     save_analysis_cache,
 )
+from services.settings import load_settings
 
 TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
@@ -575,10 +576,11 @@ async def api_analyze_result(request: Request, folder: str):
 
     # Optional AI analysis
     if mode == "ai":
-        ollama_config = project.get("analysis", {}).get("ollama", {})
-        base_url = ollama_config.get("base_url", "http://localhost:11434")
-        model = ollama_config.get("model", "llama3.1:8b")
-        timeout = ollama_config.get("timeout", 120)
+        app_settings = load_settings()
+        analysis_settings = app_settings.get("analysis", {})
+        base_url = analysis_settings.get("ollama_url", "http://localhost:11434")
+        model = analysis_settings.get("ollama_model", "llama3.1:8b")
+        timeout = analysis_settings.get("ollama_timeout", 120)
         system_context = project.get("analysis", {}).get("system_context", "")
         ai_result = await ai_analysis(summary, system_context, None, base_url, model, timeout)
         result["ai_report"] = ai_result
@@ -604,7 +606,7 @@ async def api_get_cached_analysis(request: Request, folder: str):
 
 @router.get("/api/analysis/ollama-status")
 async def api_ollama_status(request: Request):
-    project = request.app.state.project
-    base_url = project.get("analysis", {}).get("ollama", {}).get("base_url", "http://localhost:11434")
+    app_settings = load_settings()
+    base_url = app_settings.get("analysis", {}).get("ollama_url", "http://localhost:11434")
     status = await check_ollama_status(base_url)
     return status
