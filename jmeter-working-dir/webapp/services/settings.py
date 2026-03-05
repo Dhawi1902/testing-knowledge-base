@@ -13,7 +13,9 @@ from pathlib import Path
 
 logger = logging.getLogger("jmeter_dashboard")
 
-APP_DIR = Path(__file__).resolve().parent.parent
+from services.paths import get_data_dir
+
+APP_DIR = get_data_dir()
 SETTINGS_FILE = APP_DIR / "settings.json"
 
 DEFAULT_SETTINGS: dict = {

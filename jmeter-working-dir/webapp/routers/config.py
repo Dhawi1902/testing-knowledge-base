@@ -33,7 +33,9 @@ from services.config_parser import (
     detect_jmeter_path,
 )
 
-PROJECT_JSON = Path(__file__).resolve().parent.parent / "project.json"
+from services.paths import get_data_dir
+
+PROJECT_JSON = get_data_dir() / "project.json"
 
 from services.templates import templates
 

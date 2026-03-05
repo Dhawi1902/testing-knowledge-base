@@ -15,7 +15,9 @@ from pathlib import Path
 
 from services.config_parser import read_config_properties
 
-APP_DIR = Path(__file__).resolve().parent.parent
+from services.paths import get_app_dir
+
+APP_DIR = get_app_dir()
 PROPERTIES_FILE = APP_DIR / "config" / "report.properties"
 
 # ── All 16 default graphs in JMeter 5.6.3 ──────────────────────────────

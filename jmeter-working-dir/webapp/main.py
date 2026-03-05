@@ -22,14 +22,15 @@ from services.auth import (
     hash_token,
 )
 
-from services.paths import get_app_dir
+from services.paths import get_app_dir, get_data_dir
 
 APP_DIR = get_app_dir()
+DATA_DIR = get_data_dir()
 STATIC_DIR = APP_DIR / "static"
-PROJECT_JSON = APP_DIR / "project.json"
+PROJECT_JSON = DATA_DIR / "project.json"
 
 # --- Logging setup (G1) ---
-LOG_DIR = APP_DIR / "logs"
+LOG_DIR = DATA_DIR / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 
 logger = logging.getLogger("jmeter_dashboard")

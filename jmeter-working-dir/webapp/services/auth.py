@@ -11,7 +11,9 @@ logger = logging.getLogger("jmeter_dashboard")
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
-_SETTINGS_FILE = Path(__file__).resolve().parent.parent / "settings.json"
+from services.paths import get_data_dir
+
+_SETTINGS_FILE = get_data_dir() / "settings.json"
 _AUTH_DEFAULTS = {"token": "", "cookie_name": "jmeter_token", "cookie_max_age": 86400}
 
 

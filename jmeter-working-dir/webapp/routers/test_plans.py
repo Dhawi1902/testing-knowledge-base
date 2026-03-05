@@ -16,8 +16,10 @@ from services.auth import check_access as _check_access, safe_join
 from services.config_parser import get_project_root, resolve_path, read_config_properties
 from services.process_manager import jmeter_process_manager
 
-PRESETS_FILE = Path(__file__).resolve().parent.parent / "presets.json"
-FILTER_PRESETS_FILE = Path(__file__).resolve().parent.parent / "filter_presets.json"
+from services.paths import get_data_dir
+
+PRESETS_FILE = get_data_dir() / "presets.json"
+FILTER_PRESETS_FILE = get_data_dir() / "filter_presets.json"
 
 from services.templates import templates
 

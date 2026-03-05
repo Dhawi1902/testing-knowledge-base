@@ -8,8 +8,9 @@ from services.auth import check_access as _check_access, safe_join
 from services.data import list_csv_files, preview_csv, preview_split, build_csv
 from services.slaves import distribute_files, build_ssh_configs
 
-APP_DIR = Path(__file__).resolve().parent.parent
-CSV_TEMPLATES_FILE = APP_DIR / "csv_templates.json"
+from services.paths import get_data_dir
+
+CSV_TEMPLATES_FILE = get_data_dir() / "csv_templates.json"
 
 from services.templates import templates
 

@@ -17,7 +17,9 @@ from services.jmx_patcher import patch_jmx, extract_csv_data_set_configs
 from services.report_properties import get_properties_args
 from services.settings import atomic_write_json
 
-APP_DIR = Path(__file__).resolve().parent.parent
+from services.paths import get_app_dir
+
+APP_DIR = get_app_dir()
 
 # Force CSV format for report regeneration from JTL files
 CSV_FORMAT_PROP = "-Jjmeter.save.saveservice.output_format=csv"

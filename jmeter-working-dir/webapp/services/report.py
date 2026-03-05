@@ -13,7 +13,9 @@ from pathlib import Path
 from services.jmeter import build_report_command
 from services.report_properties import cleanup_report_html
 
-APP_DIR = Path(__file__).resolve().parent.parent
+from services.paths import get_app_dir
+
+APP_DIR = get_app_dir()
 
 
 async def regenerate_report(
