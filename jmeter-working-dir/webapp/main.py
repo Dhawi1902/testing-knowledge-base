@@ -49,6 +49,9 @@ from services.settings import load_settings as _load_settings
 _settings = _load_settings()
 BASE_PATH = (_settings.get("server", {}).get("base_path") or "").rstrip("/")
 
+# Disable API docs (Swagger UI, ReDoc, OpenAPI schema) when external access is enabled
+_allow_external = _settings.get("server", {}).get("allow_external", False)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -83,11 +86,11 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="JMeter Test Dashboard",
+    title="LoadLitmus",
     lifespan=lifespan,
-    docs_url=f"{BASE_PATH}/docs",
-    redoc_url=f"{BASE_PATH}/redoc",
-    openapi_url=f"{BASE_PATH}/openapi.json",
+    docs_url=None if _allow_external else f"{BASE_PATH}/docs",
+    redoc_url=None if _allow_external else f"{BASE_PATH}/redoc",
+    openapi_url=None if _allow_external else f"{BASE_PATH}/openapi.json",
 )
 
 # Mount static files
