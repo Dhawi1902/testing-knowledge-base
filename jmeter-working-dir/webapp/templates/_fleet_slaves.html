@@ -1,20 +1,30 @@
 {% from 'icons.html' import icon %}
-<!-- Slaves Tab — Toolbar -->
+
+<!-- Fleet stats -->
+<div class="grid grid-4 mb-8" id="fleetStats" style="display:none;gap:10px;">
+    <div class="stat-card"><div class="stat-value" id="statVMs">-</div><div class="stat-label">Total VMs</div></div>
+    <div class="stat-card"><div class="stat-value" id="statOnline">-</div><div class="stat-label">Online</div></div>
+    <div class="stat-card"><div class="stat-value" id="statOffline">-</div><div class="stat-label">Offline</div></div>
+    <div class="stat-card"><div class="stat-value" id="statDisabled">-</div><div class="stat-label">Disabled</div></div>
+</div>
+
+<!-- Slaves Tab — Card -->
+<div class="slave-list-card">
 <div class="card-header flex-wrap gap-8">
     <div class="flex gap-16 items-center">
         <span class="card-title">{{ icon('server', 16) }} Slave List</span>
-        <span class="text-sm text-light" id="lastCheckedLabel"></span>
+        <span class="text-sm text-secondary" id="lastCheckedLabel"></span>
     </div>
     <!-- Default actions -->
     <div class="flex gap-4 items-center flex-wrap" id="defaultActions">
         {% if access_level != 'viewer' %}<button class="btn btn-outline btn-sm" onclick="addSlave()" data-tooltip="Add slave (a)">{{ icon('plus', 14) }}</button>{% endif %}
         <button class="btn btn-outline btn-sm" onclick="refreshStatus()" id="refreshBtn" data-tooltip="Check status (r)">{{ icon('refresh-cw', 14) }}</button>
         <button class="btn btn-outline btn-sm" onclick="toggleMonitoring(this)" id="monitorBtn" data-tooltip="Auto-monitor (m)">{{ icon('activity', 14) }}</button>
-        <select class="select select-sm" id="monitorInterval" onchange="onIntervalChange()" style="width:70px;padding:2px 4px;font-size:11px;" data-tooltip="Poll interval">
-            <option value="10000">10s</option>
-            <option value="30000" selected>30s</option>
-            <option value="60000">60s</option>
-            <option value="120000">2m</option>
+        <select class="form-select interval-select" id="monitorInterval" onchange="onIntervalChange()" data-tooltip="Poll interval">
+            <option value="10000">10 s</option>
+            <option value="30000" selected>30 s</option>
+            <option value="60000">60 s</option>
+            <option value="120000">2 min</option>
         </select>
         {% if access_level != 'viewer' %}
         <div class="dropdown">
@@ -23,7 +33,6 @@
                 <button class="dropdown-item" onclick="startAll()" id="startAllBtn">{{ icon('power', 14) }} Start All</button>
                 <button class="dropdown-item" onclick="stopAll()" id="stopAllBtn">{{ icon('stop-circle', 14) }} Stop All</button>
                 <div class="dropdown-sep"></div>
-                <button class="dropdown-item" onclick="refreshResources()" id="resourcesBtn">{{ icon('cpu', 14) }} Check Resources</button>
                 <button class="dropdown-item" onclick="syncData()">{{ icon('upload', 14) }} Sync Data</button>
                 <button class="dropdown-item" onclick="openSavedLogs()">{{ icon('file-text', 14) }} Saved Logs</button>
             </div>
@@ -54,18 +63,10 @@
     {% endif %}
 </div>
 
-<!-- Fleet stats -->
-<div class="grid grid-4 mb-12" id="fleetStats" style="display:none;padding:0 16px;">
-    <div class="stat-card"><div class="stat-value" id="statVMs">-</div><div class="stat-label">Total VMs</div></div>
-    <div class="stat-card"><div class="stat-value" id="statOnline">-</div><div class="stat-label">Online</div></div>
-    <div class="stat-card"><div class="stat-value" id="statOffline">-</div><div class="stat-label">Offline</div></div>
-    <div class="stat-card"><div class="stat-value" id="statDisabled">-</div><div class="stat-label">Disabled</div></div>
-</div>
-
 <!-- Slave container -->
 <div id="slaveBody">
     <div id="slaveContainer">
-        <div class="text-light" style="text-align:center;padding:32px;">Loading...</div>
+        <div class="text-secondary" style="text-align:center;padding:32px;">Loading...</div>
     </div>
     <div class="empty-state" id="slavesEmpty" style="display:none">
         {{ icon('server', 48) }}
@@ -74,11 +75,34 @@
         <button class="btn btn-primary" onclick="addSlave()">Add Slave</button>
     </div>
 </div>
+</div>
 
-<!-- Fleet Summary Bar -->
-<div class="fleet-summary-bar" id="monitoringSummary" style="display:none;">
-    <span class="live-indicator" id="liveIndicator"></span>
-    <span class="summary-label" id="summaryContent"></span>
-    <span class="text-xs text-light" id="monitorIntervalLabel"></span>
-    <span class="text-xs text-light" id="nextPollLabel"></span>
+<!-- Fleet Monitoring — hidden when monitoring is off -->
+<div class="fleet-dashboard" id="fleetDashboard" style="display:none;">
+    <div class="card-header" style="margin-bottom:8px;">
+        <span class="card-title">{{ icon('activity', 16) }} Monitoring</span>
+        <div class="dash-live">
+            <span class="live-indicator" id="liveIndicator"></span>
+            <span class="text-xs text-secondary" id="monitorIntervalLabel"></span>
+            <span class="text-xs text-secondary" id="nextPollLabel"></span>
+        </div>
+    </div>
+    <div class="dash-header">
+        <div class="dash-heatmap" id="dashHeatmap"></div>
+        <div class="dash-averages" id="dashAverages"></div>
+    </div>
+    <div class="dash-charts">
+        <div class="dash-chart-wrap">
+            <canvas id="dashCpuChart"></canvas>
+        </div>
+        <div class="dash-chart-wrap">
+            <canvas id="dashRamChart"></canvas>
+        </div>
+        <div class="dash-chart-wrap">
+            <canvas id="dashNetChart"></canvas>
+        </div>
+        <div class="dash-chart-wrap">
+            <canvas id="dashJvmChart"></canvas>
+        </div>
+    </div>
 </div>

@@ -18,7 +18,7 @@
     </div>
     <div class="flex gap-8 items-center mb-16">
         <input class="form-input input-search" id="resultSearch" placeholder="Search results..." oninput="debouncedSearch()">
-        <span class="text-sm text-light" id="resultCount"></span>
+        <span class="text-sm text-secondary" id="resultCount"></span>
     </div>
     <div class="table-wrapper" id="resultsTableWrap">
         <table class="results-table">
@@ -34,7 +34,7 @@
                 </tr>
             </thead>
             <tbody id="resultsList">
-                <tr><td colspan="7" class="text-light">Loading...</td></tr>
+                <tr><td colspan="7" class="text-secondary">Loading...</td></tr>
             </tbody>
         </table>
     </div>
@@ -77,15 +77,15 @@
                 <div class="form-group m-0">
                     <label class="form-label">Label pattern (regex, optional)</label>
                     <input class="form-input form-input-mono" id="regen_label_pattern" placeholder="e.g. ^(A|B|C) -.*">
-                    <span class="text-light text-sm">Only keep labels matching this pattern. Leave empty for no filter.</span>
+                    <span class="text-secondary text-sm">Only keep labels matching this pattern. Leave empty for no filter.</span>
                     <div class="flex gap-8 flex-wrap mt-8">
-                        <span class="text-sm text-light items-center">Presets:</span>
+                        <span class="text-sm text-secondary items-center">Presets:</span>
                         <button type="button" class="btn btn-outline btn-sm" onclick="setLabelPreset('^\\d{2}\\w? - ')" title="00 - Login, 22a - Poll, etc.">Numbered (00-xx)</button>
                         <button type="button" class="btn btn-outline btn-sm" onclick="setLabelPreset('^[A-Z] - ')" title="A - Login Page, B - Click Login, etc.">Lettered (A-Z)</button>
                         <button type="button" class="btn btn-outline btn-sm" onclick="setLabelPreset('^(\\d{2}\\w? - |[A-Z] - )')" title="Both numbered and lettered — filters out usernames/IDs">All Transactions</button>
                         <button type="button" class="btn btn-outline btn-sm" onclick="setLabelPreset('')" title="Clear pattern">Clear</button>
                     </div>
-                    <span class="text-light text-sm mt-8">Tip: Use &quot;All Transactions&quot; to filter out username/ID rows (e.g. ABR000001).</span>
+                    <span class="text-secondary text-sm mt-8">Tip: Use &quot;All Transactions&quot; to filter out username/ID rows (e.g. ABR000001).</span>
                     <div id="labelPicker" class="hidden mt-8">
                         <span class="text-sm text-bold">Labels in JTL:</span>
                         <div id="labelPickerList" class="label-picker-list mt-4"></div>
@@ -95,7 +95,7 @@
             </div>
 
             <h4 class="text-sm mb-8 section-title">{{ icon('bar-chart-3', 14) }} Graph settings</h4>
-            <span class="text-light text-sm">Uses graph configuration from <a href="settings" class="text-primary">Settings &gt; Report</a> tab.</span>
+            <span class="text-secondary text-sm">Uses graph configuration from <a href="settings" class="text-primary">Settings &gt; Report</a> tab.</span>
         </div>
         <div class="modal-footer">
             <button class="btn btn-outline btn-sm" onclick="closeModal('regenModal')">Cancel</button>
@@ -174,7 +174,7 @@ function renderResults() {
         : `${totalResults} results`;
     if (totalPages > 1) document.getElementById('resultCount').textContent += ` (page ${currentPage}/${totalPages})`;
     if (!filtered.length) {
-        tbody.innerHTML = `<tr><td colspan="7" class="text-light">${q ? 'No matching results.' : 'No results found.'}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="text-secondary">${q ? 'No matching results.' : 'No results found.'}</td></tr>`;
         return;
     }
     // Inline SVG icon helpers for JS-generated HTML
@@ -478,13 +478,13 @@ async function compareSelected() {
     const f1 = checked[0].value, f2 = checked[1].value;
     const panel = document.getElementById('comparePanel');
     const content = document.getElementById('compareContent');
-    content.innerHTML = '<p class="text-light">Comparing... (this may take a moment for large JTL files)</p>';
+    content.innerHTML = '<p class="text-secondary">Comparing... (this may take a moment for large JTL files)</p>';
     panel.classList.remove('hidden');
     panel.scrollIntoView({ behavior: 'smooth' });
 
     try {
         const data = await api(`/api/results/compare?folder1=${encodeURIComponent(f1)}&folder2=${encodeURIComponent(f2)}`);
-        if (data.error) { content.innerHTML = `<p class="text-light">${escHtml(data.error)}</p>`; return; }
+        if (data.error) { content.innerHTML = `<p class="text-secondary">${escHtml(data.error)}</p>`; return; }
         const d = data.diff;
         let html = `<div class="table-wrapper"><table>
             <thead><tr><th>Metric</th><th>${escHtml(f1)}</th><th>${escHtml(f2)}</th><th>Change</th></tr></thead><tbody>`;
@@ -500,7 +500,7 @@ async function compareSelected() {
         html += '</tbody></table></div>';
         content.innerHTML = html;
     } catch(e) {
-        content.innerHTML = `<p class="text-light">Compare failed: ${escHtml(e.message)}</p>`;
+        content.innerHTML = `<p class="text-secondary">Compare failed: ${escHtml(e.message)}</p>`;
     }
 }
 
@@ -518,22 +518,22 @@ async function toggleStats(folder) {
         return;
     }
     const cell = row ? row.querySelector('td') : mRow;
-    cell.innerHTML = '<div class="p-12"><span class="text-light">Loading stats...</span></div>';
+    cell.innerHTML = '<div class="p-12"><span class="text-secondary">Loading stats...</span></div>';
     target.classList.remove('hidden');
     try {
         const data = await api(`/api/results/${encodeURIComponent(folder)}/stats`);
-        if (data.error) { cell.innerHTML = `<div class="p-12 text-light">${escHtml(data.error)}</div>`; return; }
+        if (data.error) { cell.innerHTML = `<div class="p-12 text-secondary">${escHtml(data.error)}</div>`; return; }
         const o = data.overall;
         const errClass = o.error_pct > 0 ? 'stat-card-tint-danger' : '';
         let html = `<div class="p-12" style="border-top:1px solid var(--color-border);background:var(--color-bg);">
             <div class="live-stats-grid mb-8">
-                <div class="surface-card"><span class="text-sm text-light">Total VUs</span><div class="text-bold">${o.total_vus ? o.total_vus.toLocaleString() : '-'}</div></div>
-                <div class="surface-card"><span class="text-sm text-light">Samples</span><div class="text-bold">${o.total_samples.toLocaleString()}</div></div>
-                <div class="surface-card"><span class="text-sm text-light">Avg RT</span><div class="text-bold">${o.avg.toFixed(0)} ms</div></div>
-                <div class="surface-card"><span class="text-sm text-light">P95</span><div class="text-bold">${o.p95.toFixed(0)} ms</div></div>
-                <div class="surface-card ${errClass}"><span class="text-sm text-light">Error %</span><div class="text-bold">${o.error_pct}%</div></div>
-                <div class="surface-card stat-card-tint-primary"><span class="text-sm text-light">Throughput</span><div class="text-bold">${o.throughput.toFixed(1)}/s</div></div>
-                <div class="surface-card"><span class="text-sm text-light">Duration</span><div class="text-bold">${o.duration_sec.toFixed(0)}s</div></div>
+                <div class="surface-card"><span class="text-sm text-secondary">Total VUs</span><div class="text-bold">${o.total_vus ? o.total_vus.toLocaleString() : '-'}</div></div>
+                <div class="surface-card"><span class="text-sm text-secondary">Samples</span><div class="text-bold">${o.total_samples.toLocaleString()}</div></div>
+                <div class="surface-card"><span class="text-sm text-secondary">Avg RT</span><div class="text-bold">${o.avg.toFixed(0)} ms</div></div>
+                <div class="surface-card"><span class="text-sm text-secondary">P95</span><div class="text-bold">${o.p95.toFixed(0)} ms</div></div>
+                <div class="surface-card ${errClass}"><span class="text-sm text-secondary">Error %</span><div class="text-bold">${o.error_pct}%</div></div>
+                <div class="surface-card stat-card-tint-primary"><span class="text-sm text-secondary">Throughput</span><div class="text-bold">${o.throughput.toFixed(1)}/s</div></div>
+                <div class="surface-card"><span class="text-sm text-secondary">Duration</span><div class="text-bold">${o.duration_sec.toFixed(0)}s</div></div>
             </div>`;
         if (data.transactions && data.transactions.length > 0) {
             html += `<div class="table-wrapper"><table class="text-xs">
@@ -551,7 +551,7 @@ async function toggleStats(folder) {
         if (row && mRow && target === row) { mRow.innerHTML = html; mRow.classList.remove('hidden'); }
         if (row && mRow && target === mRow) { row.querySelector('td').innerHTML = html; row.classList.remove('hidden'); }
     } catch(e) {
-        cell.innerHTML = `<div class="p-12 text-light">Failed to load stats</div>`;
+        cell.innerHTML = `<div class="p-12 text-secondary">Failed to load stats</div>`;
     }
 }
 

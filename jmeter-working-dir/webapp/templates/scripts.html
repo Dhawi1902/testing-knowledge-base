@@ -34,7 +34,7 @@ async function loadScripts() {
     const container = document.getElementById('scriptsList');
 
     if (!scripts.length) {
-        container.innerHTML = '<p class="text-light">No scripts found in configured directories.</p>';
+        container.innerHTML = '<p class="text-secondary">No scripts found in configured directories.</p>';
         return;
     }
 

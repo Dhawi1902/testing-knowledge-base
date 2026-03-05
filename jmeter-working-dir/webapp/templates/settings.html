@@ -39,7 +39,7 @@
             <div class="form-group" style="min-width:250px;flex:2;">
                 <label class="form-label">Base Path</label>
                 <input class="form-input form-input-mono" id="set_base_path" placeholder="e.g. /perftest" autocomplete="off">
-                <span class="text-light text-sm">Serve the app under a subdirectory (e.g. <code>/perftest</code>). Leave empty for root. Requires restart.</span>
+                <span class="text-secondary text-sm">Serve the app under a subdirectory (e.g. <code>/perftest</code>). Leave empty for root. Requires restart.</span>
             </div>
         </div>
         <div class="mb-16">
@@ -52,7 +52,7 @@
         {% if access_level != 'viewer' %}
         <div class="flex gap-8 mb-16" style="align-items:center;">
             <button class="btn btn-outline btn-sm" id="restartBtn" onclick="restartServer()" style="display:none;">{{ icon('power', 14) }} Restart Now</button>
-            <span class="text-light text-sm" id="restartHint">Changes to server settings require a restart.</span>
+            <span class="text-secondary text-sm" id="restartHint">Changes to server settings require a restart.</span>
         </div>
         {% endif %}
 
@@ -100,7 +100,7 @@
 
         <!-- Filter Defaults -->
         <h3 class="text-sm mb-16 section-title">JTL Filter Defaults</h3>
-        <p class="text-light text-sm mb-8">Default filter settings applied when starting a new test run.</p>
+        <p class="text-secondary text-sm mb-8">Default filter settings applied when starting a new test run.</p>
         <div class="flex-col gap-12 mb-16">
             <label class="toggle">
                 <input type="checkbox" id="set_filter_sub_results" checked>
@@ -112,7 +112,7 @@
             <div class="form-group" style="min-width:300px;flex:2;">
                 <label class="form-label">Label Pattern (regex)</label>
                 <input class="form-input form-input-mono" id="set_filter_label_pattern" placeholder="e.g. ^(?!Transaction).*">
-                <span class="text-light text-sm">Optional regex to filter JTL labels. Leave empty for no label filtering.</span>
+                <span class="text-secondary text-sm">Optional regex to filter JTL labels. Leave empty for no label filtering.</span>
             </div>
         </div>
 
@@ -142,12 +142,12 @@
                     <input type="text" name="username" autocomplete="username" style="display:none" aria-hidden="true" tabindex="-1">
                     <input class="form-input form-input-mono" id="set_auth_token" type="password" placeholder="Enter new token to change" style="padding-right:40px;" autocomplete="new-password">
                     <button type="button" onclick="toggleTokenVisibility()" id="tokenToggleBtn"
-                        style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--color-text-light);font-size:13px;padding:2px 4px;">Show</button>
+                        style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--color-text-secondary);font-size:13px;padding:2px 4px;">Show</button>
                 </form>
-                <span class="text-light text-sm">Leave empty to keep current token. Enter a new value to change it. Localhost always has full access.</span>
+                <span class="text-secondary text-sm">Leave empty to keep current token. Enter a new value to change it. Localhost always has full access.</span>
                 <div id="tokenClearArea" class="mt-8" style="display:none;">
                     <button class="btn btn-outline btn-sm" style="color:var(--color-danger);border-color:var(--color-danger);" onclick="clearToken()">Remove Token</button>
-                    <span class="text-light text-sm" style="margin-left:8px;">Disables token auth for remote users.</span>
+                    <span class="text-secondary text-sm" style="margin-left:8px;">Disables token auth for remote users.</span>
                 </div>
             </div>
         </div>
@@ -175,7 +175,7 @@
 
         <hr class="hr-section">
 
-        <h3 class="text-sm mb-16 section-title">Paths <span class="text-light" style="font-weight:400;">(relative to project root)</span></h3>
+        <h3 class="text-sm mb-16 section-title">Paths <span class="text-secondary" style="font-weight:400;">(relative to project root)</span></h3>
         <div class="form-row mb-16">
             <div class="form-group form-col">
                 <label class="form-label">JMX Directory</label>
@@ -212,7 +212,7 @@
     <div id="tab-report" class="tab-panel" role="tabpanel">
 
         <h3 class="text-sm mb-16 section-title">Report Generation</h3>
-        <span class="text-light text-sm">Controls which graphs appear in JMeter HTML reports. Disabling heavy over-time graphs significantly reduces report size (graph.js can exceed 500 MB with all graphs enabled on large tests).</span>
+        <span class="text-secondary text-sm">Controls which graphs appear in JMeter HTML reports. Disabling heavy over-time graphs significantly reduces report size (graph.js can exceed 500 MB with all graphs enabled on large tests).</span>
 
         <hr class="hr-section">
 
@@ -229,7 +229,7 @@
                     <option value="300000">5 min</option>
                     <option value="600000">10 min</option>
                 </select>
-                <span class="text-light text-sm">Aggregation interval for over-time graphs. Higher = smaller reports.</span>
+                <span class="text-secondary text-sm">Aggregation interval for over-time graphs. Higher = smaller reports.</span>
             </div>
         </div>
 
@@ -248,14 +248,14 @@
         <!-- Over-time (heavy) -->
         <div class="surface-card mb-16 p-12">
             <div class="text-sm mb-8 section-title">Over-time graphs <span class="badge badge-warning text-xs" style="margin-left:4px;">Heavy</span></div>
-            <span class="text-light text-sm mb-8" style="display:block;">One data point per granularity interval per sampler. Largest contributor to report size.</span>
+            <span class="text-secondary text-sm mb-8" style="display:block;">One data point per granularity interval per sampler. Largest contributor to report size.</span>
             <div id="reportGraphsOvertime" class="gap-8" style="display:flex;flex-direction:column;"></div>
         </div>
 
         <!-- Summary (light) -->
         <div class="surface-card mb-16 p-12">
             <div class="text-sm mb-8 section-title">Summary graphs <span class="badge badge-success text-xs" style="margin-left:4px;">Light</span></div>
-            <span class="text-light text-sm mb-8" style="display:block;">Aggregate statistics. Minimal impact on report size.</span>
+            <span class="text-secondary text-sm mb-8" style="display:block;">Aggregate statistics. Minimal impact on report size.</span>
             <div id="reportGraphsSummary" class="gap-8" style="display:flex;flex-direction:column;"></div>
         </div>
     </div>
@@ -284,7 +284,7 @@
         <div class="flex-between gap-8 mb-16">
             <div>
                 <h3 class="text-sm section-title mb-0">Master Properties</h3>
-                <span class="text-light text-sm">user.properties overrides applied to the JMeter master <span id="jpropsCount"></span></span>
+                <span class="text-secondary text-sm">user.properties overrides applied to the JMeter master <span id="jpropsCount"></span></span>
             </div>
             {% if access_level != 'viewer' %}
             <div class="flex gap-8">
@@ -296,9 +296,9 @@
 
         <!-- Properties content -->
         <div id="jpropsContainer">
-            <div class="text-light" style="text-align:center;padding:16px;">Loading...</div>
+            <div class="text-secondary" style="text-align:center;padding:16px;">Loading...</div>
         </div>
-        <div class="text-sm text-light mt-8" id="jpropsPath"></div>
+        <div class="text-sm text-secondary mt-8" id="jpropsPath"></div>
     </div>
 
     <!-- Add Property Modal -->
@@ -326,7 +326,7 @@
 
         <h3 class="text-sm mb-16 section-title">System Information</h3>
         <div class="form-row mb-16" id="systemInfoCards">
-            <span class="text-light text-sm">Loading...</span>
+            <span class="text-secondary text-sm">Loading...</span>
         </div>
     </div>
 
@@ -554,13 +554,13 @@ async function loadSystemInfo() {
             `<div class="surface-card form-col sys-info-card">
                 <div class="sys-info-header">
                     <span class="sys-info-icon">${ICONS[i.icon] || ''}</span>
-                    <span class="text-light text-sm">${i.label}</span>
+                    <span class="text-secondary text-sm">${i.label}</span>
                 </div>
                 <div class="text-sm text-mono" style="margin-top:6px;word-break:break-word;">${i.value}</div>
             </div>`
         ).join('');
     } catch(e) {
-        document.getElementById('systemInfoCards').innerHTML = '<span class="text-light text-sm">Failed to load system info.</span>';
+        document.getElementById('systemInfoCards').innerHTML = '<span class="text-secondary text-sm">Failed to load system info.</span>';
     }
 }
 
@@ -711,7 +711,7 @@ async function loadJmeterProperties() {
         renderJmeterProperties();
     } catch (e) {
         document.getElementById('jpropsContainer').innerHTML =
-            '<div class="text-light" style="text-align:center;padding:16px;">Failed to load properties.</div>';
+            '<div class="text-secondary" style="text-align:center;padding:16px;">Failed to load properties.</div>';
     }
 }
 
@@ -735,7 +735,7 @@ function renderJmeterProperties() {
             const desc = catalogEntry ? catalogEntry.description : '';
             const hasOverride = override !== undefined && override !== '';
             const displayVal = hasOverride ? override : defaultVal;
-            const inputClass = hasOverride ? 'form-input form-input-mono' : 'form-input form-input-mono text-light';
+            const inputClass = hasOverride ? 'form-input form-input-mono' : 'form-input form-input-mono text-secondary';
 
             html += `<div class="prop-row flex gap-8 mb-4" style="align-items:center;">`;
             html += `<label class="form-label" style="min-width:280px;font-family:var(--font-mono);font-size:12px;" title="${escAttr(desc)}">${escHtml(key)}</label>`;
@@ -771,7 +771,7 @@ function renderJmeterProperties() {
     }
 
     if (!html) {
-        html = '<div class="text-light" style="text-align:center;padding:16px;">No properties. Click "+ Add Property" to configure.</div>';
+        html = '<div class="text-secondary" style="text-align:center;padding:16px;">No properties. Click "+ Add Property" to configure.</div>';
     }
 
     container.innerHTML = html;
@@ -852,13 +852,13 @@ function filterPropertyList(query) {
             html += `data-pkey="${escAttr(e.key)}" data-pdefault="${escAttr(e.default)}" `;
             html += `onclick="${already ? '' : 'addCatalogPropertyFromEl(this)'}">`;
             html += `<code style="min-width:240px;font-size:12px;">${escHtml(e.key)}</code>`;
-            html += `<span class="text-light text-sm" style="flex:1;">${escHtml(e.description).substring(0, 80)}</span>`;
-            html += `<code class="text-light" style="font-size:11px;">${escHtml(e.default)}</code>`;
+            html += `<span class="text-secondary text-sm" style="flex:1;">${escHtml(e.description).substring(0, 80)}</span>`;
+            html += `<code class="text-secondary" style="font-size:11px;">${escHtml(e.default)}</code>`;
             html += `</div>`;
         });
     }
-    if (!html) html = '<div class="text-light" style="text-align:center;padding:16px;">No matching properties.</div>';
-    if (filtered.length > 50) html += `<div class="text-light text-sm" style="text-align:center;padding:8px;">Showing 50 of ${filtered.length} — type to narrow results</div>`;
+    if (!html) html = '<div class="text-secondary" style="text-align:center;padding:16px;">No matching properties.</div>';
+    if (filtered.length > 50) html += `<div class="text-secondary text-sm" style="text-align:center;padding:8px;">Showing 50 of ${filtered.length} — type to narrow results</div>`;
     container.innerHTML = html;
 }
 

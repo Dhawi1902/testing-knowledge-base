@@ -36,7 +36,7 @@
             <span class="badge" id="runnerBadge">-</span>
         </div>
         <div id="runnerInfo">
-            <p class="text-light">Loading...</p>
+            <p class="text-secondary">Loading...</p>
         </div>
     </div>
     <div class="card mb-0" id="alertsRow">
@@ -44,7 +44,7 @@
             <span class="card-title">{{ icon('alert-triangle', 16) }} Alerts</span>
             <span class="badge" id="alertCount">0</span>
         </div>
-        <div id="alertsList"><p class="text-light">No alerts</p></div>
+        <div id="alertsList"><p class="text-secondary">No alerts</p></div>
     </div>
 </div>
 
@@ -55,7 +55,7 @@
         <div class="flex gap-8" id="lastRunActions"></div>
     </div>
     <div id="lastRun">
-        <p class="text-light">Loading...</p>
+        <p class="text-secondary">Loading...</p>
     </div>
 </div>
 
@@ -63,10 +63,10 @@
 <div class="card mb-12">
     <div class="card-header">
         <span class="card-title">{{ icon('bar-chart-3', 16) }} Run History</span>
-        <span class="text-sm text-light">Last 10 runs</span>
+        <span class="text-sm text-secondary">Last 10 runs</span>
     </div>
     <div id="runHistory" class="run-history-table">
-        <p class="text-light">Loading...</p>
+        <p class="text-secondary">Loading...</p>
     </div>
     <div id="runHistoryCards" class="run-history-cards"></div>
     <div class="empty-state hidden" id="runsEmpty">
@@ -91,7 +91,7 @@ const ICON_FOLDER = `{{ icon('folder-open', 14) }}`;
 function trendArrow(current, previous, lowerIsBetter) {
     if (previous === null || previous === undefined) return '';
     const diff = current - previous;
-    if (Math.abs(diff) < 0.01) return '<span class="text-light">-</span>';
+    if (Math.abs(diff) < 0.01) return '<span class="text-secondary">-</span>';
     const better = lowerIsBetter ? diff < 0 : diff > 0;
     const arrow = diff > 0 ? '&#9650;' : '&#9660;';
     const color = better ? 'var(--color-success)' : 'var(--color-danger)';
@@ -140,7 +140,7 @@ async function loadDashboard() {
     const runnerInfo = document.getElementById('runnerInfo');
     const slaves = slaveHealthData ? (slaveHealthData.slaves || []) : [];
     const healthHtml = slaves.length > 0
-        ? `<tr><td class="text-light">Health</td><td>${slaves.map(s => {
+        ? `<tr><td class="text-secondary">Health</td><td>${slaves.map(s => {
             const cls = s.status === 'up' ? 'up' : s.status === 'down' ? 'down' : 'unknown';
             return `<span class="status-dot ${cls}" title="${escAttr(s.ip)}: ${s.status}" aria-label="${escAttr(s.ip)}: ${s.status}" role="img" style="margin-right:4px;"></span>`;
           }).join('')}</td></tr>`
@@ -172,8 +172,8 @@ async function loadDashboard() {
             </div>` : '';
         runnerInfo.innerHTML = `
             <table>
-                <tr><td class="text-light" style="width:100px;">Test Plan</td><td class="text-mono">${escAttr(statsData.runner_label || 'Unknown')}</td></tr>
-                <tr><td class="text-light">Slaves</td><td>${statsData.active_slaves_count} active</td></tr>
+                <tr><td class="text-secondary" style="width:100px;">Test Plan</td><td class="text-mono">${escAttr(statsData.runner_label || 'Unknown')}</td></tr>
+                <tr><td class="text-secondary">Slaves</td><td>${statsData.active_slaves_count} active</td></tr>
                 ${healthHtml}
             </table>
             ${liveHtml}
@@ -183,7 +183,7 @@ async function loadDashboard() {
     } else {
         badge.textContent = 'Idle';
         badge.className = 'badge badge-info';
-        runnerInfo.innerHTML = `<p class="text-light">No test currently running.</p>
+        runnerInfo.innerHTML = `<p class="text-secondary">No test currently running.</p>
             ${healthHtml ? `<table style="margin:8px 0;">${healthHtml}</table>` : ''}
             <a href="${BASE_PATH}/plans" class="btn btn-primary btn-sm mt-8">Start a Test</a>`;
     }
@@ -193,7 +193,7 @@ async function loadDashboard() {
     const el = document.getElementById('lastRun');
     const actionsEl = document.getElementById('lastRunActions');
     if (!lr) {
-        el.innerHTML = '<p class="text-light">No test runs yet.</p>';
+        el.innerHTML = '<p class="text-secondary">No test runs yet.</p>';
         actionsEl.innerHTML = '';
     } else {
         let statsHtml = '';
@@ -314,7 +314,7 @@ async function loadDashboard() {
                 html += `<tr>
                     <td class="text-mono">${escAttr(r.name)}</td>
                     <td>${new Date(r.date).toLocaleDateString()}</td>
-                    <td colspan="6" class="text-light">No JTL data</td>
+                    <td colspan="6" class="text-secondary">No JTL data</td>
                 </tr>`;
                 cardHtml += `<div class="run-card">
                     <div class="run-card-header">
@@ -348,7 +348,7 @@ async function loadDashboard() {
                 <span class="alert-icon">${alertIcon}</span>
                 <div>
                     <div class="alert-msg">${escAttr(a.message)}</div>
-                    ${a.detail ? `<div class="alert-detail text-sm text-light">${escAttr(a.detail)}</div>` : ''}
+                    ${a.detail ? `<div class="alert-detail text-sm text-secondary">${escAttr(a.detail)}</div>` : ''}
                 </div>
             </${tag}>`;
         });
@@ -356,7 +356,7 @@ async function loadDashboard() {
     } else {
         document.getElementById('alertCount').textContent = '0';
         document.getElementById('alertCount').className = 'badge badge-info';
-        document.getElementById('alertsList').innerHTML = '<p class="text-light">No alerts</p>';
+        document.getElementById('alertsList').innerHTML = '<p class="text-secondary">No alerts</p>';
     }
 
     // Monitoring links — cache URLs to localStorage for all pages

@@ -11,7 +11,7 @@
         <div class="flex gap-8 items-center">
             <span class="badge" id="modeIndicator">...</span>
             <span class="badge badge-info" id="runnerStatus">Idle</span>
-            <span id="elapsedTimer" class="text-sm text-light text-mono hidden"></span>
+            <span id="elapsedTimer" class="text-sm text-secondary text-mono hidden"></span>
         </div>
     </div>
 
@@ -38,7 +38,7 @@
             </div>
         </div>
     </div>
-    <span class="text-light text-xs" id="planInfo" style="display:none;margin-top:-8px;display:block;"></span>
+    <span class="text-secondary text-xs" id="planInfo" style="display:none;margin-top:-8px;display:block;"></span>
 
     <!-- Preset -->
     <div class="flex gap-8 items-center mb-16">
@@ -57,7 +57,7 @@
         <label class="form-label mb-0">Test Plan Parameters</label>
     </div>
     <div id="paramForm" class="mb-16">
-        <p class="text-light text-sm">Select a test plan to configure parameters.</p>
+        <p class="text-secondary text-sm">Select a test plan to configure parameters.</p>
     </div>
 
     <!-- Command Preview -->
@@ -84,7 +84,7 @@
                 </select>
                 <button class="btn btn-outline btn-sm btn-icon" onclick="openFilterPresetManager()" title="Manage filter presets">{{ icon('settings', 13) }}</button>
             </div>
-            <span id="filterPatternDisplay" class="text-sm text-light text-mono hidden">
+            <span id="filterPatternDisplay" class="text-sm text-secondary text-mono hidden">
                 pattern: <code id="filterPatternText" class="code-inline"></code>
             </span>
             {% endif %}
@@ -113,7 +113,7 @@
         <span class="card-title">{{ icon('activity', 16) }} Live Output</span>
     </div>
 
-    <p class="text-light text-sm py-16 text-center" id="outputPlaceholder">No active test. Stats will appear here during a run.</p>
+    <p class="text-secondary text-sm py-16 text-center" id="outputPlaceholder">No active test. Stats will appear here during a run.</p>
 
     <!-- Live Summary -->
     <div class="live-stats-grid mb-16" id="liveSummary" style="display:none;">
@@ -152,11 +152,11 @@
 
     <div id="logSection">
         <div class="flex-between mb-8">
-            <span class="text-sm text-light" style="cursor:pointer;" onclick="toggleLog()" id="logToggle">&#9654; Raw Log</span>
+            <span class="text-sm text-secondary" style="cursor:pointer;" onclick="toggleLog()" id="logToggle">&#9654; Raw Log</span>
             <label class="toggle hidden" id="autoScrollLabel">
                 <input type="checkbox" id="autoScrollToggle" checked>
                 <span class="toggle-track"></span>
-                <span class="text-sm text-light">Auto-scroll</span>
+                <span class="text-sm text-secondary">Auto-scroll</span>
             </label>
         </div>
         <div class="log-output hidden" id="logOutput" style="min-height:120px;"></div>
@@ -169,7 +169,7 @@
         <div class="modal-header">
             <div>
                 <span class="modal-title" id="presetModalTitle">Manage Presets</span>
-                <p class="text-light text-sm mt-4">Save current parameter values as a reusable preset. Apply them anytime from the Preset dropdown.</p>
+                <p class="text-secondary text-sm mt-4">Save current parameter values as a reusable preset. Apply them anytime from the Preset dropdown.</p>
             </div>
             <button class="modal-close" onclick="closePresetManager()" aria-label="Close">&times;</button>
         </div>
@@ -182,7 +182,7 @@
         </div>
         <label class="form-label text-sm mb-8">Saved Presets</label>
         <div id="presetList"></div>
-        <p class="text-light text-sm py-16" id="presetEmptyMsg" style="text-align:center;">No presets saved yet. Configure your test parameters and save them above.</p>
+        <p class="text-secondary text-sm py-16" id="presetEmptyMsg" style="text-align:center;">No presets saved yet. Configure your test parameters and save them above.</p>
     </div>
 </div>
 
@@ -192,7 +192,7 @@
         <div class="modal-header">
             <div>
                 <span class="modal-title" id="filterPresetModalTitle">Filter Label Presets</span>
-                <p class="text-light text-sm mt-4">Save regex patterns to quickly filter JTL results by label. The default pattern from Settings is always available.</p>
+                <p class="text-secondary text-sm mt-4">Save regex patterns to quickly filter JTL results by label. The default pattern from Settings is always available.</p>
             </div>
             <button class="modal-close" onclick="closeFilterPresetManager()" aria-label="Close">&times;</button>
         </div>
@@ -208,7 +208,7 @@
         </div>
         <label class="form-label text-sm mb-8">Saved Filter Presets</label>
         <div id="filterPresetList"></div>
-        <p class="text-light text-sm py-16" id="filterPresetEmptyMsg" style="text-align:center;">No filter presets saved yet. Add a name and regex pattern above.</p>
+        <p class="text-secondary text-sm py-16" id="filterPresetEmptyMsg" style="text-align:center;">No filter presets saved yet. Add a name and regex pattern above.</p>
     </div>
 </div>
 {% endblock %}
@@ -260,7 +260,7 @@ async function onPlanSelected() {
     const startBtn = document.getElementById('startTestBtn');
 
     if (!filename) {
-        document.getElementById('paramForm').innerHTML = '<p class="text-light text-sm">Select a test plan to configure parameters.</p>';
+        document.getElementById('paramForm').innerHTML = '<p class="text-secondary text-sm">Select a test plan to configure parameters.</p>';
         if (startBtn) startBtn.disabled = true;
         document.getElementById('cmdPreview').textContent = 'Select a test plan to see the command.';
         if (savePresetBtn) savePresetBtn.classList.add('hidden');
@@ -290,7 +290,7 @@ async function onPlanSelected() {
 function renderParamForm() {
     const container = document.getElementById('paramForm');
     if (!allParams.length) {
-        container.innerHTML = '<p class="text-light text-sm">No __P() parameters detected in this JMX.</p>';
+        container.innerHTML = '<p class="text-secondary text-sm">No __P() parameters detected in this JMX.</p>';
         return;
     }
     let html = '<div class="flex gap-16" style="flex-wrap:wrap;">';

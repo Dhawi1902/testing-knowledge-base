@@ -13,17 +13,17 @@
         .setup-header h1 { font-size: 1.5rem; margin-bottom: 8px; }
         .detected-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--color-border); }
         .detected-item:last-child { border-bottom: none; }
-        .detected-label { font-size: 0.85rem; color: var(--color-text-light); }
+        .detected-label { font-size: 0.85rem; color: var(--color-text-secondary); }
         .detected-value { font-family: var(--font-mono); font-size: 0.85rem; }
         .detected-found { color: var(--color-success); }
-        .detected-missing { color: var(--color-text-light); }
+        .detected-missing { color: var(--color-text-secondary); }
     </style>
 </head>
 <body>
     <div class="card setup-card">
         <div class="setup-header">
             <h1>JMeter Test Dashboard</h1>
-            <p class="text-light">First-run setup — detected project structure</p>
+            <p class="text-secondary">First-run setup — detected project structure</p>
         </div>
 
         <div class="form-group">
@@ -56,7 +56,7 @@
         {% if setup_token %}
         <div style="margin-top:20px;padding:16px;background:var(--color-surface);border:2px solid var(--color-warning);border-radius:8px;">
             <h3 style="font-size:0.95rem;margin:0 0 8px;color:var(--color-warning);">Access Token Generated</h3>
-            <p class="text-light" style="font-size:0.85rem;margin:0 0 12px;">
+            <p class="text-secondary" style="font-size:0.85rem;margin:0 0 12px;">
                 This token is required for remote access. Copy it now — it will not be shown again.
             </p>
             <div style="display:flex;align-items:center;gap:8px;">
@@ -65,7 +65,7 @@
                     style="flex:1;font-size:0.9rem;background:var(--color-bg);">
                 <button class="btn btn-outline btn-sm" onclick="copyToken()">Copy</button>
             </div>
-            <p class="text-light" style="font-size:0.8rem;margin:8px 0 0;color:var(--color-warning);">
+            <p class="text-secondary" style="font-size:0.8rem;margin:8px 0 0;color:var(--color-warning);">
                 Remote users need this token to access the dashboard. Localhost always has full access.
             </p>
         </div>

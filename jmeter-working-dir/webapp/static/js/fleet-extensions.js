@@ -8,7 +8,7 @@ async function loadExtensions() {
         renderExtensions();
     } catch (e) {
         const c = document.getElementById('extContainer');
-        if (c) c.innerHTML = '<div class="text-light" style="text-align:center;padding:16px;">Failed to load extensions</div>';
+        if (c) c.innerHTML = '<div class="text-secondary" style="text-align:center;padding:16px;">Failed to load extensions</div>';
     }
 }
 

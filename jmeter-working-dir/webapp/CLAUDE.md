@@ -1,10 +1,10 @@
-# CLAUDE.md — JMeter Test Dashboard Web App
+# CLAUDE.md — LoadLitmus Web App
 
 This file provides guidance to Claude Code when working on the web app.
 
 ## Overview
 
-A self-contained web dashboard for managing JMeter performance test projects. The app is deployed **per-project** — it lives inside the project directory and operates on the files around it. No database; everything is file-based.
+**LoadLitmus** — a self-contained web dashboard for managing performance test projects. Currently built around JMeter, with plans to support additional testing tools. The app is deployed **per-project** — it lives inside the project directory and operates on the files around it. No database; everything is file-based.
 
 ## Architecture
 
@@ -55,7 +55,8 @@ webapp/
 │   └── analysis.txt         # Ollama prompt template
 ├── static/
 │   ├── css/style.css        # Design system (tokens, utilities, components, light/dark themes)
-│   └── js/app.js            # Core utilities (API, theme, sidebar, tabs, modals, toasts, dropdowns)
+│   ├── js/app.js            # Core utilities (API, theme, sidebar, tabs, modals, toasts, dropdowns)
+│   └── favicon.svg          # SVG gauge icon (indigo gradient)
 ├── templates/
 │   ├── icons.html           # Lucide SVG icon macros (39 icons)
 │   ├── base.html            # Layout: sidebar nav, topbar, theme toggle, confirm/prompt modals
@@ -176,17 +177,17 @@ REPORT_OPTIMIZE_PROPS = [
 
 ## Slaves Configuration
 
-Slaves file supports JSON format with enable/disable flags:
+Slaves file supports JSON format with enable/disable flags, nicknames, and per-slave SSH overrides:
 
 ```json
 [
-  {"ip": "10.0.0.1", "enabled": true},
+  {"ip": "10.0.0.1", "enabled": true, "nickname": "SLAVE 1"},
   {"ip": "10.0.0.2", "enabled": false},
-  {"ip": "10.0.0.3", "enabled": true}
+  {"ip": "10.0.0.3", "enabled": true, "overrides": {"user": "admin", "key_file": "/path/to/key"}}
 ]
 ```
 
-Backward-compatible: auto-migrates plain text (one IP per line) to JSON on first edit. `get_active_slaves()` returns only enabled IPs for JMeter `-R` flag.
+Backward-compatible: auto-migrates plain text (one IP per line) to JSON on first edit. `get_active_slaves()` returns only enabled IPs for JMeter `-R` flag. `read_slaves()` preserves all fields (nickname, overrides) through read/write cycles.
 
 ## CSV Builder Column Types
 
@@ -222,7 +223,7 @@ App-level configuration stored in `settings.json` (auto-created on first save):
 {
   "server": {
     "host": "127.0.0.1",
-    "port": 8080,
+    "port": 5080,
     "allow_external": false,
     "base_path": ""
   },
@@ -248,10 +249,10 @@ pip install -r requirements.txt
 python -m webapp
 
 # Run the app (CLI overrides)
-python -m webapp --host 0.0.0.0 --port 8080
+python -m webapp --host 0.0.0.0 --port 5080
 
 # Run the app (development with reload)
-cd webapp && uvicorn main:app --reload --host 0.0.0.0 --port 8080
+cd webapp && uvicorn main:app --reload --host 0.0.0.0 --port 5080
 
 # Run tests
 python -m pytest tests/ -v --tb=short
@@ -298,7 +299,7 @@ CSS-first design system in `style.css` targeting a "Linear meets Vercel" aesthet
 ### CSS Tokens (Custom Properties)
 
 - **Colors**: `--color-primary`, `--color-danger`, `--color-success`, `--color-warning` + `-hover` and `-subtle` variants
-- **Text**: `--color-text`, `--color-text-secondary`, `--color-text-tertiary` (`--color-text-light` is a deprecated alias for `-secondary`)
+- **Text**: `--color-text`, `--color-text-secondary`, `--color-text-tertiary`
 - **Surfaces**: `--color-bg`, `--color-surface`, `--color-surface-alt`, `--color-surface-hover`
 - **Radius**: `--radius-sm` (4px), `--radius` (6px), `--radius-lg` (8px), `--radius-xl` (12px)
 - **Shadows**: `--shadow`, `--shadow-md`, `--shadow-lg`

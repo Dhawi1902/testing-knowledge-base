@@ -62,7 +62,7 @@
                 </tr>
             </thead>
             <tbody id="csvFilesList">
-                <tr><td colspan="5" class="text-light">Loading...</td></tr>
+                <tr><td colspan="5" class="text-secondary">Loading...</td></tr>
             </tbody>
         </table>
     </div>
@@ -263,9 +263,9 @@ function renderTypeBody(body, type, def = {}) {
     } else if (type === 'sequence') {
         body.innerHTML = `
             <span class="flex items-center gap-4">
-                <span class="text-light text-sm">Start</span>
+                <span class="text-secondary text-sm">Start</span>
                 <input type="number" class="form-input seq-num-start" value="${def.start ?? 1}" style="width:70px;">
-                <span class="text-light text-sm">Step</span>
+                <span class="text-secondary text-sm">Step</span>
                 <input type="number" class="form-input seq-num-step" value="${def.step ?? 1}" style="width:70px;">
             </span>
         `;
@@ -441,11 +441,11 @@ function previewBuild() {
     }
     if (totalRows > n) {
         html += '<tr>';
-        columns.forEach(() => { html += '<td class="text-light">...</td>'; });
+        columns.forEach(() => { html += '<td class="text-secondary">...</td>'; });
         html += '</tr>';
     }
     html += '</tbody></table>';
-    html += `<p class="text-light text-sm mt-8">${totalRows.toLocaleString()} rows will be generated.</p>`;
+    html += `<p class="text-secondary text-sm mt-8">${totalRows.toLocaleString()} rows will be generated.</p>`;
 
     document.getElementById('buildPreviewTable').innerHTML = html;
     document.getElementById('buildPreview').classList.remove('hidden');
@@ -719,9 +719,9 @@ function addDistFile() {
             <option value="split">Split</option>
         </select>
         <span class="dist-split-opts hidden">
-            <span class="text-light text-sm">Offset</span>
+            <span class="text-secondary text-sm">Offset</span>
             <input type="number" class="form-input dist-offset" value="0" min="0">
-            <span class="text-light text-sm">Size</span>
+            <span class="text-secondary text-sm">Size</span>
             <input type="number" class="form-input dist-size" placeholder="all" min="1">
         </span>
         <button class="dist-remove" onclick="removeDistItem(this)" title="Remove">&times;</button>
@@ -772,7 +772,7 @@ async function previewDist() {
 
     const previewEl = document.getElementById('distPreview');
     previewEl.classList.remove('hidden');
-    previewEl.innerHTML = '<span class="text-light text-sm">Loading...</span>';
+    previewEl.innerHTML = '<span class="text-secondary text-sm">Loading...</span>';
 
     try {
         // Fetch split previews for all split items in parallel
@@ -854,7 +854,7 @@ async function previewDist() {
                             html += `<td>${rows.toLocaleString()}</td>`;
                             total += rows;
                         } else {
-                            html += `<td class="text-light" style="color:var(--color-error,#ef4444);">err</td>`;
+                            html += `<td class="text-secondary" style="color:var(--color-error,#ef4444);">err</td>`;
                         }
                     } else {
                         const info = fileMap[item.file];
@@ -895,7 +895,7 @@ async function previewDist() {
                 for (let r = 0; r < rows.length; r++) {
                     if (slave.gap && r === half) {
                         html += '<tr>';
-                        for (let c = 0; c < sr.columns.length; c++) html += '<td class="text-light">...</td>';
+                        for (let c = 0; c < sr.columns.length; c++) html += '<td class="text-secondary">...</td>';
                         html += '</tr>';
                     }
                     html += '<tr>';
@@ -1050,7 +1050,7 @@ function startRename(el, oldName) {
     const base = oldName.replace(/\.csv$/i, '');
     td.innerHTML = `<form onsubmit="return doRename(this, '${escAttr(oldName)}')" class="flex gap-4" style="display:inline-flex;align-items:center;">
         <input type="text" class="form-input text-mono" value="${escAttr(base)}" style="padding:2px 6px;font-size:13px;width:180px;" autofocus>
-        <span class="text-mono text-sm" style="color:var(--color-text-light);">.csv</span>
+        <span class="text-mono text-sm" style="color:var(--color-text-secondary);">.csv</span>
         <button type="submit" class="btn btn-outline btn-sm">OK</button>
     </form>`;
     const input = td.querySelector('input');
@@ -1111,12 +1111,12 @@ async function previewFile(filename, rows = 50) {
     _previewFilename = filename;
     const contentEl = document.getElementById('previewContent');
     document.getElementById('previewTitle').textContent = 'Preview: ' + filename;
-    contentEl.innerHTML = '<p class="text-light">Loading...</p>';
+    contentEl.innerHTML = '<p class="text-secondary">Loading...</p>';
     openModal('previewModal');
     try {
         const data = await api(`/api/data/preview/${encodeURIComponent(filename)}?rows=${rows}`);
         if (data.error) {
-            contentEl.innerHTML = `<p class="text-light">${escHtml(data.error)}</p>`;
+            contentEl.innerHTML = `<p class="text-secondary">${escHtml(data.error)}</p>`;
             return;
         }
         let html = '<table><thead><tr>';
@@ -1133,7 +1133,7 @@ async function previewFile(filename, rows = 50) {
         if (remaining > 0) {
             const nextBatch = Math.min(remaining, 500);
             html += `<div class="flex mt-8 gap-12" style="align-items:center;">`;
-            html += `<span class="text-light text-sm">Showing ${data.total_preview.toLocaleString()} of ${data.total_rows.toLocaleString()} rows</span>`;
+            html += `<span class="text-secondary text-sm">Showing ${data.total_preview.toLocaleString()} of ${data.total_rows.toLocaleString()} rows</span>`;
             html += `<button class="btn btn-outline btn-sm" onclick="previewFile('${escAttr(filename)}', ${data.total_preview + nextBatch})">Load ${nextBatch.toLocaleString()} more</button>`;
             if (data.total_rows <= 10000) {
                 html += `<button class="btn btn-outline btn-sm" onclick="previewFile('${escAttr(filename)}', ${data.total_rows})">Load all</button>`;
@@ -1142,7 +1142,7 @@ async function previewFile(filename, rows = 50) {
         }
         contentEl.innerHTML = html;
     } catch(e) {
-        contentEl.innerHTML = '<p class="text-light">Failed to load preview.</p>';
+        contentEl.innerHTML = '<p class="text-secondary">Failed to load preview.</p>';
     }
 }
 

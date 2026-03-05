@@ -552,7 +552,7 @@ function openProvisionModal(ips, preselectSteps) {
     footer.innerHTML = '<button class="btn btn-outline btn-sm" onclick="closeProvisionModal()">Cancel</button>' +
         '<button class="btn btn-primary btn-sm" id="provisionRunBtn" onclick="startProvisionRun()">Run Provision</button>';
 
-    modal.style.display = 'flex';
+    openModal('provisionModal');
 }
 
 function toggleProvisionSelectAll(checked) {
@@ -560,7 +560,7 @@ function toggleProvisionSelectAll(checked) {
 }
 
 function closeProvisionModal() {
-    document.getElementById('provisionModal').style.display = 'none';
+    closeModal('provisionModal');
 }
 
 function startProvisionRun() {
@@ -596,7 +596,7 @@ function startProvisionRun() {
 
     // Footer: only close during run
     var footer = document.getElementById('provisionFooter');
-    footer.innerHTML = '<span class="text-sm text-light" id="provisionRunStatus">Running...</span>' +
+    footer.innerHTML = '<span class="text-sm text-secondary" id="provisionRunStatus">Running...</span>' +
         '<button class="btn btn-outline btn-sm" onclick="closeProvisionModal()" disabled id="provisionCloseBtn">Close</button>';
 
     runProvisionSequence();
@@ -773,22 +773,21 @@ function toggleSlaveList() {
 
 // ===== Sync Data =====
 async function syncData() {
-    const modal = document.getElementById('syncModal');
     const preview = document.getElementById('syncPreview');
     const logEl = document.getElementById('syncLog');
     logEl.style.display = 'none';
     logEl.innerHTML = '';
     preview.innerHTML = 'Loading...';
-    modal.style.display = 'flex';
+    openModal('syncModal');
     try {
         const data = await api('/api/slaves/sync-data/preview');
         if (!data.files || !data.files.length) {
-            preview.innerHTML = '<div class="text-light">No CSV files in test data directory.</div>';
+            preview.innerHTML = '<div class="text-secondary">No CSV files in test data directory.</div>';
             document.getElementById('syncBtn').disabled = true;
             return;
         }
         if (!data.slaves || !data.slaves.length) {
-            preview.innerHTML = '<div class="text-light">No active slaves configured.</div>';
+            preview.innerHTML = '<div class="text-secondary">No active slaves configured.</div>';
             document.getElementById('syncBtn').disabled = true;
             return;
         }
@@ -797,15 +796,15 @@ async function syncData() {
         html += '<ul style="margin:0;padding-left:20px;">';
         data.files.forEach(f => { html += `<li class="text-sm">${escHtml(f.filename)} (${f.size || '?'})</li>`; });
         html += '</ul>';
-        html += `<div class="text-sm text-light mt-8">Target slaves: ${data.slaves.map(escHtml).join(', ')}</div>`;
+        html += `<div class="text-sm text-secondary mt-8">Target slaves: ${data.slaves.map(escHtml).join(', ')}</div>`;
         preview.innerHTML = html;
     } catch (e) {
-        preview.innerHTML = '<div class="text-light">Failed to load preview.</div>';
+        preview.innerHTML = '<div class="text-secondary">Failed to load preview.</div>';
     }
 }
 
 function closeSyncModal() {
-    document.getElementById('syncModal').style.display = 'none';
+    closeModal('syncModal');
 }
 
 async function runSyncData() {
@@ -814,7 +813,7 @@ async function runSyncData() {
     btn.disabled = true;
     btn.textContent = 'Syncing...';
     logEl.style.display = '';
-    appendLog(logEl, 'Distributing files to slaves...', 'text-light');
+    appendLog(logEl, 'Distributing files to slaves...', 'text-secondary');
     try {
         const data = await api('/api/slaves/sync-data', { method: 'POST' });
         if (data.results) {
@@ -823,7 +822,7 @@ async function runSyncData() {
                 appendLog(logEl, `  ${icon} ${r.ip}: ${r.file} — ${r.detail || (r.ok ? 'OK' : 'FAILED')}`);
             });
         }
-        appendLog(logEl, `\n${data.summary || 'Done.'}`, 'text-light');
+        appendLog(logEl, `\n${data.summary || 'Done.'}`, 'text-secondary');
         showToast(data.ok ? 'Data synced successfully' : 'Some transfers failed', data.ok ? 'success' : 'warning');
     } catch (e) {
         appendLog(logEl, `ERROR: ${e.message || 'Sync failed'}`, '');
@@ -836,14 +835,13 @@ async function runSyncData() {
 // ===== View Slave Log =====
 async function viewLog(ip) {
     Fleet.currentLogIp = ip;
-    const modal = document.getElementById('logModal');
     const content = document.getElementById('logContent');
     const title = document.getElementById('logModalTitle');
     const pathEl = document.getElementById('logPath');
     title.textContent = `Log: ${ip}`;
     content.textContent = 'Loading...';
     pathEl.textContent = '';
-    modal.style.display = 'flex';
+    openModal('logModal');
     try {
         const data = await api(`/api/slaves/${encodeURIComponent(ip)}/log`);
         const r = data.result;
@@ -860,7 +858,7 @@ async function viewLog(ip) {
 }
 
 function closeLogModal() {
-    document.getElementById('logModal').style.display = 'none';
+    closeModal('logModal');
     Fleet.currentLogIp = '';
 }
 
@@ -972,12 +970,12 @@ async function openSavedLogs() {
     const pathEl = document.getElementById('savedLogsPath');
     content.innerHTML = 'Loading...';
     pathEl.textContent = '';
-    modal.style.display = 'flex';
+    openModal('savedLogsModal');
     try {
         const data = await api('/api/slaves/saved-logs');
         pathEl.textContent = data.dest || '';
         if (!data.files || !data.files.length) {
-            content.innerHTML = '<div class="text-center text-light py-16">No saved logs yet. Use "Collect Logs" to fetch from slaves.</div>';
+            content.innerHTML = '<div class="text-center text-secondary py-16">No saved logs yet. Use "Collect Logs" to fetch from slaves.</div>';
             return;
         }
         let html = '<table class="table"><thead><tr><th>Slave IP</th><th>Filename</th><th>Size</th><th>Saved</th><th></th></tr></thead><tbody>';
@@ -1003,7 +1001,7 @@ async function openSavedLogs() {
 }
 
 function closeSavedLogsModal() {
-    document.getElementById('savedLogsModal').style.display = 'none';
+    closeModal('savedLogsModal');
 }
 
 async function viewSavedLog(filename) {
@@ -1016,7 +1014,7 @@ async function viewSavedLog(filename) {
     title.textContent = `Saved Log: ${ip}`;
     content.textContent = 'Loading...';
     pathEl.textContent = filename;
-    modal.style.display = 'flex';
+    openModal('logModal');
     Fleet.currentLogIp = '';
     try {
         const resp = await fetch(`${BASE_PATH}/api/slaves/saved-logs/${filename}`);
@@ -1196,7 +1194,7 @@ function renderDashboard() {
         if (chartsEl) chartsEl.style.display = '';
         if (headerEl) headerEl.style.display = '';
         const liveEl = dashboard.querySelector('.dash-live');
-        if (liveEl) liveEl.innerHTML = '<span class="text-xs text-light">Paused</span>';
+        if (liveEl) liveEl.innerHTML = '<span class="text-xs text-secondary">Paused</span>';
         // Keep heatmap and averages visible with last values
         renderHeatmap();
         renderDashAverages();
@@ -1208,8 +1206,8 @@ function renderDashboard() {
     var liveEl2 = dashboard.querySelector('.dash-live');
     if (liveEl2 && !document.getElementById('liveIndicator')) {
         liveEl2.innerHTML = '<span class="live-indicator" id="liveIndicator"></span>' +
-            '<span class="text-xs text-light" id="monitorIntervalLabel"></span>' +
-            '<span class="text-xs text-light" id="nextPollLabel"></span>';
+            '<span class="text-xs text-secondary" id="monitorIntervalLabel"></span>' +
+            '<span class="text-xs text-secondary" id="nextPollLabel"></span>';
     }
 
     // State 2: Monitoring ON, no data yet → skeleton
@@ -1316,7 +1314,7 @@ function renderDashAverages() {
         if (r.load_1m != null) { loadSum += r.load_1m; }
         if (r.jmeter_running) jmeterUp++;
     });
-    if (count === 0) { el.innerHTML = '<span class="text-light">Waiting for data...</span>'; return; }
+    if (count === 0) { el.innerHTML = '<span class="text-secondary">Waiting for data...</span>'; return; }
     const avgCpu = Math.round(cpuSum / count);
     const avgRam = Math.round(ramSum / count);
     const avgDisk = Math.round(diskSum / count);

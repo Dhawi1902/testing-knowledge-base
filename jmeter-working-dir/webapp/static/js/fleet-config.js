@@ -23,7 +23,7 @@ function renderVmConfig() {
             <div class="form-group form-col" style="flex:2;min-width:250px;">
                 <label class="form-label">Base Directory (on slaves)</label>
                 <input class="form-input form-input-mono" id="vm_slave_dir" value="${escHtml(slaveDir)}" placeholder="~/jmeter-slave"${ro}>
-                <span class="text-sm text-light">Base path on slaves. Uses ~ which resolves via $HOME. test_data/, start-slave.sh, stop-slave.sh are derived from this.</span>
+                <span class="text-sm text-secondary">Base path on slaves. Uses ~ which resolves via $HOME. test_data/, start-slave.sh, stop-slave.sh are derived from this.</span>
             </div>
         </div>
         <h3 class="text-sm mb-16 section-title">SSH Defaults</h3>
@@ -51,7 +51,7 @@ function renderVmConfig() {
             <div class="form-group form-col" style="flex:2;min-width:250px;">
                 <label class="form-label">JMeter Path (on slaves)</label>
                 <input class="form-input form-input-mono" id="vm_jmeter_path" value="${escHtml(ssh.jmeter_path || '')}" placeholder="/opt/jmeter"${ro}>
-                <span class="text-sm text-light">If set, auto-generates start/stop commands when scripts are empty.</span>
+                <span class="text-sm text-secondary">If set, auto-generates start/stop commands when scripts are empty.</span>
             </div>
             <div class="form-group form-col" style="min-width:120px;">
                 <label class="form-label">Default OS</label>
@@ -87,7 +87,7 @@ function renderVmConfig() {
                 <input class="form-input form-input-mono" id="vm_script_stop" value="${escHtml(scripts.stop || '')}" placeholder="(auto: slave_dir/stop-slave.sh)"${ro}>
             </div>
         </div>
-        <div class="text-sm text-light" style="margin-top:-8px;">Per-slave overrides can be set via the &#9881; button on each slave.</div>
+        <div class="text-sm text-secondary" style="margin-top:-8px;">Per-slave overrides can be set via the &#9881; button on each slave.</div>
         </form>`;
 }
 
@@ -130,7 +130,7 @@ async function loadJmeterProperties() {
         renderJmeterProperties();
     } catch (e) {
         const c = document.getElementById('jpropsContainer');
-        if (c) c.innerHTML = '<div class="text-light" style="text-align:center;padding:16px;">Failed to load properties.</div>';
+        if (c) c.innerHTML = '<div class="text-secondary" style="text-align:center;padding:16px;">Failed to load properties.</div>';
     }
 }
 
@@ -157,7 +157,7 @@ function renderJmeterProperties() {
             const desc = catalogEntry ? catalogEntry.description : '';
             const hasOverride = override !== undefined && override !== '';
             const displayVal = hasOverride ? override : defaultVal;
-            const inputClass = hasOverride ? 'form-input form-input-mono' : 'form-input form-input-mono text-light';
+            const inputClass = hasOverride ? 'form-input form-input-mono' : 'form-input form-input-mono text-secondary';
 
             html += `<div class="prop-row flex gap-8 mb-4" style="align-items:center;">`;
             html += `<label class="form-label" style="min-width:280px;font-family:var(--font-mono);font-size:12px;" title="${escAttr(desc)}">${escHtml(key)}</label>`;
@@ -194,7 +194,7 @@ function renderJmeterProperties() {
     }
 
     if (!html) {
-        html = '<div class="text-light" style="text-align:center;padding:16px;">No properties. Click "+ Add Property" to configure.</div>';
+        html = '<div class="text-secondary" style="text-align:center;padding:16px;">No properties. Click "+ Add Property" to configure.</div>';
     }
 
     container.innerHTML = html;
@@ -277,13 +277,13 @@ function filterPropertyList(query) {
             html += `data-pkey="${escAttr(e.key)}" data-pdefault="${escAttr(e.default)}" `;
             html += `onclick="${already ? '' : 'addCatalogPropertyFromEl(this)'}">`;
             html += `<code style="font-size:12px;white-space:nowrap;">${escHtml(e.key)}</code>`;
-            html += `<span class="text-light text-sm" style="flex:1;">${escHtml(e.description).substring(0, 80)}</span>`;
-            if (e.default) html += `<code class="text-light" style="font-size:11px;white-space:nowrap;">${escHtml(e.default)}</code>`;
+            html += `<span class="text-secondary text-sm" style="flex:1;">${escHtml(e.description).substring(0, 80)}</span>`;
+            if (e.default) html += `<code class="text-secondary" style="font-size:11px;white-space:nowrap;">${escHtml(e.default)}</code>`;
             html += `</div>`;
         });
     }
-    if (!html) html = '<div class="text-light" style="text-align:center;padding:16px;">No matching properties.</div>';
-    if (filtered.length > 50) html += `<div class="text-light text-sm" style="text-align:center;padding:8px;">Showing 50 of ${filtered.length} — type to narrow results</div>`;
+    if (!html) html = '<div class="text-secondary" style="text-align:center;padding:16px;">No matching properties.</div>';
+    if (filtered.length > 50) html += `<div class="text-secondary text-sm" style="text-align:center;padding:8px;">Showing 50 of ${filtered.length} — type to narrow results</div>`;
     container.innerHTML = html;
 }
 
