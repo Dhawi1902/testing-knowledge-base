@@ -6,9 +6,12 @@ the service-layer pattern used by jmeter.py, jtl_parser.py, etc.
 """
 
 import json
+import logging
 import os
 import tempfile
 from pathlib import Path
+
+logger = logging.getLogger("jmeter_dashboard")
 
 APP_DIR = Path(__file__).resolve().parent.parent
 SETTINGS_FILE = APP_DIR / "settings.json"
@@ -95,7 +98,7 @@ def load_settings() -> dict:
                     merged[key] = val
             return merged
         except Exception:
-            pass
+            logger.warning("Failed to load settings.json, using defaults", exc_info=True)
     return {**DEFAULT_SETTINGS}
 
 

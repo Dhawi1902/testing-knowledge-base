@@ -5,8 +5,11 @@ Keeps last MAX_ENTRIES checks per slave. Each entry has:
 """
 
 import json
+import logging
 import time
 from pathlib import Path
+
+logger = logging.getLogger("jmeter_dashboard")
 
 MAX_ENTRIES = 50
 _HISTORY_FILENAME = "health_history.json"
@@ -27,7 +30,7 @@ def load_health_history(config_dir: Path) -> dict[str, list[dict]]:
         if isinstance(data, dict):
             return data
     except Exception:
-        pass
+        logger.warning("Failed to load health history", exc_info=True)
     return {}
 
 

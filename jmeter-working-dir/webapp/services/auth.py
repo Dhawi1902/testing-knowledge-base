@@ -2,8 +2,11 @@
 import hashlib
 import hmac
 import json
+import logging
 import os
 from pathlib import Path
+
+logger = logging.getLogger("jmeter_dashboard")
 
 from fastapi import Request
 from fastapi.responses import JSONResponse
@@ -54,7 +57,7 @@ def migrate_token_if_needed():
                 json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
             )
     except Exception:
-        pass
+        logger.warning("Failed to migrate auth token", exc_info=True)
 
 
 # --- Auth helpers ---
@@ -72,7 +75,7 @@ def get_auth_config() -> dict:
             data = json.loads(_SETTINGS_FILE.read_text(encoding="utf-8"))
             return {**_AUTH_DEFAULTS, **data.get("auth", {})}
         except Exception:
-            pass
+            logger.warning("Failed to load auth config", exc_info=True)
     return {**_AUTH_DEFAULTS}
 
 
