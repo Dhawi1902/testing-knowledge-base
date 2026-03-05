@@ -6,8 +6,6 @@ from pathlib import Path
 
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse
-from fastapi.templating import Jinja2Templates
-
 from services.auth import check_access as _check_access
 from services import report_properties
 from services.settings import (
@@ -18,9 +16,7 @@ from services.settings import (
     APP_DIR,
 )
 
-TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
-
-templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+from services.templates import templates
 
 router = APIRouter()
 

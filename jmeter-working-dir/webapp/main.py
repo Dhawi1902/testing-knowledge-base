@@ -12,8 +12,6 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
-
 from services.config_parser import load_project_config, auto_detect_project
 from services.auth import (
     is_localhost as _is_localhost,
@@ -25,7 +23,6 @@ from services.auth import (
 )
 
 APP_DIR = Path(__file__).resolve().parent
-TEMPLATES_DIR = APP_DIR / "templates"
 STATIC_DIR = APP_DIR / "static"
 PROJECT_JSON = APP_DIR / "project.json"
 
@@ -96,8 +93,8 @@ app = FastAPI(
 # Mount static files
 app.mount(f"{BASE_PATH}/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
-# Jinja2 templates
-templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+# Shared Jinja2 templates instance (used by all routers)
+from services.templates import templates  # noqa: E402
 
 # Make base_path available in all templates as {{ bp }}
 templates.env.globals["bp"] = BASE_PATH
@@ -303,13 +300,8 @@ def _patch_template_response(tmpl):
     tmpl.TemplateResponse = _wrapped
 
 
-# Set bp (base path) global and auth context on all template instances
+# Patch the single shared templates instance with auth context injection
 _patch_template_response(templates)
-for _mod in [dashboard, config, test_data, test_plans, results, settings, extensions]:
-    if hasattr(_mod, 'templates'):
-        _mod.templates.env.globals["bp"] = BASE_PATH
-        _mod.templates.env.globals["asset_v"] = _asset_version
-        _patch_template_response(_mod.templates)
 
 app.include_router(dashboard.router, prefix=BASE_PATH)
 app.include_router(config.router, prefix=BASE_PATH)

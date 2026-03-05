@@ -3,7 +3,6 @@ from pathlib import Path
 
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, FileResponse
-from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 from services.auth import check_access as _check_access
@@ -34,9 +33,9 @@ from services.config_parser import (
     detect_jmeter_path,
 )
 
-TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
 PROJECT_JSON = Path(__file__).resolve().parent.parent / "project.json"
-templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+
+from services.templates import templates
 
 router = APIRouter()
 

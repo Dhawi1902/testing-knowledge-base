@@ -3,17 +3,15 @@ from pathlib import Path
 
 from fastapi import APIRouter, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse
-from fastapi.templating import Jinja2Templates
-
 from services.config_parser import resolve_path, get_project_root, get_active_slaves, read_json_config
 from services.auth import check_access as _check_access, safe_join
 from services.data import list_csv_files, preview_csv, preview_split, build_csv
 from services.slaves import distribute_files, build_ssh_configs
 
 APP_DIR = Path(__file__).resolve().parent.parent
-TEMPLATES_DIR = APP_DIR / "templates"
 CSV_TEMPLATES_FILE = APP_DIR / "csv_templates.json"
-templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+
+from services.templates import templates
 
 router = APIRouter()
 

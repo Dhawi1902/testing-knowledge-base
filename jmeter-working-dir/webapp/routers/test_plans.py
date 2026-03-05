@@ -5,8 +5,6 @@ from pathlib import Path
 
 from fastapi import APIRouter, Request, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse, JSONResponse
-from fastapi.templating import Jinja2Templates
-
 from services.jmeter import (
     list_jmx_files,
     extract_jmx_params,
@@ -18,10 +16,10 @@ from services.auth import check_access as _check_access, safe_join
 from services.config_parser import get_project_root, resolve_path, read_config_properties
 from services.process_manager import jmeter_process_manager
 
-TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
 PRESETS_FILE = Path(__file__).resolve().parent.parent / "presets.json"
 FILTER_PRESETS_FILE = Path(__file__).resolve().parent.parent / "filter_presets.json"
-templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+
+from services.templates import templates
 
 router = APIRouter()
 

@@ -11,8 +11,6 @@ from pathlib import Path
 
 from fastapi import APIRouter, Request
 from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
-from fastapi.templating import Jinja2Templates
-
 from services.auth import check_access as _check_access, safe_join
 from services.config_parser import resolve_path, read_json_config
 from services.report import regenerate_report as _regen_report
@@ -27,8 +25,7 @@ from services.analysis import (
 )
 from services.settings import load_settings
 
-TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
-templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+from services.templates import templates
 
 router = APIRouter()
 

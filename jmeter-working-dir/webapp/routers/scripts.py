@@ -1,14 +1,9 @@
-from pathlib import Path
-
 from fastapi import APIRouter, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
-from fastapi.templating import Jinja2Templates
 
 from services.config_parser import get_project_root
 from services.process_manager import script_process_manager
-
-TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "templates"
-templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+from services.templates import templates
 
 router = APIRouter()
 
