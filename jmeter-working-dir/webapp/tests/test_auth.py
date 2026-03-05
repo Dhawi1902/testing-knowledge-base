@@ -187,3 +187,36 @@ class TestCheckAccess:
         result = check_access(self._make_request("viewer"))
         assert result is not None
         assert result.status_code == 403
+
+
+# ---- error handling ----
+
+class TestErrorHandling:
+    def test_500_does_not_leak_exception_details(self, bp, monkeypatch):
+        """500 responses should return a generic message, not str(exc)."""
+        import services.auth as auth_mod
+        import main as main_mod
+        import routers.dashboard as dash_mod
+        from starlette.testclient import TestClient
+        from main import app
+
+        monkeypatch.setattr(auth_mod, "is_localhost", lambda _req: True)
+        monkeypatch.setattr(main_mod, "_is_localhost", lambda _req: True)
+
+        secret_msg = "SECRET: C:\\Users\\internal\\path\\lib.py line 42"
+
+        def _boom(*args, **kwargs):
+            raise RuntimeError(secret_msg)
+
+        monkeypatch.setattr(dash_mod, "list_jmx_files", _boom)
+
+        with TestClient(app, raise_server_exceptions=False) as client:
+            r = client.get(f"{bp}/api/dashboard/stats")
+        assert r.status_code == 500
+        body = r.json()
+        # The response must NOT contain the raw exception string
+        assert secret_msg not in body.get("error", "")
+        assert "\\Users\\" not in body.get("error", "")
+        assert "RuntimeError" not in body.get("error", "")
+        # It should contain a generic message instead
+        assert "error" in body

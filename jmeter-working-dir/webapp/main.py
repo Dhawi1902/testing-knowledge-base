@@ -111,7 +111,7 @@ templates.env.globals["asset_v"] = _asset_version
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error("Unhandled error on %s %s: %s", request.method, request.url.path, exc, exc_info=True)
     if request.url.path.startswith(f"{BASE_PATH}/api/"):
-        return JSONResponse(status_code=500, content={"error": str(exc)})
+        return JSONResponse(status_code=500, content={"error": "An internal error occurred"})
     return templates.TemplateResponse("base.html", {
         "request": request,
         "project_name": "Error",
