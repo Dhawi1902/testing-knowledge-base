@@ -694,6 +694,52 @@ class TestJmeterPropertiesCatalogEndpoint:
         assert "category" in entry
 
 
+class TestSlaveIPValidation:
+    """All slave endpoints must reject invalid IP addresses (#14)."""
+
+    INVALID_IPS = ["not-an-ip", "999.999.999.999", "abc", "10.0.0"]
+    INJECTION_IPS = [";rm%20-rf", "$(whoami)", "10.0.0.1;ls"]
+
+    # Every {ip}-parameterized endpoint and its HTTP method
+    ENDPOINTS = [
+        ("post", "/api/slaves/{ip}/start"),
+        ("post", "/api/slaves/{ip}/stop"),
+        ("post", "/api/slaves/{ip}/restart"),
+        ("post", "/api/slaves/{ip}/test-ssh"),
+        ("post", "/api/slaves/{ip}/test-rmi"),
+        ("post", "/api/slaves/{ip}/provision"),
+        ("post", "/api/slaves/{ip}/provision-status"),
+        ("get",  "/api/slaves/{ip}/log"),
+        ("post", "/api/slaves/{ip}/clean-data"),
+        ("post", "/api/slaves/{ip}/clean-log"),
+        ("get",  "/api/slaves/{ip}/resources"),
+    ]
+
+    def test_invalid_ip_rejected(self, admin_client, bp):
+        """Non-IP strings are rejected with 400."""
+        r = admin_client.post(f"{bp}/api/slaves/not-an-ip/start")
+        assert r.status_code == 400
+        assert "Invalid IP" in r.json()["error"]
+
+    def test_injection_ip_rejected(self, admin_client, bp):
+        """Shell injection attempts are rejected."""
+        r = admin_client.post(f"{bp}/api/slaves/;rm%20-rf/start")
+        assert r.status_code in (400, 404, 422)
+
+    def test_all_endpoints_reject_invalid_ip(self, admin_client, bp):
+        """Every {ip}-parameterized endpoint rejects an invalid IP with 400."""
+        bad_ip = "not-an-ip"
+        for method, path in self.ENDPOINTS:
+            url = f"{bp}{path.replace('{ip}', bad_ip)}"
+            r = getattr(admin_client, method)(url)
+            assert r.status_code == 400, f"{method.upper()} {path} accepted invalid IP (got {r.status_code})"
+
+    def test_valid_ip_passes_validation(self, admin_client, bp):
+        """A valid IP passes validation (may 404 if slave not configured, but not 400)."""
+        r = admin_client.post(f"{bp}/api/slaves/10.99.99.99/start")
+        assert r.status_code != 400  # should be 404 (slave not found), not 400
+
+
 class TestResourceMonitoringEndpoint:
     """API tests for resource monitoring endpoint (#30)."""
 

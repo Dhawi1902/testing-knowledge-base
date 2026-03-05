@@ -566,6 +566,9 @@ async def api_bulk_clean_data(request: Request):
 @router.post("/api/slaves/{ip}/clean-log")
 async def api_clean_log(request: Request, ip: str):
     """Truncate jmeter-slave.log on a slave (#33)."""
+    invalid = _validate_ip(ip)
+    if invalid:
+        return invalid
     denied = _check_access(request)
     if denied:
         return denied
@@ -682,6 +685,9 @@ async def api_bulk_clean_logs(request: Request):
 @router.get("/api/slaves/{ip}/resources")
 async def api_slave_resources(request: Request, ip: str):
     """Get CPU and RAM usage from a single slave (#30)."""
+    invalid = _validate_ip(ip)
+    if invalid:
+        return invalid
     denied = _check_access(request)
     if denied:
         return denied
