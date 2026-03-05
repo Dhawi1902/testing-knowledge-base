@@ -70,6 +70,30 @@ function render() {
     renderDashboard();
 }
 
+function renderSlaveDropdown(s, aIp) {
+    return `<div class="dropdown">
+                        <button class="btn btn-outline btn-xs" onclick="toggleDropdown(this)">${Fleet.ICON_MORE}</button>
+                        <div class="dropdown-menu">
+                            ${s.jmeter === 'running'
+                                ? `<button class="dropdown-item" onclick="stopSingle('${aIp}')">Stop JMeter</button>`
+                                : `<button class="dropdown-item" onclick="startSingle('${aIp}')">Start JMeter</button>`}
+                            <button class="dropdown-item" onclick="restartSingle('${aIp}')">Restart</button>
+                            <div class="dropdown-sep"></div>
+                            <button class="dropdown-item" onclick="toggleConfig('${aIp}')">SSH Overrides</button>
+                            <button class="dropdown-item" onclick="testSsh('${aIp}')">SSH Test</button>
+                            <button class="dropdown-item" onclick="testRmi('${aIp}')">RMI Test</button>
+                            <div class="dropdown-sep"></div>
+                            <button class="dropdown-item" onclick="provisionSingle('${aIp}')">Provision</button>
+                            <button class="dropdown-item" onclick="checkProvisionStatus('${aIp}')">Health Check</button>
+                            <button class="dropdown-item" onclick="viewLog('${aIp}')">View Log</button>
+                            <button class="dropdown-item" onclick="confirmCleanData('${aIp}')">Clean Data</button>
+                            <button class="dropdown-item" onclick="confirmCleanLog('${aIp}')">Clean Log</button>
+                            <div class="dropdown-sep"></div>
+                            <button class="dropdown-item" style="color:var(--color-danger)" onclick="removeSlave('${aIp}')">Remove</button>
+                        </div>
+                    </div>`;
+}
+
 function renderList() {
     const container = document.getElementById('slaveContainer');
     if (!Fleet.slaveData.length) { container.innerHTML = ''; return; }
@@ -91,50 +115,25 @@ function renderList() {
         const hasOverrides = s.overrides && (s.overrides.user || s.overrides.password || s.overrides.dest_path);
         const aIp = escAttr(s.ip);
         const ipClick = Fleet.isAdmin ? `onclick="editSlaveIp('${aIp}', this)" title="Click to edit"` : '';
-        const hasMetrics = Fleet.resourceData[s.ip] && Fleet.resourceData[s.ip].cpu_percent != null;
 
         html += `<div class="slave-entry${enabled ? '' : ' disabled'}${sel ? ' selected' : ''}" data-ip="${aIp}">
             <div class="slave-row">
                 ${Fleet.isAdmin ? `<label class="check"><input type="checkbox" class="select-cb" ${sel ? 'checked' : ''} onchange="toggleSelect('${aIp}', this.checked)"><span class="check-box"></span></label>` : ''}
                 ${statusDot(s)}
                 <span class="slave-ip" ${ipClick}>${escHtml(s.ip)}</span>
-                <span class="slave-meta">VM #${i + 1}${s.nickname ? ` <em>${escHtml(s.nickname)}</em>` : ''}${hasOverrides ? ' <span class="badge badge-sm">custom</span>' : ''}${historySparkline(s)}</span>
+                <span class="slave-meta">${s.nickname ? escHtml(s.nickname) : `VM #${i + 1}`}${hasOverrides ? ' <span class="badge badge-sm">custom</span>' : ''}</span>
+                ${statusBadge(s)}
+                ${s.error ? `<span class="text-xs text-danger slave-error">${escHtml(s.error)}</span>` : ''}
                 <div class="slave-actions">
-                    ${Fleet.isAdmin && enabled ? `<button class="btn btn-outline btn-xs" onclick="startSingle('${aIp}')" data-tooltip="Start">&#9654;</button>` : ''}
-                    ${Fleet.isAdmin && enabled ? `<button class="btn btn-danger-outline btn-xs" onclick="stopSingle('${aIp}')" data-tooltip="Stop">&#9632;</button>` : ''}
-                    ${Fleet.isAdmin ? `<button class="gear-btn${expanded ? ' active' : ''}" onclick="toggleConfig('${aIp}')" data-tooltip="SSH overrides">${gearIcon()}</button>` : ''}
-                    ${Fleet.isAdmin && enabled ? `<div class="dropdown">
-                        <button class="btn btn-outline btn-xs" onclick="toggleDropdown(this)">${Fleet.ICON_MORE}</button>
-                        <div class="dropdown-menu">
-                            <button class="dropdown-item" onclick="testSsh('${aIp}')">SSH Test</button>
-                            <button class="dropdown-item" onclick="testRmi('${aIp}')">RMI Test</button>
-                            <button class="dropdown-item" onclick="provisionSingle('${aIp}')">Provision</button>
-                            <button class="dropdown-item" onclick="restartSingle('${aIp}')">Restart</button>
-                            <button class="dropdown-item" onclick="viewLog('${aIp}')">View Log</button>
-                            <button class="dropdown-item" onclick="confirmCleanData('${aIp}')">Clean Data</button>
-                            <button class="dropdown-item" onclick="confirmCleanLog('${aIp}')">Clean Log</button>
-                            <div class="dropdown-sep"></div>
-                            <button class="dropdown-item" style="color:var(--color-danger)" onclick="removeSlave('${aIp}')">Remove</button>
-                        </div>
-                    </div>` : ''}
+                    ${Fleet.isAdmin && enabled ? (s.jmeter === 'running'
+                        ? `<button class="btn btn-danger-outline btn-xs" onclick="stopSingle('${aIp}')" data-tooltip="Stop JMeter">&#9632;</button>`
+                        : `<button class="btn btn-outline btn-xs" onclick="startSingle('${aIp}')" data-tooltip="Start JMeter">&#9654;</button>`) : ''}
+                    ${Fleet.isAdmin && enabled ? renderSlaveDropdown(s, aIp) : ''}
                     ${Fleet.isAdmin ? `<label class="toggle" title="${enabled ? 'Disable' : 'Enable'}">
                         <input type="checkbox" ${enabled ? 'checked' : ''} onchange="toggleSlave('${aIp}', this.checked)">
                         <span class="toggle-track"></span>
                     </label>` : ''}
                 </div>
-            </div>
-            <div class="slave-row-details">
-                <div class="slave-status-row">
-                    ${statusBadge(s)}${provisionBadges(s)}
-                    ${hasMetrics ? `<span class="metrics-summary" onclick="toggleDrillDown('${aIp}')">
-                        CPU <strong>${Fleet.resourceData[s.ip].cpu_percent}%</strong>
-                        RAM <strong>${Fleet.resourceData[s.ip].ram_percent}%</strong>
-                        ${Fleet.resourceData[s.ip].jvm_rss_mb != null ? `JVM <strong>${Fleet.resourceData[s.ip].jvm_rss_mb}MB</strong>` : ''}
-                        <span class="drill-arrow ${Fleet.drillDownIp === s.ip ? 'open' : ''}">\u25BC</span>
-                    </span>` : ''}
-                    ${s.error ? `<span class="text-sm text-danger">${escHtml(s.error)}</span>` : ''}
-                </div>
-                ${Fleet.drillDownIp === s.ip ? renderDrillDown(s.ip) : ''}
             </div>
             ${expanded ? renderConfigPanel(s) : ''}
         </div>`;
@@ -154,53 +153,28 @@ function renderGrid() {
         const hasOverrides = s.overrides && (s.overrides.user || s.overrides.password || s.overrides.dest_path);
         const aIp = escAttr(s.ip);
         const ipClick = Fleet.isAdmin ? `onclick="editSlaveIp('${aIp}', this)" title="Click to edit"` : '';
-        const hasMetrics = Fleet.resourceData[s.ip] && Fleet.resourceData[s.ip].cpu_percent != null;
 
         html += `<div class="vm-card${enabled ? '' : ' disabled'}${sel ? ' selected' : ''}" data-ip="${aIp}">
-            <div class="flex-between gap-8">
-                <div class="flex gap-8 items-center">
-                    ${Fleet.isAdmin ? `<label class="check"><input type="checkbox" class="select-cb" ${sel ? 'checked' : ''} onchange="toggleSelect('${aIp}', this.checked)"><span class="check-box"></span></label>` : ''}
+            <div class="vm-card-row">
+                ${Fleet.isAdmin ? `<label class="check"><input type="checkbox" class="select-cb" ${sel ? 'checked' : ''} onchange="toggleSelect('${aIp}', this.checked)"><span class="check-box"></span></label>` : ''}
+                ${statusDot(s)}
+                <div class="slave-identity">
                     <span class="vm-ip" ${ipClick}>${escHtml(s.ip)}</span>
-                    ${hasOverrides ? '<span class="badge badge-sm">custom</span>' : ''}
+                    <span class="vm-card-meta">${s.nickname ? escHtml(s.nickname) : `VM #${i + 1}`}${hasOverrides ? ' <span class="badge badge-sm">custom</span>' : ''}</span>
                 </div>
-                <div class="flex gap-4 items-center flex-wrap">
-                    ${Fleet.isAdmin && enabled ? `<button class="btn btn-outline btn-xs" onclick="startSingle('${aIp}')" data-tooltip="Start">&#9654;</button>` : ''}
-                    ${Fleet.isAdmin && enabled ? `<button class="btn btn-danger-outline btn-xs" onclick="stopSingle('${aIp}')" data-tooltip="Stop">&#9632;</button>` : ''}
-                    ${Fleet.isAdmin ? `<button class="gear-btn${expanded ? ' active' : ''}" onclick="toggleConfig('${aIp}')" data-tooltip="SSH overrides">${gearIcon()}</button>` : ''}
-                    ${Fleet.isAdmin && enabled ? `<div class="dropdown">
-                        <button class="btn btn-outline btn-xs" onclick="toggleDropdown(this)">${Fleet.ICON_MORE}</button>
-                        <div class="dropdown-menu">
-                            <button class="dropdown-item" onclick="testSsh('${aIp}')">SSH Test</button>
-                            <button class="dropdown-item" onclick="testRmi('${aIp}')">RMI Test</button>
-                            <button class="dropdown-item" onclick="provisionSingle('${aIp}')">Provision</button>
-                            <button class="dropdown-item" onclick="restartSingle('${aIp}')">Restart</button>
-                            <button class="dropdown-item" onclick="viewLog('${aIp}')">View Log</button>
-                            <button class="dropdown-item" onclick="confirmCleanData('${aIp}')">Clean Data</button>
-                            <button class="dropdown-item" onclick="confirmCleanLog('${aIp}')">Clean Log</button>
-                            <div class="dropdown-sep"></div>
-                            <button class="dropdown-item" style="color:var(--color-danger)" onclick="removeSlave('${aIp}')">Remove</button>
-                        </div>
-                    </div>` : ''}
+                ${statusBadge(s)}
+                ${s.error ? `<span class="text-xs text-danger slave-error">${escHtml(s.error)}</span>` : ''}
+                <div class="flex gap-4 items-center" style="margin-left:auto;">
+                    ${Fleet.isAdmin && enabled ? (s.jmeter === 'running'
+                        ? `<button class="btn btn-danger-outline btn-xs" onclick="stopSingle('${aIp}')" data-tooltip="Stop JMeter">&#9632;</button>`
+                        : `<button class="btn btn-outline btn-xs" onclick="startSingle('${aIp}')" data-tooltip="Start JMeter">&#9654;</button>`) : ''}
+                    ${Fleet.isAdmin && enabled ? renderSlaveDropdown(s, aIp) : ''}
                     ${Fleet.isAdmin ? `<label class="toggle" title="${enabled ? 'Disable' : 'Enable'}">
                         <input type="checkbox" ${enabled ? 'checked' : ''} onchange="toggleSlave('${aIp}', this.checked)">
                         <span class="toggle-track"></span>
                     </label>` : ''}
                 </div>
             </div>
-            <div class="vm-card-meta">
-                VM #${i + 1}${s.nickname ? ` &mdash; <em>${escHtml(s.nickname)}</em>` : ''}
-                ${historySparkline(s)}
-            </div>
-            <div class="vm-card-status">
-                ${statusBadge(s)}${provisionBadges(s)}${s.error ? ' <span class="text-sm text-danger">' + escHtml(s.error) + '</span>' : ''}
-            </div>
-            ${hasMetrics ? `<div class="metrics-summary" onclick="toggleDrillDown('${aIp}')">
-                CPU <strong>${Fleet.resourceData[s.ip].cpu_percent}%</strong>
-                RAM <strong>${Fleet.resourceData[s.ip].ram_percent}%</strong>
-                ${Fleet.resourceData[s.ip].jvm_rss_mb != null ? `JVM <strong>${Fleet.resourceData[s.ip].jvm_rss_mb}MB</strong>` : ''}
-                <span class="drill-arrow ${Fleet.drillDownIp === s.ip ? 'open' : ''}">\u25BC</span>
-            </div>` : ''}
-            ${Fleet.drillDownIp === s.ip ? renderDrillDown(s.ip) : ''}
             ${expanded ? renderConfigPanel(s) : ''}
         </div>`;
     });
@@ -369,6 +343,10 @@ function renderConfigPanel(s) {
     const ssh = Fleet.currentVmConfig.ssh_config || {};
     const ip = escAttr(s.ip);
     return `<form onsubmit="return false" class="slave-config-panel">
+        <div class="config-panel-header">
+            <span class="text-sm text-secondary">SSH Overrides</span>
+            <button type="button" class="btn btn-ghost btn-xs" onclick="toggleConfig('${ip}')" data-tooltip="Close">${Fleet.ICON_X}</button>
+        </div>
         <div class="form-group">
             <label class="form-label">Nickname</label>
             <input class="form-input" value="${escAttr(s.nickname || '')}" placeholder="Optional display name"
@@ -515,7 +493,19 @@ async function testRmi(ip) {
     }
 }
 
-// ===== Provision =====
+// ===== Provision — 3-phase modal =====
+var _provisionCtx = { ips: [], selectedSteps: [], results: {} };
+
+var PROVISION_STEP_DEFS = [
+    { id: 'java',        name: 'Java 21',        desc: 'Install OpenJDK 21 runtime' },
+    { id: 'jmeter',      name: 'JMeter 5.6.3',   desc: 'Download & install Apache JMeter' },
+    { id: 'directories',  name: 'Directories',     desc: 'Create slave working directories' },
+    { id: 'scripts',     name: 'Scripts',         desc: 'Deploy start/stop shell scripts' },
+    { id: 'agent',       name: 'Metrics Agent',   desc: 'Deploy monitoring agent + systemd service' },
+    { id: 'firewall',    name: 'Firewall',        desc: 'Open RMI & agent ports' },
+    { id: 'environment', name: 'Environment',     desc: 'Set JAVA_HOME & JMETER_HOME in .bashrc' },
+];
+
 async function provisionSingle(ip) {
     openProvisionModal([ip]);
 }
@@ -529,53 +519,246 @@ async function bulkProvision() {
     openProvisionModal(ips);
 }
 
-function openProvisionModal(ips) {
-    const modal = document.getElementById('provisionModal');
-    const log = document.getElementById('provisionLog');
-    const title = document.getElementById('provisionModalTitle');
-    title.textContent = ips.length === 1 ? `Provisioning ${ips[0]}` : `Provisioning ${ips.length} slaves`;
-    log.innerHTML = '';
+function openProvisionModal(ips, preselectSteps) {
+    _provisionCtx = { ips: ips, selectedSteps: [], results: {} };
+    var modal = document.getElementById('provisionModal');
+    var title = document.getElementById('provisionModalTitle');
+    title.textContent = ips.length === 1 ? `Provision ${ips[0]}` : `Provision ${ips.length} slaves`;
+
+    // Build step checklist
+    var listEl = document.getElementById('provisionStepList');
+    listEl.innerHTML = PROVISION_STEP_DEFS.map(function(s) {
+        var checked = preselectSteps ? preselectSteps.includes(s.id) : true;
+        return '<label class="provision-step-item">' +
+            '<input type="checkbox" class="provision-step-cb" value="' + s.id + '"' + (checked ? ' checked' : '') + '>' +
+            '<div class="provision-step-info">' +
+                '<span class="provision-step-name">' + s.name + '</span>' +
+                '<span class="provision-step-desc">' + s.desc + '</span>' +
+            '</div>' +
+        '</label>';
+    }).join('');
+
+    // Update select-all state
+    var selectAll = document.getElementById('provisionSelectAll');
+    if (selectAll) selectAll.checked = !preselectSteps;
+
+    // Show phase 1, hide others
+    document.getElementById('provisionSelectPhase').style.display = '';
+    document.getElementById('provisionRunPhase').style.display = 'none';
+    document.getElementById('provisionResultPhase').style.display = 'none';
+
+    // Footer: Cancel + Run
+    var footer = document.getElementById('provisionFooter');
+    footer.innerHTML = '<button class="btn btn-outline btn-sm" onclick="closeProvisionModal()">Cancel</button>' +
+        '<button class="btn btn-primary btn-sm" id="provisionRunBtn" onclick="startProvisionRun()">Run Provision</button>';
+
     modal.style.display = 'flex';
-    runProvision(ips, log);
+}
+
+function toggleProvisionSelectAll(checked) {
+    document.querySelectorAll('.provision-step-cb').forEach(function(cb) { cb.checked = checked; });
 }
 
 function closeProvisionModal() {
     document.getElementById('provisionModal').style.display = 'none';
 }
 
-async function runProvision(ips, logEl) {
-    for (const ip of ips) {
-        appendLog(logEl, `\n=== Provisioning ${ip} ===`, 'text-light');
-        try {
-            const data = await api(`/api/slaves/${encodeURIComponent(ip)}/provision`, { method: 'POST' });
-            const r = data.result;
-            if (r.steps) {
-                r.steps.forEach(step => {
-                    const icon = step.ok ? '\u2713' : '\u2717';
-                    appendLog(logEl, `  ${icon} ${step.name}: ${step.detail || (step.ok ? 'OK' : 'FAILED')}`);
-                });
+function startProvisionRun() {
+    // Gather selected steps
+    var cbs = document.querySelectorAll('.provision-step-cb:checked');
+    var selected = [];
+    cbs.forEach(function(cb) { selected.push(cb.value); });
+    if (!selected.length) { showToast('Select at least one component', 'warning'); return; }
+    _provisionCtx.selectedSteps = selected;
+    _provisionCtx.results = {};
+
+    // Switch to phase 2: progress
+    document.getElementById('provisionSelectPhase').style.display = 'none';
+    document.getElementById('provisionRunPhase').style.display = '';
+    document.getElementById('provisionResultPhase').style.display = 'none';
+
+    // Build progress UI per slave
+    var progressEl = document.getElementById('provisionProgress');
+    progressEl.innerHTML = _provisionCtx.ips.map(function(ip) {
+        var stepRows = selected.map(function(stepId) {
+            var def = PROVISION_STEP_DEFS.find(function(d) { return d.id === stepId; });
+            return '<div class="prov-step-row" id="prov-' + CSS.escape(ip) + '-' + stepId + '">' +
+                '<span class="prov-step-icon prov-pending">&#9679;</span>' +
+                '<span class="prov-step-label">' + (def ? def.name : stepId) + '</span>' +
+                '<span class="prov-step-detail"></span>' +
+            '</div>';
+        }).join('');
+        return '<div class="prov-slave-block">' +
+            '<div class="prov-slave-header">' + escHtml(ip) + '</div>' +
+            stepRows +
+        '</div>';
+    }).join('');
+
+    // Footer: only close during run
+    var footer = document.getElementById('provisionFooter');
+    footer.innerHTML = '<span class="text-sm text-light" id="provisionRunStatus">Running...</span>' +
+        '<button class="btn btn-outline btn-sm" onclick="closeProvisionModal()" disabled id="provisionCloseBtn">Close</button>';
+
+    runProvisionSequence();
+}
+
+async function runProvisionSequence() {
+    var ips = _provisionCtx.ips;
+    var steps = _provisionCtx.selectedSteps;
+
+    // Mark all as pending spinner
+    for (var i = 0; i < ips.length; i++) {
+        for (var j = 0; j < steps.length; j++) {
+            var rowEl = document.getElementById('prov-' + CSS.escape(ips[i]) + '-' + steps[j]);
+            if (rowEl) {
+                var icon = rowEl.querySelector('.prov-step-icon');
+                if (icon) { icon.className = 'prov-step-icon prov-pending'; icon.innerHTML = '&#9679;'; }
             }
-            if (r.status) {
-                Fleet.provisionStatus[ip] = r.status;
-            }
-            appendLog(logEl, r.ok ? `  => ${ip} provisioned successfully` : `  => ${ip} provisioning had errors`, '');
-        } catch (e) {
-            appendLog(logEl, `  ERROR: Failed to provision ${ip} — ${e.message || 'network error'}`, '');
         }
     }
-    appendLog(logEl, '\nDone.', 'text-light');
-    document.getElementById('provisionModalTitle').textContent = 'Provisioning Complete';
+
+    for (var i = 0; i < ips.length; i++) {
+        var ip = ips[i];
+        // Mark current slave steps as "running" (spinner)
+        for (var j = 0; j < steps.length; j++) {
+            var rowEl = document.getElementById('prov-' + CSS.escape(ip) + '-' + steps[j]);
+            if (rowEl) {
+                var icon = rowEl.querySelector('.prov-step-icon');
+                if (icon) { icon.className = 'prov-step-icon prov-running'; icon.innerHTML = '&#8987;'; }
+            }
+        }
+
+        try {
+            var data = await api('/api/slaves/' + encodeURIComponent(ip) + '/provision', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ steps: steps })
+            });
+            var r = data.result;
+            _provisionCtx.results[ip] = r;
+            if (r.status) Fleet.provisionStatus[ip] = r.status;
+
+            // Update each step row with result
+            if (r.steps) {
+                r.steps.forEach(function(step) {
+                    var rowEl = document.getElementById('prov-' + CSS.escape(ip) + '-' + step.id);
+                    if (!rowEl) return;
+                    var icon = rowEl.querySelector('.prov-step-icon');
+                    var detail = rowEl.querySelector('.prov-step-detail');
+                    if (step.ok) {
+                        icon.className = 'prov-step-icon prov-ok';
+                        icon.innerHTML = '&#10003;';
+                    } else {
+                        icon.className = 'prov-step-icon prov-fail';
+                        icon.innerHTML = '&#10007;';
+                    }
+                    if (detail) detail.textContent = step.detail || '';
+                });
+            }
+        } catch (e) {
+            _provisionCtx.results[ip] = { ok: false, steps: [], error: e.message || 'Network error' };
+            // Mark all steps as failed for this slave
+            for (var j = 0; j < steps.length; j++) {
+                var rowEl = document.getElementById('prov-' + CSS.escape(ip) + '-' + steps[j]);
+                if (rowEl) {
+                    var icon = rowEl.querySelector('.prov-step-icon');
+                    if (icon) { icon.className = 'prov-step-icon prov-fail'; icon.innerHTML = '&#10007;'; }
+                    var detail = rowEl.querySelector('.prov-step-detail');
+                    if (detail && j === 0) detail.textContent = e.message || 'Connection failed';
+                }
+            }
+        }
+    }
+
+    // Done — switch to results phase
+    showProvisionResults();
     render();
 }
 
+function showProvisionResults() {
+    document.getElementById('provisionRunPhase').style.display = 'none';
+    document.getElementById('provisionResultPhase').style.display = '';
+
+    var resultsEl = document.getElementById('provisionResults');
+    var allOk = true;
+    var failedStepIds = new Set();
+
+    var html = '';
+    _provisionCtx.ips.forEach(function(ip) {
+        var r = _provisionCtx.results[ip];
+        if (!r) return;
+        var slaveOk = r.ok;
+        if (!slaveOk) allOk = false;
+
+        html += '<div class="prov-result-slave">';
+        html += '<div class="prov-result-header ' + (slaveOk ? 'prov-result-ok' : 'prov-result-fail') + '">';
+        html += '<span>' + (slaveOk ? '&#10003;' : '&#10007;') + ' ' + escHtml(ip) + '</span>';
+        html += '<span class="text-sm">' + (slaveOk ? 'All components OK' : 'Some components failed') + '</span>';
+        html += '</div>';
+
+        if (r.steps && r.steps.length) {
+            html += '<div class="prov-result-steps">';
+            r.steps.forEach(function(step) {
+                var cls = step.ok ? 'prov-ok' : 'prov-fail';
+                if (!step.ok) failedStepIds.add(step.id);
+                html += '<div class="prov-result-step">';
+                html += '<span class="prov-step-icon ' + cls + '">' + (step.ok ? '&#10003;' : '&#10007;') + '</span>';
+                html += '<span class="prov-step-label">' + escHtml(step.name) + '</span>';
+                html += '<span class="prov-step-detail">' + escHtml(step.detail || '') + '</span>';
+                html += '</div>';
+            });
+            html += '</div>';
+        }
+        if (r.error) {
+            html += '<div class="text-sm text-danger" style="padding:4px 12px;">' + escHtml(r.error) + '</div>';
+        }
+        html += '</div>';
+    });
+
+    resultsEl.innerHTML = html;
+
+    // Footer: re-run failed + close
+    var footer = document.getElementById('provisionFooter');
+    var failedArr = [...failedStepIds];
+    footer.innerHTML = '';
+    if (failedArr.length > 0) {
+        footer.innerHTML += '<button class="btn btn-warning btn-sm" onclick="rerunFailedSteps()">Re-run ' + failedArr.length + ' failed</button>';
+    }
+    footer.innerHTML += '<button class="btn btn-outline btn-sm" onclick="openProvisionModal(_provisionCtx.ips)">Run Again</button>';
+    footer.innerHTML += '<button class="btn btn-primary btn-sm" onclick="closeProvisionModal()">Done</button>';
+
+    // Title
+    document.getElementById('provisionModalTitle').textContent = allOk ? 'Provision Complete' : 'Provision — Issues Found';
+}
+
+function rerunFailedSteps() {
+    var failedIds = new Set();
+    _provisionCtx.ips.forEach(function(ip) {
+        var r = _provisionCtx.results[ip];
+        if (!r || !r.steps) return;
+        r.steps.forEach(function(step) {
+            if (!step.ok) failedIds.add(step.id);
+        });
+    });
+    openProvisionModal(_provisionCtx.ips, [...failedIds]);
+}
+
 async function checkProvisionStatus(ip) {
+    showToast(`Checking provision status on ${ip}...`, 'info');
     try {
         const data = await api(`/api/slaves/${encodeURIComponent(ip)}/provision-status`, { method: 'POST' });
         if (data.result && data.result.status) {
             Fleet.provisionStatus[ip] = data.result.status;
+            var st = data.result.status;
+            var parts = [];
+            for (var k in st) parts.push(k + ': ' + (st[k] ? '\u2713' : '\u2717'));
+            var allOk = Object.values(st).every(Boolean);
+            showToast(`${ip} — ${allOk ? 'All OK' : 'Issues found'}: ${parts.join(', ')}`, allOk ? 'success' : 'warning');
             render();
         }
-    } catch (e) { /* ignore */ }
+    } catch (e) {
+        showToast(`Health check failed for ${ip}`, 'error');
+    }
 }
 
 // ===== Collapse =====
@@ -890,18 +1073,50 @@ function _applyMetricsResults(results) {
                 });
             }
             const slave = Fleet.slaveData.find(s => s.ip === r.ip);
-            if (slave) slave.jmeter = r.jmeter_running ? 'running' : 'stopped';
+            if (slave) {
+                slave.jmeter = r.jmeter_running ? 'running' : 'stopped';
+            }
         }
     });
     render();
+    updateSummary();
 }
 
 
 function startMetricsPolling() {
     if (Fleet._metricsTimer) return;
+    loadMetricsHistory();
     _pollMetrics();
     Fleet._metricsTimer = setInterval(_pollMetrics, Fleet._metricsInterval);
     Fleet._countdownTimer = setInterval(renderDashboard, 1000);
+}
+
+async function loadMetricsHistory() {
+    try {
+        const data = await api('/api/slaves/metrics/history');
+        const history = data.history || {};
+        for (const ip in history) {
+            const entries = history[ip];
+            if (entries.length > 0) {
+                const last = entries[entries.length - 1];
+                Fleet.resourceData[ip] = {
+                    cpu_percent: last.cpu_percent,
+                    ram_percent: last.ram_percent,
+                    ram_used_mb: last.ram_used_mb,
+                    ram_total_mb: last.ram_total_mb,
+                    disk_percent: last.disk_percent,
+                    disk_used_gb: last.disk_used_gb,
+                    disk_total_gb: last.disk_total_gb,
+                    load_1m: last.load_1m,
+                    jvm_rss_mb: last.jvm_rss_mb,
+                    jvm_threads: last.jvm_threads,
+                    jmeter_running: last.jmeter_running,
+                };
+            }
+        }
+        FleetDashboard.backfill(history);
+        render();
+    } catch (e) { /* silent */ }
 }
 
 function stopMetricsPolling() {
@@ -914,9 +1129,7 @@ function stopMetricsPolling() {
         Fleet._countdownTimer = null;
     }
     localStorage.removeItem('fleet_monitoring');
-    FleetDashboard.hide();
-    FleetDashboard.destroyDrillDown();
-    Fleet.drillDownIp = null;
+    // Don't destroy charts or clear data — freeze in place
     renderDashboard();
 }
 
@@ -966,10 +1179,64 @@ function renderDashboard() {
     const dashboard = document.getElementById('fleetDashboard');
     if (!dashboard) return;
     const hasData = Object.keys(Fleet.resourceData).length > 0;
-    if (!Fleet._metricsTimer || !hasData) {
-        FleetDashboard.hide();
+
+    // State 1: Monitoring OFF
+    if (!Fleet._metricsTimer) {
+        // No data at all → hide dashboard entirely
+        if (!hasData) {
+            dashboard.style.display = 'none';
+            dashboard.classList.remove('dash-paused');
+            return;
+        }
+        // Has data → freeze charts in place with paused overlay
+        dashboard.style.display = '';
+        dashboard.classList.add('dash-paused');
+        const chartsEl = dashboard.querySelector('.dash-charts');
+        const headerEl = dashboard.querySelector('.dash-header');
+        if (chartsEl) chartsEl.style.display = '';
+        if (headerEl) headerEl.style.display = '';
+        const liveEl = dashboard.querySelector('.dash-live');
+        if (liveEl) liveEl.innerHTML = '<span class="text-xs text-light">Paused</span>';
+        // Keep heatmap and averages visible with last values
+        renderHeatmap();
+        renderDashAverages();
         return;
     }
+    dashboard.classList.remove('dash-paused');
+
+    // Restore live indicator for States 2 & 3
+    var liveEl2 = dashboard.querySelector('.dash-live');
+    if (liveEl2 && !document.getElementById('liveIndicator')) {
+        liveEl2.innerHTML = '<span class="live-indicator" id="liveIndicator"></span>' +
+            '<span class="text-xs text-light" id="monitorIntervalLabel"></span>' +
+            '<span class="text-xs text-light" id="nextPollLabel"></span>';
+    }
+
+    // State 2: Monitoring ON, no data yet → skeleton
+    if (!hasData) {
+        dashboard.style.display = '';
+        const chartsEl2 = dashboard.querySelector('.dash-charts');
+        const headerEl2 = dashboard.querySelector('.dash-header');
+        if (chartsEl2) chartsEl2.style.display = '';
+        if (headerEl2) headerEl2.style.display = '';
+        renderDashboardSkeleton();
+        const intervalLabel = document.getElementById('monitorIntervalLabel');
+        if (intervalLabel) {
+            const secs = Fleet._metricsInterval / 1000;
+            intervalLabel.textContent = secs >= 60 ? `every ${secs/60}m` : `every ${secs}s`;
+        }
+        const nextEl = document.getElementById('nextPollLabel');
+        if (nextEl) nextEl.textContent = 'fetching...';
+        return;
+    }
+
+    // State 3: real data — clear skeletons, show charts
+    clearDashboardSkeleton();
+    dashboard.style.display = '';
+    const chartsEl3 = dashboard.querySelector('.dash-charts');
+    const headerEl3 = dashboard.querySelector('.dash-header');
+    if (chartsEl3) chartsEl3.style.display = '';
+    if (headerEl3) headerEl3.style.display = '';
     FleetDashboard.show();
     renderHeatmap();
     renderDashAverages();
@@ -987,6 +1254,31 @@ function renderDashboard() {
     }
 }
 
+function renderDashboardSkeleton() {
+    const heatmap = document.getElementById('dashHeatmap');
+    if (heatmap && !heatmap.querySelector('.skeleton')) {
+        const count = Fleet.slaveData.filter(s => s.enabled !== false).length || 3;
+        let dots = '';
+        for (let i = 0; i < count; i++)
+            dots += '<span class="heatmap-cell skeleton"></span>';
+        heatmap.innerHTML = dots;
+    }
+    const averages = document.getElementById('dashAverages');
+    if (averages && !averages.querySelector('.skeleton')) {
+        averages.innerHTML = '<span class="skeleton skeleton-text" style="width:200px;margin:0;"></span>';
+    }
+    document.querySelectorAll('.dash-chart-wrap').forEach(wrap => {
+        wrap.querySelector('canvas').style.display = 'none';
+        if (!wrap.querySelector('.dash-chart-skeleton'))
+            wrap.insertAdjacentHTML('beforeend', '<div class="skeleton dash-chart-skeleton"></div>');
+    });
+}
+
+function clearDashboardSkeleton() {
+    document.querySelectorAll('.dash-chart-skeleton').forEach(el => el.remove());
+    document.querySelectorAll('.dash-chart-wrap canvas').forEach(c => c.style.display = '');
+}
+
 function renderHeatmap() {
     const el = document.getElementById('dashHeatmap');
     if (!el) return;
@@ -994,7 +1286,8 @@ function renderHeatmap() {
     Fleet.slaveData.forEach(s => {
         if (s.enabled === false) return;
         const r = Fleet.resourceData[s.ip];
-        const cpu = r ? r.cpu_percent : null;
+        if (!r) return;
+        const cpu = r.cpu_percent;
         let color;
         if (cpu == null) color = 'var(--color-border)';
         else if (cpu > 80) color = '#ef4444';
@@ -1011,12 +1304,12 @@ function renderDashAverages() {
     const el = document.getElementById('dashAverages');
     if (!el) return;
     let cpuSum = 0, ramSum = 0, diskSum = 0, loadSum = 0;
-    let count = 0, jmeterUp = 0, totalEnabled = 0;
+    let count = 0, jmeterUp = 0, monitored = 0;
     Fleet.slaveData.forEach(s => {
         if (s.enabled === false) return;
-        totalEnabled++;
         const r = Fleet.resourceData[s.ip];
         if (!r) return;
+        monitored++;
         if (r.cpu_percent != null) { cpuSum += r.cpu_percent; count++; }
         if (r.ram_percent != null) { ramSum += r.ram_percent; }
         if (r.disk_percent != null) { diskSum += r.disk_percent; }
@@ -1028,11 +1321,8 @@ function renderDashAverages() {
     const avgRam = Math.round(ramSum / count);
     const avgDisk = Math.round(diskSum / count);
     const avgLoad = (loadSum / count).toFixed(2);
-    el.innerHTML = `<span>CPU: <strong>${avgCpu}%</strong></span>` +
-        `<span>RAM: <strong>${avgRam}%</strong></span>` +
-        `<span>Disk: <strong>${avgDisk}%</strong></span>` +
-        `<span>Load: <strong>${avgLoad}</strong></span>` +
-        `<span>JMeter: <strong>${jmeterUp}/${totalEnabled}</strong> up</span>`;
+    const mc = (label, val) => `<div class="mini-card"><span class="mini-card-label">${label}</span><span class="mini-card-val">${val}</span></div>`;
+    el.innerHTML = mc('CPU', avgCpu + '%') + mc('RAM', avgRam + '%') + mc('Disk', avgDisk + '%') + mc('Load', avgLoad) + mc('JMeter', jmeterUp + '/' + monitored);
 }
 
 function scrollToSlave(ip) {
@@ -1042,44 +1332,6 @@ function scrollToSlave(ip) {
         el.classList.add('flash-highlight');
         setTimeout(() => el.classList.remove('flash-highlight'), 1500);
     }
-}
-
-// ===== Drill-Down =====
-function toggleDrillDown(ip) {
-    if (Fleet.drillDownIp === ip) {
-        Fleet.drillDownIp = null;
-        FleetDashboard.destroyDrillDown();
-    } else {
-        Fleet.drillDownIp = ip;
-    }
-    render();
-    if (Fleet.drillDownIp) {
-        setTimeout(() => FleetDashboard.initDrillDown(ip), 50);
-    }
-}
-
-function renderDrillDown(ip) {
-    const r = Fleet.resourceData[ip];
-    if (!r) return '';
-    const aIp = escAttr(ip);
-    const diskInfo = r.disk_percent != null
-        ? `<div class="drill-stat">Disk: ${r.disk_used_gb}/${r.disk_total_gb} GB ${progressBar(r.disk_percent, {warn:80,danger:90})}</div>` : '';
-    const loadInfo = r.load_1m != null ? `<div class="drill-stat">Load: <strong>${r.load_1m}</strong></div>` : '';
-    const jvmInfo = r.jvm_rss_mb != null
-        ? `<div class="drill-stat">JVM: <strong>${r.jvm_rss_mb} MB</strong> RSS${r.jvm_threads != null ? ` | ${r.jvm_threads} threads` : ''}</div>` : '';
-    const netPrev = Fleet._prevNetBytes?.[ip];
-    let netInfo = '';
-    if (netPrev && netPrev.kbps != null) {
-        const val = netPrev.kbps > 1024 ? (netPrev.kbps / 1024).toFixed(1) + ' MB/s' : Math.round(netPrev.kbps) + ' KB/s';
-        netInfo = `<div class="drill-stat">Net: <strong>${val}</strong></div>`;
-    }
-    return `<div class="drill-down-panel">
-        <div class="drill-charts">
-            <div class="drill-chart-wrap"><canvas id="drillCpuChart_${aIp}"></canvas></div>
-            <div class="drill-chart-wrap"><canvas id="drillRamChart_${aIp}"></canvas></div>
-        </div>
-        <div class="drill-stats">${diskInfo}${loadInfo}${jvmInfo}${netInfo}</div>
-    </div>`;
 }
 
 // ===== Keyboard shortcuts =====
