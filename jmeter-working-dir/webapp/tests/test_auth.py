@@ -220,3 +220,97 @@ class TestErrorHandling:
         assert "RuntimeError" not in body.get("error", "")
         # It should contain a generic message instead
         assert "error" in body
+
+
+# ---- Open redirect prevention ----
+
+class TestOpenRedirect:
+    def test_next_rejects_external_url(self, admin_client, bp, tmp_project_dir, monkeypatch):
+        import services.auth as auth_mod
+        import main as main_mod
+        import json
+
+        plain_token = "redirect-test-token"
+        sp = tmp_project_dir["settings_path"]
+        settings = json.loads(sp.read_text())
+        settings["auth"]["token"] = auth_mod.hash_token(plain_token)
+        sp.write_text(json.dumps(settings, indent=2))
+        monkeypatch.setattr(auth_mod, "is_localhost", lambda _req: False)
+        monkeypatch.setattr(main_mod, "_is_localhost", lambda _req: False)
+
+        from starlette.testclient import TestClient
+        from main import app
+        with TestClient(app) as c:
+            r = c.post(f"{bp}/api/auth/verify?next=https://evil.com", json={"token": plain_token})
+            body = r.json()
+            if body.get("ok"):
+                redirect = body.get("redirect", "")
+                assert not redirect.startswith("http")
+                assert "evil.com" not in redirect
+
+        settings["auth"]["token"] = ""
+        sp.write_text(json.dumps(settings, indent=2))
+
+    def test_next_rejects_protocol_relative(self, admin_client, bp, tmp_project_dir, monkeypatch):
+        import services.auth as auth_mod
+        import main as main_mod
+        import json
+
+        plain_token = "redirect-test-token2"
+        sp = tmp_project_dir["settings_path"]
+        settings = json.loads(sp.read_text())
+        settings["auth"]["token"] = auth_mod.hash_token(plain_token)
+        sp.write_text(json.dumps(settings, indent=2))
+        monkeypatch.setattr(auth_mod, "is_localhost", lambda _req: False)
+        monkeypatch.setattr(main_mod, "_is_localhost", lambda _req: False)
+
+        from starlette.testclient import TestClient
+        from main import app
+        with TestClient(app) as c:
+            r = c.post(f"{bp}/api/auth/verify?next=//evil.com/steal", json={"token": plain_token})
+            body = r.json()
+            if body.get("ok"):
+                redirect = body.get("redirect", "")
+                assert not redirect.startswith("//")
+
+        settings["auth"]["token"] = ""
+        sp.write_text(json.dumps(settings, indent=2))
+
+
+# ---- Security headers ----
+
+class TestSecurityHeaders:
+    def test_responses_include_security_headers(self, admin_client, bp):
+        r = admin_client.get(f"{bp}/")
+        assert r.headers.get("X-Frame-Options") == "DENY"
+        assert r.headers.get("X-Content-Type-Options") == "nosniff"
+        assert "same-origin" in r.headers.get("Referrer-Policy", "")
+
+
+# ---- Cookie security ----
+
+class TestCookieSecurity:
+    def test_auth_cookie_has_samesite_strict(self, tmp_project_dir, monkeypatch):
+        import services.auth as auth_mod
+        import main as main_mod
+        import json
+
+        plain_token = "cookie-test-token"
+        sp = tmp_project_dir["settings_path"]
+        settings = json.loads(sp.read_text())
+        settings["auth"]["token"] = auth_mod.hash_token(plain_token)
+        sp.write_text(json.dumps(settings, indent=2))
+        monkeypatch.setattr(auth_mod, "is_localhost", lambda _req: False)
+        monkeypatch.setattr(main_mod, "_is_localhost", lambda _req: False)
+
+        from starlette.testclient import TestClient
+        from main import app
+        bp = main_mod.BASE_PATH
+        with TestClient(app) as c:
+            r = c.post(f"{bp}/api/auth/verify", json={"token": plain_token})
+            assert r.status_code == 200
+            cookie_header = r.headers.get("set-cookie", "")
+            assert "samesite=strict" in cookie_header.lower()
+
+        settings["auth"]["token"] = ""
+        sp.write_text(json.dumps(settings, indent=2))

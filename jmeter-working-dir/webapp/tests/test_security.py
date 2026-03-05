@@ -301,6 +301,11 @@ class TestViewerDenied:
         r = viewer_client.delete(f"{bp}/api/slaves/health-history")
         assert r.status_code == 403
 
+    # -- Server restart --
+    def test_viewer_cannot_restart_server(self, viewer_client, bp):
+        r = viewer_client.post(f"{bp}/api/server/restart")
+        assert r.status_code in (403, 307)
+
 
 # ====================================================================
 # Viewer CAN read — read-only endpoints should be accessible

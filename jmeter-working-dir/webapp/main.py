@@ -147,6 +147,22 @@ async def request_logging_middleware(request: Request, call_next):
 
 
 @app.middleware("http")
+async def security_headers(request: Request, call_next):
+    """Add security headers to all non-static responses."""
+    response = await call_next(request)
+    if not request.url.path.startswith(f"{BASE_PATH}/static"):
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Referrer-Policy"] = "same-origin"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; script-src 'self' 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+            "connect-src 'self' ws: wss:"
+        )
+    return response
+
+
+@app.middleware("http")
 async def auth_middleware(request: Request, call_next):
     """Set access_level and is_localhost on every request.
     Redirect remote users to token page if auth_token is configured."""
@@ -210,8 +226,12 @@ async def verify_token_route(request: Request):
         cookie_name = auth_config.get("cookie_name", "jmeter_token")
         max_age = auth_config.get("cookie_max_age", 86400)
         next_url = request.query_params.get("next", f"{BASE_PATH}/")
+        if "://" in next_url or next_url.startswith("//"):
+            next_url = f"{BASE_PATH}/"
+        elif BASE_PATH and not next_url.startswith(BASE_PATH):
+            next_url = f"{BASE_PATH}/"
         response = JSONResponse(content={"ok": True, "redirect": next_url})
-        response.set_cookie(key=cookie_name, value=token, max_age=max_age, httponly=True)
+        response.set_cookie(key=cookie_name, value=token, max_age=max_age, httponly=True, samesite="strict")
         return response
     return JSONResponse(content={"ok": False, "error": "Invalid token"})
 
@@ -233,8 +253,12 @@ def get_project(request: Request) -> dict:
 # --- Server restart ---
 
 @app.post(f"{BASE_PATH}/api/server/restart")
-async def restart_server():
+async def restart_server(request: Request):
     """Restart the server with updated settings."""
+    from services.auth import check_access
+    denied = check_access(request)
+    if denied:
+        return denied
     from services.settings import load_settings
     settings = load_settings()
     server = settings.get("server", {})
