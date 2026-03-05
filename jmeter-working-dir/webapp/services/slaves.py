@@ -1,8 +1,17 @@
 import asyncio
+import re
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 _executor = ThreadPoolExecutor(max_workers=20)
+
+_SAFE_PATH_RE = re.compile(r'^[~/a-zA-Z0-9._/ -]+$')
+
+
+def _validate_slave_dir(slave_dir: str) -> None:
+    """Validate slave_dir has no shell metacharacters."""
+    if not slave_dir or not _SAFE_PATH_RE.match(slave_dir):
+        raise ValueError(f"Invalid slave_dir: contains unsafe characters: {slave_dir}")
 
 
 def build_ssh_configs(slaves: list[dict], vm_config: dict) -> dict[str, dict]:
@@ -156,6 +165,7 @@ def generate_start_script(ssh_config: dict) -> str:
     """Generate start-slave.sh content using current vm_config settings (#20)."""
     jmeter_home = "/opt/jmeter"
     slave_dir = ssh_config.get("slave_dir", "~/jmeter-slave")
+    _validate_slave_dir(slave_dir)
     heap = ssh_config.get("jmeter_heap", {})
     xms = heap.get("xms", "512m")
     xmx = heap.get("xmx", "1g")
@@ -227,6 +237,7 @@ def _provision_slave(ip: str, ssh_config: dict, only_steps: list[str] | None = N
     steps = []
     status = {"java": False, "jmeter": False, "scripts": False, "agent": False, "firewall": False}
     slave_dir = ssh_config.get("slave_dir", "~/jmeter-slave")
+    _validate_slave_dir(slave_dir)
 
     try:
         client = _ssh_connect(ip, ssh_config, timeout=15)
@@ -393,6 +404,7 @@ def _check_provision_status(ip: str, ssh_config: dict) -> dict:
     """Check what's installed on a slave (#18). Returns status badges."""
     status = {"java": False, "jmeter": False, "scripts": False, "agent": False, "firewall": False}
     slave_dir = ssh_config.get("slave_dir", "~/jmeter-slave")
+    _validate_slave_dir(slave_dir)
 
     try:
         client = _ssh_connect(ip, ssh_config, timeout=10)
@@ -630,6 +642,8 @@ async def distribute_files(
 def _fetch_slave_log(ip: str, ssh_config: dict, tail: int = 200) -> dict:
     """Fetch the last N lines of jmeter-server.log via SSH (#22)."""
     slave_dir = ssh_config.get("slave_dir", "~/jmeter-slave")
+    _validate_slave_dir(slave_dir)
+    tail = max(1, min(int(tail), 10000))
     log_path = f"{slave_dir}/jmeter-server.log"
     try:
         client = _ssh_connect(ip, ssh_config, timeout=10)
@@ -654,6 +668,7 @@ async def fetch_slave_log(ip: str, ssh_config: dict, tail: int = 200) -> dict:
 def _clean_slave_data(ip: str, ssh_config: dict) -> dict:
     """Delete CSV files in slave's test_data/ directory via SSH (#32)."""
     slave_dir = ssh_config.get("slave_dir", "~/jmeter-slave")
+    _validate_slave_dir(slave_dir)
     data_path = f"{slave_dir}/test_data"
     try:
         client = _ssh_connect(ip, ssh_config, timeout=10)
@@ -682,6 +697,7 @@ async def clean_slave_data(ip: str, ssh_config: dict) -> dict:
 def _clean_slave_log(ip: str, ssh_config: dict) -> dict:
     """Truncate jmeter-slave.log on a slave via SSH (#33)."""
     slave_dir = ssh_config.get("slave_dir", "~/jmeter-slave")
+    _validate_slave_dir(slave_dir)
     log_path = f"{slave_dir}/jmeter-slave.log"
     try:
         client = _ssh_connect(ip, ssh_config, timeout=10)
