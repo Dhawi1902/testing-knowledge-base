@@ -521,7 +521,6 @@ async function bulkProvision() {
 
 function openProvisionModal(ips, preselectSteps) {
     _provisionCtx = { ips: ips, selectedSteps: [], results: {} };
-    var modal = document.getElementById('provisionModal');
     var title = document.getElementById('provisionModalTitle');
     title.textContent = ips.length === 1 ? `Provision ${ips[0]}` : `Provision ${ips.length} slaves`;
 
@@ -965,7 +964,6 @@ async function collectLogs() {
 
 // ===== Saved Logs =====
 async function openSavedLogs() {
-    const modal = document.getElementById('savedLogsModal');
     const content = document.getElementById('savedLogsContent');
     const pathEl = document.getElementById('savedLogsPath');
     content.innerHTML = 'Loading...';
@@ -1006,7 +1004,6 @@ function closeSavedLogsModal() {
 
 async function viewSavedLog(filename) {
     closeSavedLogsModal();
-    const modal = document.getElementById('logModal');
     const content = document.getElementById('logContent');
     const title = document.getElementById('logModalTitle');
     const pathEl = document.getElementById('logPath');
