@@ -377,7 +377,7 @@ loadDashboard();
     const badge = document.getElementById('runnerBadge');
     function watchRunner() {
         const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const ws = new WebSocket(`${proto}//${location.host}/ws/runner/logs`);
+        const ws = new WebSocket(`${proto}//${location.host}${BASE_PATH}/ws/runner/logs`);
         ws.onopen = function() {
             badge.textContent = 'Running';
             badge.className = 'badge badge-success';
