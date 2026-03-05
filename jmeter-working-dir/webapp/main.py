@@ -267,7 +267,7 @@ async def restart_server(request: Request):
 
     # Spawn new server process, then exit current one
     subprocess.Popen(
-        [sys.executable, "-m", "uvicorn", "main:app", "--reload", "--host", host, "--port", port],
+        [sys.executable, "-m", "uvicorn", "main:app", "--host", host, "--port", port],
         cwd=str(APP_DIR),
     )
 

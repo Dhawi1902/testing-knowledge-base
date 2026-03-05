@@ -9,7 +9,7 @@ if __name__ == "__main__":
     server = settings.get("server", {})
 
     host = server.get("host", "127.0.0.1")
-    port = server.get("port", 8080)
+    port = server.get("port", 5080)
     base_path = (server.get("base_path") or "").rstrip("/")
 
     if server.get("allow_external"):
@@ -24,10 +24,13 @@ if __name__ == "__main__":
             host = args[i + 1]
 
     url = f"http://{host}:{port}{base_path}/"
-    print(f"Starting JMeter Dashboard on {url}")
+    print(f"Starting LoadLitmus on {url}")
     if base_path:
         print(f"  Base path: {base_path}")
     if host == "0.0.0.0":
         print("  External access enabled — accessible from other machines on the network")
 
-    uvicorn.run("main:app", host=host, port=port, reload=True)
+    dev_mode = "--dev" in args or "--reload" in args
+    if dev_mode:
+        print("  Development mode — auto-reload enabled")
+    uvicorn.run("main:app", host=host, port=port, reload=dev_mode)
