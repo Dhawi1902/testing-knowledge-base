@@ -22,12 +22,15 @@ This file provides guidance to Claude Code when working on the web app.
 webapp/
 ├── main.py                  # FastAPI app, auth middleware, logging, first-run redirect
 ├── __main__.py              # Entry point: python -m webapp
-├── requirements.txt         # Python dependencies (incl. pytest, pytest-cov)
+├── __version__.py           # Version: "0.5.0" — single source of truth
+├── requirements.txt         # Runtime Python dependencies (dev deps in pyproject.toml)
 ├── project.json             # Project-specific config (auto-generated on first run)
 ├── settings.json            # App settings (auto-generated on first save)
 ├── presets.json             # Saved test parameter presets
 ├── jmeter_properties.json   # User-defined JMeter properties (F2)
 ├── jtl_filter.py            # JTL filter script (sub-results, variables, regex)
+├── pyproject.toml           # Package metadata, entry point, dependency split
+├── loadlitmus.spec          # PyInstaller build spec for standalone exe
 ├── routers/
 │   ├── dashboard.py         # GET / — stats, trends, alerts, slave health, disk usage
 │   ├── config.py            # Slaves page, VM config, properties, JMeter props, slave mgmt
@@ -41,6 +44,7 @@ webapp/
 │   ├── jmeter.py            # Build JMeter commands, REPORT_OPTIMIZE_PROPS, parse JMX
 │   ├── slaves.py            # SSH operations (start/stop/status, file distribution, paramiko)
 │   ├── data.py              # CSV generation (5 column types), split, distribute
+│   ├── paths.py             # get_app_dir() — path resolution for source and frozen exe
 │   ├── config_parser.py     # Read/write config.properties, vm_config, slaves (JSON format)
 │   ├── jmx_patcher.py       # JMX XML patching (Backend Listener, etc.)
 │   ├── jtl_parser.py        # Parse JTL files with JSON caching for summary stats
@@ -53,6 +57,8 @@ webapp/
 │   └── report.properties    # Default report generation properties
 ├── prompts/
 │   └── analysis.txt         # Ollama prompt template
+├── scripts/
+│   └── build.py             # PyInstaller build automation + smoke test
 ├── static/
 │   ├── css/style.css        # Design system (tokens, utilities, components, light/dark themes)
 │   ├── js/app.js            # Core utilities (API, theme, sidebar, tabs, modals, toasts, dropdowns)
@@ -68,7 +74,7 @@ webapp/
 │   ├── settings.html        # 5 tabs: General, Project, Report, Integrations, System
 │   ├── setup.html           # First-run setup wizard
 │   └── token.html           # Token entry page for remote users
-├── tests/                   # pytest suite (303 tests, 56% code coverage)
+├── tests/                   # pytest suite (320 tests, 56% code coverage)
 │   ├── conftest.py          # Fixtures: temp dirs, admin/viewer clients, test data
 │   ├── test_auth.py         # Auth middleware, token verification, access levels
 │   ├── test_config_api.py   # VM config, slaves, project, properties, JMeter props
@@ -263,12 +269,41 @@ python -m pytest tests/ -v --tb=short \
   --cov-report=term-missing
 ```
 
+### CLI Commands
+
+```bash
+# Version
+python -m webapp --version          # Print "LoadLitmus 0.5.0"
+
+# Project init
+python -m webapp init               # Scaffold project in current directory
+python -m webapp init <path>        # Scaffold project in specific directory
+
+# Serve (default command)
+python -m webapp                    # Start dashboard (default)
+python -m webapp serve              # Explicit serve
+python -m webapp serve --port 9000  # Override port
+python -m webapp serve --dev        # Enable auto-reload
+```
+
+### Build Standalone Exe
+
+```bash
+# Install dev dependencies (includes pyinstaller)
+pip install ".[dev]"
+
+# Build exe + run smoke test
+cd webapp && python scripts/build.py
+
+# Output: dist/loadlitmus.exe (~62 MB)
+```
+
 ## CI/CD
 
 GitHub Actions workflow at `.github/workflows/webapp-tests.yml`:
 - Triggers on push/PR to `jmeter-working-dir/webapp/**`
 - Runs on Ubuntu with Python 3.13
-- Executes all 303 tests with coverage reporting (minimum 55% enforced)
+- Executes all 320 tests with coverage reporting (minimum 55% enforced)
 - Uploads HTML coverage report as artifact
 
 ## Logging
