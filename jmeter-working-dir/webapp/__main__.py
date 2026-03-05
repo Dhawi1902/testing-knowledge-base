@@ -51,7 +51,13 @@ def cmd_serve(args):
     dev_mode = args.dev
     if dev_mode:
         print("  Development mode — auto-reload enabled")
-    uvicorn.run("main:app", host=host, port=port, reload=dev_mode)
+    # In frozen mode (PyInstaller exe), uvicorn cant import "main" by string.
+    # Pass the app object directly. Reload is not supported in frozen mode.
+    if getattr(sys, "frozen", False):
+        from main import app
+        uvicorn.run(app, host=host, port=port)
+    else:
+        uvicorn.run("main:app", host=host, port=port, reload=dev_mode)
 
 
 def cmd_init(args):
