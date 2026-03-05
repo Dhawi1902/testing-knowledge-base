@@ -175,7 +175,7 @@ async def api_alerts(request: Request):
 
     # Slave health from cached status
     from routers.config import get_cached_slave_status
-    slaves, _ts = get_cached_slave_status()
+    slaves, _ts = await get_cached_slave_status()
     down = [s for s in slaves if s.get("status") == "down"]
     if down:
         ips = ", ".join(s["ip"] for s in down)
@@ -193,5 +193,5 @@ async def api_alerts(request: Request):
 async def api_slave_health(request: Request):
     """Return cached slave status from most recent check."""
     from routers.config import get_cached_slave_status
-    slaves, checked_at = get_cached_slave_status()
+    slaves, checked_at = await get_cached_slave_status()
     return {"slaves": slaves, "checked_at": checked_at}

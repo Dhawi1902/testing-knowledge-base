@@ -1,3 +1,4 @@
+import ipaddress
 from pathlib import Path
 
 from fastapi import APIRouter, Request
@@ -6,7 +7,17 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
 from services.auth import check_access as _check_access
+import asyncio as _asyncio_mod
 import json as _json
+
+
+def _validate_ip(ip: str):
+    """Return a 400 JSONResponse if ip is not a valid address, else None."""
+    try:
+        ipaddress.ip_address(ip)
+        return None
+    except ValueError:
+        return JSONResponse(status_code=400, content={"error": f"Invalid IP address: {ip}"})
 
 from services.config_parser import (
     load_project_config,
@@ -244,11 +255,13 @@ from services.health_history import load_health_history, record_status_check
 # Cache last slave status check for dashboard health dots (E2)
 _last_slave_status: list[dict] = []
 _last_slave_status_ts: float = 0  # Unix timestamp of last check
+_status_lock = _asyncio_mod.Lock()
 
 
-def get_cached_slave_status() -> tuple[list[dict], float]:
+async def get_cached_slave_status() -> tuple[list[dict], float]:
     """Return (results, timestamp) from the most recent slave status check."""
-    return list(_last_slave_status), _last_slave_status_ts
+    async with _status_lock:
+        return list(_last_slave_status), _last_slave_status_ts
 
 
 def _get_slaves(project: dict) -> tuple[list[dict], list[str], dict[str, dict]]:
@@ -282,20 +295,21 @@ async def api_slave_status(request: Request):
     merged = []
     for s in slaves:
         if s.get("enabled", True) and s["ip"] in result_map:
-            entry = result_map[s["ip"]]
-            entry["enabled"] = True
+            entry = {**result_map[s["ip"]], "enabled": True}
             merged.append(entry)
         else:
             merged.append({"ip": s["ip"], "status": "disabled", "enabled": s.get("enabled", True)})
     # Cache for dashboard health dots
     import time as _time
     global _last_slave_status, _last_slave_status_ts
-    _last_slave_status = merged
-    _last_slave_status_ts = _time.time()
+    async with _status_lock:
+        _last_slave_status = merged
+        _last_slave_status_ts = _time.time()
+        checked_at = _last_slave_status_ts
     # Record to health history (#31)
     config_dir = resolve_path(project, "config_dir")
     record_status_check(config_dir, merged)
-    return {"slaves": merged, "checked_at": _last_slave_status_ts}
+    return {"slaves": merged, "checked_at": checked_at}
 
 
 @router.post("/api/slaves/start")
@@ -327,6 +341,9 @@ async def api_stop_servers(request: Request):
 @router.post("/api/slaves/{ip}/start")
 async def api_start_single_slave(request: Request, ip: str):
     """Start JMeter server on a single slave (F8)."""
+    invalid = _validate_ip(ip)
+    if invalid:
+        return invalid
     denied = _check_access(request)
     if denied:
         return denied
@@ -341,6 +358,9 @@ async def api_start_single_slave(request: Request, ip: str):
 @router.post("/api/slaves/{ip}/stop")
 async def api_stop_single_slave(request: Request, ip: str):
     """Stop JMeter server on a single slave (F8)."""
+    invalid = _validate_ip(ip)
+    if invalid:
+        return invalid
     denied = _check_access(request)
     if denied:
         return denied
@@ -355,6 +375,9 @@ async def api_stop_single_slave(request: Request, ip: str):
 @router.post("/api/slaves/{ip}/restart")
 async def api_restart_single_slave(request: Request, ip: str):
     """Restart JMeter server on a single slave (stop + start)."""
+    invalid = _validate_ip(ip)
+    if invalid:
+        return invalid
     denied = _check_access(request)
     if denied:
         return denied
@@ -370,6 +393,9 @@ async def api_restart_single_slave(request: Request, ip: str):
 @router.post("/api/slaves/{ip}/test-ssh")
 async def api_test_ssh(request: Request, ip: str):
     """Test SSH connection to a single slave (#27)."""
+    invalid = _validate_ip(ip)
+    if invalid:
+        return invalid
     denied = _check_access(request)
     if denied:
         return denied
@@ -384,6 +410,9 @@ async def api_test_ssh(request: Request, ip: str):
 @router.post("/api/slaves/{ip}/test-rmi")
 async def api_test_rmi(request: Request, ip: str):
     """Test RMI port reachability on a slave (#28)."""
+    invalid = _validate_ip(ip)
+    if invalid:
+        return invalid
     denied = _check_access(request)
     if denied:
         return denied
@@ -393,7 +422,14 @@ async def api_test_rmi(request: Request, ip: str):
 
 @router.post("/api/slaves/{ip}/provision")
 async def api_provision_slave(request: Request, ip: str):
-    """Provision a single slave: Java, JMeter, dirs, scripts, firewall (#17)."""
+    """Provision a single slave: Java, JMeter, dirs, scripts, firewall (#17).
+
+    Accepts optional JSON body {"steps": ["java", "scripts", ...]} to run only
+    selected components. Omit body or send empty to run all steps.
+    """
+    invalid = _validate_ip(ip)
+    if invalid:
+        return invalid
     denied = _check_access(request)
     if denied:
         return denied
@@ -401,13 +437,24 @@ async def api_provision_slave(request: Request, ip: str):
     slaves, active_ips, ssh_configs = _get_slaves(project)
     if ip not in ssh_configs:
         return JSONResponse(status_code=404, content={"error": f"Slave {ip} not found"})
-    result = await provision_slave(ip, ssh_configs[ip])
+    # Parse optional step selection
+    only_steps = None
+    try:
+        body = await request.json()
+        if body and isinstance(body.get("steps"), list) and body["steps"]:
+            only_steps = body["steps"]
+    except Exception:
+        pass
+    result = await provision_slave(ip, ssh_configs[ip], only_steps=only_steps)
     return {"result": result}
 
 
 @router.post("/api/slaves/{ip}/provision-status")
 async def api_provision_status(request: Request, ip: str):
     """Check provision status on a slave: Java, JMeter, scripts, firewall (#18)."""
+    invalid = _validate_ip(ip)
+    if invalid:
+        return invalid
     denied = _check_access(request)
     if denied:
         return denied
@@ -463,6 +510,9 @@ async def api_sync_data_preview(request: Request):
 @router.get("/api/slaves/{ip}/log")
 async def api_slave_log(request: Request, ip: str, tail: int = 200):
     """Fetch jmeter-slave.log from a slave via SSH (#22)."""
+    invalid = _validate_ip(ip)
+    if invalid:
+        return invalid
     denied = _check_access(request)
     if denied:
         return denied
@@ -479,6 +529,9 @@ async def api_slave_log(request: Request, ip: str, tail: int = 200):
 @router.post("/api/slaves/{ip}/clean-data")
 async def api_clean_data(request: Request, ip: str):
     """Delete CSV files in slave's test_data/ directory (#32)."""
+    invalid = _validate_ip(ip)
+    if invalid:
+        return invalid
     denied = _check_access(request)
     if denied:
         return denied
@@ -671,7 +724,22 @@ async def api_all_slave_metrics(request: Request):
     if not active_ips:
         return {"results": []}
     results = await fetch_all_agent_metrics(active_ips, port=agent_port)
-    return {"results": list(results)}
+    result_list = list(results)
+    # Record metrics for chart history backfill
+    from services.metrics_history import record_metrics
+    config_dir = resolve_path(project, "config_dir")
+    record_metrics(config_dir, result_list)
+    return {"results": result_list}
+
+
+@router.get("/api/slaves/metrics/history")
+async def api_metrics_history(request: Request):
+    """Return recent metrics history for chart backfill."""
+    project = request.app.state.project
+    config_dir = resolve_path(project, "config_dir")
+    from services.metrics_history import load_metrics_history
+    history = load_metrics_history(config_dir)
+    return {"history": history}
 
 
 # --- Health History (#31) ---
