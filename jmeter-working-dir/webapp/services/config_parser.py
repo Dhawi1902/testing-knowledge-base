@@ -203,9 +203,21 @@ def read_slaves(path: Path) -> list[dict]:
     try:
         data = json.loads(content)
         if isinstance(data, list):
-            return [{"ip": s.get("ip", s) if isinstance(s, dict) else s,
-                      "enabled": s.get("enabled", True) if isinstance(s, dict) else True}
-                    for s in data if (s.get("ip") if isinstance(s, dict) else s)]
+            result = []
+            for s in data:
+                if isinstance(s, dict):
+                    ip = s.get("ip")
+                    if not ip:
+                        continue
+                    entry = {"ip": ip, "enabled": s.get("enabled", True)}
+                    if s.get("nickname"):
+                        entry["nickname"] = s["nickname"]
+                    if s.get("overrides"):
+                        entry["overrides"] = s["overrides"]
+                    result.append(entry)
+                elif s:
+                    result.append({"ip": s, "enabled": True})
+            return result
     except (json.JSONDecodeError, ValueError):
         pass
     # Fall back to plain text (one IP per line)

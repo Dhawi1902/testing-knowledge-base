@@ -55,8 +55,7 @@ function statusBadge(s) {
 function statusDot(s) {
     if (s.status === null) return '<span class="status-dot unknown"></span>';
     const cls = s.enabled === false ? 'unknown' : (s.status || 'down');
-    const label = s.enabled === false ? 'Disabled' : s.status === 'up' ? 'Online' : s.status === 'checking' ? 'Checking' : 'Offline';
-    return `<span class="status-dot ${cls}"></span><span class="text-xs text-secondary">${label}</span>`;
+    return `<span class="status-dot ${cls}"></span>`;
 }
 
 function historySparkline(s) {

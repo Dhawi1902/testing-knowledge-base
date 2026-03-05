@@ -35,6 +35,7 @@ Fleet.isAdmin = Fleet.ACCESS_LEVEL !== 'viewer';
 Fleet.ICON_MORE = `{{ icon('more-horizontal', 16) }}`;
 Fleet.ICON_DOWNLOAD = `{{ icon('download', 14) }}`;
 Fleet.ICON_TRASH = `{{ icon('trash-2', 14) }}`;
+Fleet.ICON_X = `{{ icon('x', 14) }}`;
 </script>
 <script src="{{ bp }}/static/js/fleet-charts.js?v={{ asset_v }}"></script>
 <script src="{{ bp }}/static/js/fleet-slaves.js?v={{ asset_v }}"></script>
@@ -58,6 +59,9 @@ if (localStorage.getItem('fleet_monitoring') === 'on') {
     startMetricsPolling();
     const mb = document.getElementById('monitorBtn');
     if (mb) { mb.classList.remove('btn-outline'); mb.classList.add('btn-primary'); }
+} else {
+    // Load history so paused/returning users see frozen charts
+    loadMetricsHistory();
 }
 </script>
 {% endblock %}

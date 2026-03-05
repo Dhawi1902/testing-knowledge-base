@@ -87,14 +87,12 @@ echo "[4/6] Creating start/stop slave scripts..."
 cat > "${PROJECT_DIR}/start-slave.sh" << 'SCRIPT'
 #!/bin/bash
 # Start JMeter in server (slave) mode
+# Usage: start-slave.sh [IP]   (IP passed by webapp, or auto-detected)
 JMETER_HOME="/opt/jmeter"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-# Use Tailscale IP if available (for cross-network master), otherwise system IP
-if command -v tailscale &> /dev/null && tailscale status &> /dev/null; then
-    HOST_IP=$(tailscale ip -4)
-else
-    HOST_IP=$(hostname -I | awk '{print $1}')
-fi
+
+# Use IP from argument if provided, otherwise detect from system
+HOST_IP="${1:-$(hostname -I | awk '{print $1}')}"
 
 # Apply heap settings
 export JVM_ARGS="-Xms512m -Xmx1g -XX:+UseG1GC -XX:MaxGCPauseMillis=100 -XX:G1ReservePercent=20"

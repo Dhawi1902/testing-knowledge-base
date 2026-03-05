@@ -69,10 +69,14 @@ class FleetChart {
 
     _startLoop() {
         var self = this;
-        var loop = function() {
+        var lastRender = 0;
+        var loop = function(now) {
+            // Auto-dirty every ~1s so time axis scrolls even without new data
+            if (!self._dirty && now - lastRender > 1000) self._dirty = true;
             if (self._dirty) {
                 self._render();
                 self._dirty = false;
+                lastRender = now;
             }
             self._raf = requestAnimationFrame(loop);
         };
@@ -161,7 +165,7 @@ class FleetChart {
         var tRange = tMax - tMin;
         if (tRange === 0) tRange = 1; // prevent division by zero
 
-        // Time axis labels (MM:SS)
+        // Time axis labels (HH:MM)
         ctx.textAlign = 'center';
         ctx.fillStyle = textColor;
         var timeSteps = 5;
@@ -170,7 +174,7 @@ class FleetChart {
             var tx = pad.left + tFrac * plotW;
             var t = tMin + tFrac * tRange;
             var d = new Date(t);
-            var lbl = d.getMinutes().toString().padStart(2, '0') + ':' + d.getSeconds().toString().padStart(2, '0');
+            var lbl = d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
             ctx.fillText(lbl, tx, h - 6);
         }
 
@@ -323,8 +327,6 @@ class FleetChart {
 
 var FleetDashboard = {
     charts: {},          // { cpu: FleetChart, ram: FleetChart, net: FleetChart, jvm: FleetChart }
-    drillCharts: {},     // { 'ip_cpu': FleetChart, 'ip_ram': FleetChart, ... }
-    expandedDrill: null, // IP of expanded drill-down, or null
     _resizeHandler: null,
 
     init: function() {
@@ -347,10 +349,12 @@ var FleetDashboard = {
             title: 'JVM RSS Memory', yMax: null, yLabel: ' MB', yFixed: 0
         });
 
-        // Ensure series exist for all slaves
-        if (typeof Fleet !== 'undefined' && Fleet.slaveData) {
+        // Ensure series exist for slaves that have agent data
+        if (typeof Fleet !== 'undefined' && Fleet.resourceData) {
             var self2 = this;
-            Fleet.slaveData.forEach(function(s) { self2._ensureSeries(s.ip); });
+            for (var ip in Fleet.resourceData) {
+                self2._ensureSeries(ip);
+            }
         }
 
         // Resize handler
@@ -358,9 +362,6 @@ var FleetDashboard = {
         this._resizeHandler = function() {
             for (var key in self.charts) {
                 self.charts[key].resize();
-            }
-            for (var dKey in self.drillCharts) {
-                self.drillCharts[dKey].resize();
             }
         };
         window.addEventListener('resize', this._resizeHandler);
@@ -406,60 +407,6 @@ var FleetDashboard = {
             }
         }
 
-        // Update drill-down if expanded for this IP
-        if (this.expandedDrill === ip) {
-            this._pushDrillMetrics(ip, data, now);
-        }
-    },
-
-    _pushDrillMetrics: function(ip, data, now) {
-        var prefix = ip + '_';
-        if (this.drillCharts[prefix + 'cpu'] && data.cpu_percent != null)
-            this.drillCharts[prefix + 'cpu'].addPoint(ip, now, data.cpu_percent);
-        if (this.drillCharts[prefix + 'ram'] && data.ram_percent != null)
-            this.drillCharts[prefix + 'ram'].addPoint(ip, now, data.ram_percent);
-    },
-
-    initDrillDown: function(ip) {
-        // Destroy previous drill-down charts
-        this.destroyDrillDown();
-        this.expandedDrill = ip;
-
-        var cpuCanvas = document.getElementById('drillCpuChart_' + CSS.escape(ip));
-        var ramCanvas = document.getElementById('drillRamChart_' + CSS.escape(ip));
-        if (!cpuCanvas || !ramCanvas) return;
-
-        var label = _slaveLabel(ip);
-        this.drillCharts[ip + '_cpu'] = new FleetChart(cpuCanvas, {
-            title: 'CPU \u2014 ' + label, yMax: 100, yLabel: '%', showLegend: false
-        });
-        this.drillCharts[ip + '_ram'] = new FleetChart(ramCanvas, {
-            title: 'RAM \u2014 ' + label, yMax: 100, yLabel: '%', showLegend: false
-        });
-        this.drillCharts[ip + '_cpu'].addSeries(ip, label);
-        this.drillCharts[ip + '_ram'].addSeries(ip, label);
-
-        // Backfill from fleet-wide chart data
-        if (this.charts.cpu && this.charts.cpu.series[ip]) {
-            var cpuPts = this.charts.cpu.series[ip].points;
-            for (var i = 0; i < cpuPts.length; i++) {
-                this.drillCharts[ip + '_cpu'].addPoint(ip, cpuPts[i].t, cpuPts[i].v);
-            }
-        }
-        if (this.charts.ram && this.charts.ram.series[ip]) {
-            var ramPts = this.charts.ram.series[ip].points;
-            for (var i = 0; i < ramPts.length; i++) {
-                this.drillCharts[ip + '_ram'].addPoint(ip, ramPts[i].t, ramPts[i].v);
-            }
-        }
-    },
-
-    destroyDrillDown: function() {
-        for (var key in this.drillCharts) {
-            this.drillCharts[key].destroy();
-        }
-        this.drillCharts = {};
-        this.expandedDrill = null;
     },
 
     show: function() {
@@ -473,12 +420,53 @@ var FleetDashboard = {
         if (el) el.style.display = 'none';
     },
 
+    backfill: function(historyData) {
+        // historyData = {ip: [{ts, cpu_percent, ram_percent, ...}, ...]}
+        if (!this.charts.cpu) this.init();
+        // Clear existing points to avoid duplicates on re-backfill
+        for (var key in this.charts) {
+            for (var sid in this.charts[key].series) {
+                this.charts[key].series[sid].points = [];
+            }
+        }
+        for (var ip in historyData) {
+            this._ensureSeries(ip);
+            var entries = historyData[ip];
+            var prevRx = null, prevTx = null, prevTs = null;
+            for (var i = 0; i < entries.length; i++) {
+                var e = entries[i];
+                var t = e.ts * 1000; // Unix seconds → JS ms
+                if (e.cpu_percent != null) this.charts.cpu.addPoint(ip, t, e.cpu_percent);
+                if (e.ram_percent != null) this.charts.ram.addPoint(ip, t, e.ram_percent);
+                if (e.jvm_rss_mb != null) this.charts.jvm.addPoint(ip, t, e.jvm_rss_mb);
+                // Network: compute delta throughput from consecutive samples
+                if (e.net_rx_bytes != null && e.net_tx_bytes != null) {
+                    if (prevRx != null && prevTs != null) {
+                        var dtSec = (e.ts - prevTs);
+                        if (dtSec > 0) {
+                            var rxKBs = Math.max(0, (e.net_rx_bytes - prevRx) / 1024 / dtSec);
+                            var txKBs = Math.max(0, (e.net_tx_bytes - prevTx) / 1024 / dtSec);
+                            this.charts.net.addPoint(ip, t, rxKBs + txKBs);
+                        }
+                    }
+                    prevRx = e.net_rx_bytes;
+                    prevTx = e.net_tx_bytes;
+                    prevTs = e.ts;
+                }
+            }
+            // Seed _prevNetBytes so live polling can compute delta from last historical sample
+            if (prevRx != null) {
+                if (!Fleet._prevNetBytes) Fleet._prevNetBytes = {};
+                Fleet._prevNetBytes[ip] = { rx: prevRx, tx: prevTx, ts: prevTs * 1000 };
+            }
+        }
+    },
+
     destroy: function() {
         for (var key in this.charts) {
             this.charts[key].destroy();
         }
         this.charts = {};
-        this.destroyDrillDown();
         if (this._resizeHandler) {
             window.removeEventListener('resize', this._resizeHandler);
             this._resizeHandler = null;
