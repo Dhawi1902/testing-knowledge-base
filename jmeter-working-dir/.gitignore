@@ -69,3 +69,8 @@ webapp/logs/
 webapp/htmlcov/
 webapp/__pycache__/
 webapp/**/__pycache__/
+
+# PyInstaller build artifacts
+webapp/dist/
+webapp/build/
+*.manifest

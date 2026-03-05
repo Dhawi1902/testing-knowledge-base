@@ -22,7 +22,9 @@ from services.auth import (
     hash_token,
 )
 
-APP_DIR = Path(__file__).resolve().parent
+from services.paths import get_app_dir
+
+APP_DIR = get_app_dir()
 STATIC_DIR = APP_DIR / "static"
 PROJECT_JSON = APP_DIR / "project.json"
 
