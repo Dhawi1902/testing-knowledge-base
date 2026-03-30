@@ -1,1 +1,0 @@
-{"100.125.26.29": [{"ts": 1772689271.3826056, "cpu_percent": 2.4, "ram_percent": 9.1, "ram_used_mb": 1045, "ram_total_mb": 11501, "disk_percent": 36.9, "disk_used_gb": 10.9, "disk_total_gb": 29.4, "load_1m": 0.02, "net_rx_bytes": 1281029748, "net_tx_bytes": 458801579, "jvm_rss_mb": 149, "jvm_threads": 25, "jmeter_running": true}]}

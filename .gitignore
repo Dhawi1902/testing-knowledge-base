@@ -17,3 +17,7 @@ Thumbs.db
 __pycache__/
 *.py[cod]
 .coverage
+
+# archives
+jmeter-working-dir/
+playground/

@@ -1,6 +1,0 @@
-pandas
-numpy
-paramiko
-scp
-python-docx
-matplotlib
