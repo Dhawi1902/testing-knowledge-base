@@ -2,16 +2,6 @@
 
 The script is debugged, the load model is defined - now it's time to run the actual load test and make sense of the results. Always run load tests in **CLI mode** (command line), never from the GUI.
 
-## Table of Contents
-- [Why CLI Mode](#why-cli-mode)
-- [CLI Command](#cli-command)
-- [Key Metrics](#key-metrics)
-- [JMeter Web Report](#jmeter-web-report)
-- [Reading the Results](#reading-the-results)
-- [Identifying Bottlenecks](#identifying-bottlenecks)
-- [Tips](#tips)
-
----
 
 ## Why CLI Mode
 

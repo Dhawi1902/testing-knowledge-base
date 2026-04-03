@@ -2,17 +2,6 @@
 
 Before starting performance testing, you need the following tools set up on your machine.
 
-## Table of Contents
-- [Required Tools](#required-tools)
-  - [Google Chrome](#google-chrome)
-  - [Apache JMeter](#apache-jmeter)
-  - [Fiddler](#fiddler)
-  - [Blazemeter Chrome Extension](#blazemeter-chrome-extension)
-- [Optional Tools](#optional-tools)
-  - [Python](#python)
-  - [InfluxDB + Grafana](#influxdb--grafana)
-
----
 
 ## Required Tools
 

@@ -2,20 +2,6 @@
 
 After recording, the script has hardcoded values everywhere - tokens, session IDs, timestamps, and other dynamic values that change every session. The script will fail on replay if these are not handled. This step makes the script dynamic.
 
-## Table of Contents
-- [Correlation](#correlation)
-  - [What is Correlation?](#what-is-correlation)
-  - [How to Find Dynamic Values Using Fiddler](#how-to-find-dynamic-values-using-fiddler)
-  - [Extractors](#extractors)
-  - [Handling Timestamps](#handling-timestamps)
-- [Parameterization](#parameterization)
-  - [CSV Data Set Config](#csv-data-set-config)
-  - [User Defined Variables](#user-defined-variables)
-  - [When to Use CSV vs User Defined Variables](#when-to-use-csv-vs-user-defined-variables)
-- [Advanced: Dynamic Forms](#advanced-dynamic-forms)
-- [Tips](#tips)
-
----
 
 ## Correlation
 

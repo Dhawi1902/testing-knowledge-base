@@ -2,19 +2,6 @@
 
 Before you start recording and building scripts, you need to understand the building blocks of JMeter. This section covers the elements you'll use most often and how they relate to each other.
 
-## Table of Contents
-- [Test Plan](#test-plan)
-- [Thread Group](#thread-group)
-- [Samplers](#samplers)
-- [Config Elements](#config-elements)
-- [Logic Controllers](#logic-controllers)
-- [Timers](#timers)
-- [Assertions](#assertions)
-- [Listeners](#listeners)
-- [Pre-Processors and Post-Processors](#pre-processors-and-post-processors)
-- [How Elements Relate - Scope and Hierarchy](#how-elements-relate---scope-and-hierarchy)
-
----
 
 ## Test Plan
 

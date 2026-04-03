@@ -2,16 +2,6 @@
 
 After correlation and parameterization, the script works but it's messy - auto-generated names, flat structure, no validation. This step turns it into a clean, maintainable, and robust test plan.
 
-## Table of Contents
-- [Group Requests into Transaction Controllers](#group-requests-into-transaction-controllers)
-- [Rename Samplers and Controllers](#rename-samplers-and-controllers)
-- [Add Flow Logic](#add-flow-logic)
-- [Add Assertions](#add-assertions)
-- [Add Timers / Think Time](#add-timers--think-time)
-- [Clean Up Unnecessary Requests](#clean-up-unnecessary-requests)
-- [Tips](#tips)
-
----
 
 ## Group Requests into Transaction Controllers
 

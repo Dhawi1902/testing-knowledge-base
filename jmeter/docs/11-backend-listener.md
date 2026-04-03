@@ -2,16 +2,6 @@
 
 The JMeter web report is generated **after** the test finishes. If you want to monitor results **in real-time** while the test is running, you need a Backend Listener that streams data to InfluxDB, which Grafana then visualizes as a live dashboard.
 
-## Table of Contents
-- [Why Use a Backend Listener](#why-use-a-backend-listener)
-- [Architecture](#architecture)
-- [Setting Up InfluxDB](#setting-up-influxdb)
-- [Setting Up Grafana](#setting-up-grafana)
-- [Configuring JMeter Backend Listener](#configuring-jmeter-backend-listener)
-- [Building a Grafana Dashboard](#building-a-grafana-dashboard)
-- [Tips](#tips)
-
----
 
 ## Why Use a Backend Listener
 

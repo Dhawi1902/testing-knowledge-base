@@ -2,15 +2,6 @@
 
 After enhancing the script with transaction controllers, assertions, extractors, and timers, you need to verify it actually works end-to-end before running any load. Debugging is about running the script with a single user and making sure every request succeeds, every extraction works, and every assertion passes.
 
-## Table of Contents
-- [Run with 1 Thread](#run-with-1-thread)
-- [View Results Tree](#view-results-tree)
-- [Debug Sampler](#debug-sampler)
-- [Common Issues and Fixes](#common-issues-and-fixes)
-- [Verify the Script is Ready](#verify-the-script-is-ready)
-- [Tips](#tips)
-
----
 
 ## Run with 1 Thread
 

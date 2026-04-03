@@ -2,17 +2,6 @@
 
 When a single machine can't generate enough load (CPU or memory maxes out before reaching the target thread count), you distribute the load across multiple machines. JMeter has built-in support for this using a controller-worker architecture.
 
-## Table of Contents
-- [When You Need Distributed Testing](#when-you-need-distributed-testing)
-- [Architecture](#architecture)
-- [Setting Up Remote Machines](#setting-up-remote-machines)
-- [Configuring JMeter for Distributed Mode](#configuring-jmeter-for-distributed-mode)
-- [Running Distributed Tests](#running-distributed-tests)
-- [Important Considerations](#important-considerations)
-- [Practical Lessons Learned](#practical-lessons-learned)
-- [Tips](#tips)
-
----
 
 ## When You Need Distributed Testing
 

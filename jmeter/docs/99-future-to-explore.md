@@ -2,13 +2,6 @@
 
 Topics not covered in this guide but worth exploring as you advance.
 
-## Table of Contents
-- [Server-Side Monitoring](#server-side-monitoring)
-- [CI/CD Integration](#cicd-integration)
-- [Advanced Reporting](#advanced-reporting)
-- [Other Topics](#other-topics)
-
----
 
 ## Server-Side Monitoring
 

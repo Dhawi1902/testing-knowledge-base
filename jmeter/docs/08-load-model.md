@@ -2,14 +2,6 @@
 
 The script works with 1 user - now you need to define how to apply load. The load model determines how many users, how fast they ramp up, how long the test runs, and what the pacing looks like. All of this comes from the requirements gathered in [Section 2](02-understand-requirements.md).
 
-## Table of Contents
-- [Key Parameters](#key-parameters)
-- [Load Profiles](#load-profiles)
-- [Calculating Load from Requirements](#calculating-load-from-requirements)
-- [Thread Group Configuration](#thread-group-configuration)
-- [Tips](#tips)
-
----
 
 ## Key Parameters
 

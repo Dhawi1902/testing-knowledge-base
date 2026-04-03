@@ -2,14 +2,6 @@
 
 You have the results - now you need to communicate them. The report should be clear enough for both technical and non-technical stakeholders to understand whether the system passed or failed.
 
-## Table of Contents
-- [Key Metrics to Highlight](#key-metrics-to-highlight)
-- [Report Structure](#report-structure)
-- [Pass/Fail Against NFRs](#passfail-against-nfrs)
-- [What to Present to Stakeholders](#what-to-present-to-stakeholders)
-- [Tips](#tips)
-
----
 
 ## Key Metrics to Highlight
 

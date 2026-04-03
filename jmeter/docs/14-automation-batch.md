@@ -2,15 +2,6 @@
 
 Manually starting jmeter-server on each worker, copying files, and running the test gets repetitive fast - especially when you have multiple machines and run tests frequently. Batch files automate these steps.
 
-## Table of Contents
-- [Why Automate](#why-automate)
-- [Automating Test Execution](#automating-test-execution)
-- [Automating Test Data Distribution](#automating-test-data-distribution)
-- [Automating Worker Setup](#automating-worker-setup)
-- [Combining Everything](#combining-everything)
-- [Tips](#tips)
-
----
 
 ## Why Automate
 

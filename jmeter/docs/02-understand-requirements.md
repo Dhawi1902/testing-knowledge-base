@@ -2,13 +2,6 @@
 
 Before opening JMeter, you need to understand **what** you are testing and **why**. Skipping this step leads to wasted effort - building scripts for the wrong flows or testing with unrealistic numbers.
 
-## Table of Contents
-- [What to Ask](#what-to-ask)
-- [Identify User Flows](#identify-user-flows)
-- [Define Pass/Fail Criteria](#define-passfail-criteria)
-- [Tips](#tips)
-
----
 
 ## What to Ask
 

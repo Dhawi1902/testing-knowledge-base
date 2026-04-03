@@ -1,0 +1,68 @@
+site_name: JMeter Performance Testing
+site_description: A practical guide on how to approach performance testing using JMeter
+site_url: ""
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - toc.follow
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  icon:
+    repo: fontawesome/brands/github
+
+nav:
+  - Home: index.md
+  - Basics:
+    - Install Tools: 01-install-tools.md
+    - Understand Requirements: 02-understand-requirements.md
+    - JMeter Elements: 03-jmeter-elements.md
+    - Recording: 04-recording.md
+    - Correlation & Parameterization: 05-correlation-parameterization.md
+    - Script Enhancement: 06-script-enhancement.md
+    - Debug: 07-debug.md
+  - Applying Load:
+    - Design Load Model: 08-load-model.md
+    - Execute & Analyze: 09-execute-analyze.md
+    - Reporting: 10-reporting.md
+  - Advanced:
+    - Backend Listener: 11-backend-listener.md
+    - Distributed Testing: 12-distributed-testing.md
+    - Test Data with Python: 13-test-data-python.md
+    - Automation with Batch Files: 14-automation-batch.md
+    - OCI Linux Slave Setup: 15-oci-linux-slave-setup.md
+  - Appendix:
+    - Future / To Explore: 99-future-to-explore.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+  - toc:
+      permalink: true
+
+plugins:
+  - search

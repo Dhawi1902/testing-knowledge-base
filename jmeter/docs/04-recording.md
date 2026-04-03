@@ -2,14 +2,6 @@
 
 This section covers how to record your test script using both Fiddler and Blazemeter simultaneously. This dual-recording approach gives you the best of both tools.
 
-## Table of Contents
-- [Why Record from Both?](#why-record-from-both)
-- [Before You Start](#before-you-start)
-- [Steps](#steps)
-- [Open the Recording in JMeter](#open-the-recording-in-jmeter)
-- [Tips](#tips)
-
----
 
 ## Why Record from Both?
 

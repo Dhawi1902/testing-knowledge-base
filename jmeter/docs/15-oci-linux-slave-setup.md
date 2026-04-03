@@ -4,25 +4,6 @@ This is a practical, step-by-step guide for setting up JMeter slave (worker) mac
 
 For the theory behind distributed testing, see [Section 12](12-distributed-testing.md). For automation scripts, see [Section 14](14-automation-batch.md).
 
-## Table of Contents
-- [Prerequisites](#prerequisites)
-- [Step 1: Create OCI Instances](#step-1-create-oci-instances)
-- [Step 2: Configure OCI Networking](#step-2-configure-oci-networking)
-- [Step 3: SSH Into the Instance](#step-3-ssh-into-the-instance)
-- [Step 4: Install Java](#step-4-install-java)
-- [Step 5: Install JMeter](#step-5-install-jmeter)
-- [Step 6: Create Project Directories](#step-6-create-project-directories)
-- [Step 7: Create Start/Stop Scripts](#step-7-create-startstop-scripts)
-- [Step 8: Configure OS Firewall](#step-8-configure-os-firewall)
-- [Step 9: Set Environment Variables](#step-9-set-environment-variables)
-- [Step 10: Verify the Setup](#step-10-verify-the-setup)
-- [Step 11: Start JMeter Slave](#step-11-start-jmeter-slave)
-- [My Setup](#my-setup)
-- [Troubleshooting](#troubleshooting)
-- [Testing Results](#testing-results)
-- [Tips](#tips)
-
----
 
 ## Prerequisites
 

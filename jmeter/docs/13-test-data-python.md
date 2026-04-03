@@ -2,15 +2,6 @@
 
 When running distributed tests with unique data per user, you need to split CSV files so each worker machine gets a different subset. Python makes this quick and repeatable.
 
-## Table of Contents
-- [Why Python for Test Data](#why-python-for-test-data)
-- [Generating Sequential IDs](#generating-sequential-ids)
-- [Splitting CSV Data Across Machines](#splitting-csv-data-across-machines)
-- [Same Filename, Different Content](#same-filename-different-content)
-- [Example Scripts](#example-scripts)
-- [Tips](#tips)
-
----
 
 ## Why Python for Test Data
 
