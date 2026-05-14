@@ -1016,6 +1016,18 @@
   .md-typeset .grid.cards > ol > li {
     padding: 1.3rem !important;
   }
+
+  /* Fix nav drawer peeking 28px into viewport when closed.
+     MkDocs Material sets [dir=ltr] .md-sidebar--primary { left: -12.1rem }
+     but the mobile drawer renders at 270px wide, leaving 28px visible.
+     Match specificity with [dir] attribute selector. */
+  [dir] .md-sidebar--primary {
+    left: -270px;
+  }
+
+  [data-md-toggle="drawer"]:checked ~ .md-container .md-sidebar--primary {
+    transform: translateX(270px);
+  }
 }
 
 /* ============================
