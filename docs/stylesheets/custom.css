@@ -983,3 +983,263 @@
 .md-progress {
   background: var(--gradient-primary) !important;
 }
+
+/* ============================
+   RESPONSIVE — TABLET (≤ 960px)
+   ============================ */
+
+@media screen and (max-width: 960px) {
+  .md-content__inner {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+
+  .hero {
+    padding: 2.5rem 1rem 1.5rem;
+  }
+
+  .hero h1 {
+    font-size: 2.2rem !important;
+  }
+
+  .hero p {
+    font-size: 1rem;
+  }
+
+  .md-typeset .grid.cards > ul,
+  .md-typeset .grid.cards > ol {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+    gap: 0.8rem !important;
+  }
+
+  .md-typeset .grid.cards > ul > li,
+  .md-typeset .grid.cards > ol > li {
+    padding: 1.3rem !important;
+  }
+}
+
+/* ============================
+   RESPONSIVE — MOBILE (≤ 768px)
+   ============================ */
+
+@media screen and (max-width: 768px) {
+  .md-content__inner {
+    max-width: 100%;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  /* Hero */
+  .hero {
+    padding: 2rem 0.75rem 1.2rem;
+  }
+
+  .hero h1 {
+    font-size: 1.8rem !important;
+    letter-spacing: -0.03em !important;
+  }
+
+  .hero p {
+    font-size: 0.92rem;
+    max-width: 100%;
+  }
+
+  /* Typography */
+  .md-typeset {
+    font-size: 0.82rem;
+  }
+
+  .md-typeset h1 {
+    font-size: 1.6em;
+  }
+
+  .md-typeset h2 {
+    font-size: 1.3em;
+    margin-top: 1.8em;
+  }
+
+  .md-typeset h3 {
+    font-size: 1.1em;
+  }
+
+  /* Cards — single column on mobile */
+  .md-typeset .grid.cards > ul,
+  .md-typeset .grid.cards > ol {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+  }
+
+  .md-typeset .grid.cards > ul > li,
+  .md-typeset .grid.cards > ol > li {
+    padding: 1.2rem !important;
+  }
+
+  /* Disable hover lift on touch */
+  .md-typeset .grid.cards > ul > li:hover,
+  .md-typeset .grid.cards > ol > li:hover {
+    transform: none;
+  }
+
+  /* Tables — horizontal scroll */
+  .md-typeset__scrollwrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .md-typeset table:not([class]) {
+    font-size: 0.78rem;
+    min-width: 500px;
+  }
+
+  /* Code blocks — smaller text, scroll */
+  .md-typeset pre {
+    border-radius: 8px;
+    font-size: 0.8rem;
+  }
+
+  .md-typeset code {
+    font-size: 0.8em;
+    word-break: break-word;
+  }
+
+  /* Admonitions */
+  .md-typeset .admonition,
+  .md-typeset details {
+    border-radius: 8px;
+    font-size: 0.8rem;
+  }
+
+  /* Images — full width */
+  .md-typeset img {
+    border-radius: 6px;
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* Blockquotes */
+  .md-typeset blockquote {
+    padding: 0.4em 0.8em;
+    margin: 0.8em 0;
+  }
+
+  /* Lists — tighter */
+  .md-typeset ol,
+  .md-typeset ul:not(.tabbed-labels):not(.grid):not(.task-list) {
+    padding-left: 1.2em !important;
+  }
+
+  /* Back to top button — keep visible and tappable */
+  .md-top {
+    padding: 0.6rem 1rem;
+    font-size: 0.78rem;
+  }
+
+  /* Search results */
+  .md-search-result__meta {
+    font-size: 0.75rem;
+  }
+
+  /* Tabs */
+  .md-typeset .tabbed-labels {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .md-typeset .tabbed-labels::-webkit-scrollbar {
+    display: none;
+  }
+
+  .md-typeset .tabbed-labels > label {
+    font-size: 0.78rem;
+    white-space: nowrap;
+  }
+
+  /* Footer nav — stack on mobile */
+  .md-footer__inner {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .md-footer__link {
+    max-width: 100%;
+  }
+}
+
+/* ============================
+   RESPONSIVE — SMALL PHONE (≤ 480px)
+   ============================ */
+
+@media screen and (max-width: 480px) {
+  .md-content__inner {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .hero {
+    padding: 1.5rem 0.5rem 1rem;
+  }
+
+  .hero h1 {
+    font-size: 1.5rem !important;
+  }
+
+  .hero p {
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+
+  .md-typeset {
+    font-size: 0.8rem;
+  }
+
+  .md-typeset h1 {
+    font-size: 1.4em;
+  }
+
+  .md-typeset h2 {
+    font-size: 1.2em;
+  }
+
+  /* Cards — compact */
+  .md-typeset .grid.cards > ul > li,
+  .md-typeset .grid.cards > ol > li {
+    padding: 1rem !important;
+  }
+
+  .card-icon {
+    font-size: 1.3rem !important;
+  }
+
+  .card-title {
+    font-size: 0.95rem !important;
+  }
+
+  .card-link {
+    font-size: 0.8rem;
+  }
+
+  /* Admonitions — tighter padding */
+  .md-typeset .admonition,
+  .md-typeset details {
+    padding: 0.5rem 0.75rem;
+  }
+
+  /* Header title — prevent overflow */
+  .md-header__title {
+    font-size: 0.85rem;
+  }
+
+  /* Ensure touch-friendly tap targets */
+  .md-nav__link {
+    padding: 0.5rem 0.6rem;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Search input — prevent iOS auto-zoom */
+  .md-search__input {
+    font-size: 16px !important;
+  }
+}
