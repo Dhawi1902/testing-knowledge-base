@@ -1,0 +1,2228 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="A practical, hands-on knowledge base for software testing tools and methodologies">
+      
+      
+      
+      
+        <link rel="prev" href="../02-understand-requirements/">
+      
+      
+        <link rel="next" href="../04-recording/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>JMeter Elements - Testing Knowledge Base</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../stylesheets/custom.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#3-jmeter-elements-overview" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="Testing Knowledge Base" class="md-header__button md-logo" aria-label="Testing Knowledge Base" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 19a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1c0-.21-.07-.41-.18-.57L13 8.35V4h-2v4.35L5.18 18.43c-.11.16-.18.36-.18.57m1 3a3 3 0 0 1-3-3c0-.6.18-1.16.5-1.63L9 7.81V6a1 1 0 0 1-1-1V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1v1.81l5.5 9.56c.32.47.5 1.03.5 1.63a3 3 0 0 1-3 3zm7-6 1.34-1.34L16.27 18H7.73l2.66-4.61zm-.5-4a.5.5 0 0 1 .5.5.5.5 0 0 1-.5.5.5.5 0 0 1-.5-.5.5.5 0 0 1 .5-.5"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Testing Knowledge Base
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              JMeter Elements
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m17.75 4.09-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94L12.44 4l1.06-3 1.06 3zm3.5 6.91-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 0 0 8.02 2.89m-1.64 2.02a12.08 12.08 0 0 1-7.8-3.47c-2.17-2.19-3.33-5-3.49-7.82-2.81 3.14-2.7 7.96.31 10.98 3.02 3.01 7.84 3.12 10.98.31"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 7a5 5 0 0 1 5 5 5 5 0 0 1-5 5 5 5 0 0 1-5-5 5 5 0 0 1 5-5m0 2a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0-7 2.39 3.42C13.65 5.15 12.84 5 12 5s-1.65.15-2.39.42zM3.34 7l4.16-.35A7.2 7.2 0 0 0 5.94 8.5c-.44.74-.69 1.5-.83 2.29zm.02 10 1.76-3.77a7.131 7.131 0 0 0 2.38 4.14zM20.65 7l-1.77 3.79a7.02 7.02 0 0 0-2.38-4.15zm-.01 10-4.14.36c.59-.51 1.12-1.14 1.54-1.86.42-.73.69-1.5.83-2.29zM12 22l-2.41-3.44c.74.27 1.55.44 2.41.44.82 0 1.63-.17 2.37-.44z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="Testing Knowledge Base" class="md-nav__button md-logo" aria-label="Testing Knowledge Base" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 19a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1c0-.21-.07-.41-.18-.57L13 8.35V4h-2v4.35L5.18 18.43c-.11.16-.18.36-.18.57m1 3a3 3 0 0 1-3-3c0-.6.18-1.16.5-1.63L9 7.81V6a1 1 0 0 1-1-1V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1a1 1 0 0 1-1 1v1.81l5.5 9.56c.32.47.5 1.03.5 1.63a3 3 0 0 1-3 3zm7-6 1.34-1.34L16.27 18H7.73l2.66-4.61zm-.5-4a.5.5 0 0 1 .5.5.5.5 0 0 1-.5.5.5.5 0 0 1-.5-.5.5.5 0 0 1 .5-.5"/></svg>
+
+    </a>
+    Testing Knowledge Base
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JMeter
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    JMeter
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Basics
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Basics
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01-install-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Install Tools
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02-understand-requirements/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Understand Requirements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JMeter Elements
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    JMeter Elements
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#test-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test Plan
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#thread-group" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Thread Group
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#samplers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Samplers
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Samplers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#http-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HTTP Request
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#config-elements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Config Elements
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Config Elements">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#http-request-defaults" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HTTP Request Defaults
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#http-header-manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HTTP Header Manager
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#http-cookie-manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HTTP Cookie Manager
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#csv-data-set-config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CSV Data Set Config
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#user-defined-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        User Defined Variables
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#logic-controllers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Logic Controllers
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Logic Controllers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#transaction-controller" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transaction Controller
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#if-controller" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        If Controller
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#loop-controller" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Loop Controller
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simple-controller" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Simple Controller
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#timers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Timers
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Timers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#constant-timer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Constant Timer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gaussian-random-timer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gaussian Random Timer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#constant-throughput-timer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Constant Throughput Timer
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#assertions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Assertions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Assertions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#response-assertion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Response Assertion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#json-assertion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        JSON Assertion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#duration-assertion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Duration Assertion
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#listeners" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Listeners
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Listeners">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#view-results-tree" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        View Results Tree
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#summary-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary Report
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aggregate-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aggregate Report
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#backend-listener" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backend Listener
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pre-processors-and-post-processors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pre-Processors and Post-Processors
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pre-Processors and Post-Processors">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pre-processors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pre-Processors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-processors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Post-Processors
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-elements-relate-scope-and-hierarchy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How Elements Relate - Scope and Hierarchy
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04-recording/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Recording
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05-correlation-parameterization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Correlation & Parameterization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06-script-enhancement/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Script Enhancement
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07-debug/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Debug
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Applying Load
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Applying Load
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../08-load-model/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Load Model
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09-execute-analyze/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Execute & Analyze
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../10-reporting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reporting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_4" id="__nav_2_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Advanced
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Advanced
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../11-backend-listener/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Backend Listener
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../12-distributed-testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Distributed Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../13-test-data-python/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Test Data (Python)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../14-automation-batch/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Automation & Batch
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../15-oci-linux-slave-setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    OCI Linux Slave Setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_5" id="__nav_2_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Appendix
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Appendix
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../99-future-to-explore/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Future Topics
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#test-plan" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test Plan
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#thread-group" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Thread Group
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#samplers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Samplers
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Samplers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#http-request" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HTTP Request
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#config-elements" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Config Elements
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Config Elements">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#http-request-defaults" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HTTP Request Defaults
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#http-header-manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HTTP Header Manager
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#http-cookie-manager" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        HTTP Cookie Manager
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#csv-data-set-config" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CSV Data Set Config
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#user-defined-variables" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        User Defined Variables
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#logic-controllers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Logic Controllers
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Logic Controllers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#transaction-controller" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transaction Controller
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#if-controller" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        If Controller
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#loop-controller" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Loop Controller
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#simple-controller" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Simple Controller
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#timers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Timers
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Timers">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#constant-timer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Constant Timer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#gaussian-random-timer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Gaussian Random Timer
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#constant-throughput-timer" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Constant Throughput Timer
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#assertions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Assertions
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Assertions">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#response-assertion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Response Assertion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#json-assertion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        JSON Assertion
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#duration-assertion" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Duration Assertion
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#listeners" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Listeners
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Listeners">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#view-results-tree" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        View Results Tree
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#summary-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Summary Report
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#aggregate-report" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Aggregate Report
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#backend-listener" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Backend Listener
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pre-processors-and-post-processors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pre-Processors and Post-Processors
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Pre-Processors and Post-Processors">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pre-processors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Pre-Processors
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#post-processors" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Post-Processors
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-elements-relate-scope-and-hierarchy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How Elements Relate - Scope and Hierarchy
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="../.." class="md-path__link">
+        
+  <span class="md-ellipsis">
+    Home
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    JMeter
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../01-install-tools/" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    Basics
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="3-jmeter-elements-overview">3. JMeter Elements Overview<a class="headerlink" href="#3-jmeter-elements-overview" title="Link to this section">&para;</a></h1>
+<p>Before you start recording and building scripts, you need to understand the building blocks of JMeter. This section covers the elements you'll use most often and how they relate to each other.</p>
+<h2 id="test-plan">Test Plan<a class="headerlink" href="#test-plan" title="Link to this section">&para;</a></h2>
+<p>The <strong>Test Plan</strong> is the root element - the container for everything. Every JMeter script starts with a Test Plan. It holds all Thread Groups, controllers, samplers, and configurations.</p>
+<!-- TODO: Screenshot - Test Plan element -->
+
+<hr />
+<h2 id="thread-group">Thread Group<a class="headerlink" href="#thread-group" title="Link to this section">&para;</a></h2>
+<p>The <strong>Thread Group</strong> represents a group of virtual users. This is where you define:</p>
+<ul>
+<li>
+<p><strong>Number of Threads (users)</strong> - how many virtual users to simulate</p>
+</li>
+<li>
+<p><strong>Ramp-up Period</strong> - how long to take to start all threads (e.g., 100 users over 60 seconds)</p>
+</li>
+<li>
+<p><strong>Loop Count</strong> - how many times each user repeats the flow (or infinite with a duration)</p>
+</li>
+</ul>
+<p>During script development, you'll typically use <strong>1 thread</strong> and <strong>1 loop</strong> to debug. The real numbers come later in step 8 (Load Model).</p>
+<!-- TODO: Screenshot - Thread Group configuration -->
+
+<hr />
+<h2 id="samplers">Samplers<a class="headerlink" href="#samplers" title="Link to this section">&para;</a></h2>
+<p>Samplers are the actual <strong>requests</strong> sent to the server. The most common one is:</p>
+<h3 id="http-request">HTTP Request<a class="headerlink" href="#http-request" title="Link to this section">&para;</a></h3>
+<p>Sends an HTTP/HTTPS request to the server. You configure:
+- Protocol (http/https)
+- Server name or IP
+- Port
+- Method (GET, POST, PUT, DELETE, etc.)
+- Path
+- Parameters or body data</p>
+<!-- TODO: Screenshot - HTTP Request sampler -->
+
+<p>Other samplers exist (JDBC Request, JMS, FTP, etc.) but HTTP Request is used in the majority of performance tests.</p>
+<hr />
+<h2 id="config-elements">Config Elements<a class="headerlink" href="#config-elements" title="Link to this section">&para;</a></h2>
+<p>Config elements provide <strong>default values and shared configuration</strong> for samplers. They don't send requests themselves - they configure how requests are sent.</p>
+<h3 id="http-request-defaults">HTTP Request Defaults<a class="headerlink" href="#http-request-defaults" title="Link to this section">&para;</a></h3>
+<p>Sets default values (protocol, server, port) so you don't repeat them in every HTTP Request sampler. If the server or port changes, you update it in one place.</p>
+<!-- TODO: Screenshot - HTTP Request Defaults -->
+
+<h3 id="http-header-manager">HTTP Header Manager<a class="headerlink" href="#http-header-manager" title="Link to this section">&para;</a></h3>
+<p>Adds headers to requests (e.g., <code>Content-Type</code>, <code>Authorization</code>, <code>Accept</code>). Can be placed at the Test Plan level to apply to all requests, or under a specific sampler for that request only.</p>
+<h3 id="http-cookie-manager">HTTP Cookie Manager<a class="headerlink" href="#http-cookie-manager" title="Link to this section">&para;</a></h3>
+<p>Handles cookies automatically - stores cookies from responses and sends them with subsequent requests, just like a browser would. Essential for session-based applications.</p>
+<h3 id="csv-data-set-config">CSV Data Set Config<a class="headerlink" href="#csv-data-set-config" title="Link to this section">&para;</a></h3>
+<p>Reads test data from a CSV file and assigns values to JMeter variables. Used for parameterization - feeding different data (usernames, passwords, IDs) to each virtual user.</p>
+<ul>
+<li>
+<p><strong>Filename</strong> - path to the CSV file</p>
+</li>
+<li>
+<p><strong>Variable Names</strong> - comma-separated names to assign to each column</p>
+</li>
+<li>
+<p><strong>Sharing Mode</strong> - controls how data is shared across threads</p>
+</li>
+</ul>
+<!-- TODO: Screenshot - CSV Data Set Config -->
+
+<h3 id="user-defined-variables">User Defined Variables<a class="headerlink" href="#user-defined-variables" title="Link to this section">&para;</a></h3>
+<p>Stores key-value pairs as variables. Useful for environment-specific values (URLs, ports) that you want to change in one place.</p>
+<hr />
+<h2 id="logic-controllers">Logic Controllers<a class="headerlink" href="#logic-controllers" title="Link to this section">&para;</a></h2>
+<p>Logic controllers determine the <strong>order and conditions</strong> for executing samplers.</p>
+<h3 id="transaction-controller">Transaction Controller<a class="headerlink" href="#transaction-controller" title="Link to this section">&para;</a></h3>
+<p>Groups multiple requests that belong to the <strong>same page or action</strong>. This is critical for meaningful reporting - you see "Login Page" as a single transaction rather than 5 separate API calls.</p>
+<ul>
+<li>Leave <strong>"Generate parent sample"</strong> unchecked so individual requests are visible in the report for detailed analysis</li>
+</ul>
+<!-- TODO: Screenshot - Transaction Controller -->
+
+<h3 id="if-controller">If Controller<a class="headerlink" href="#if-controller" title="Link to this section">&para;</a></h3>
+<p>Executes child elements only when a condition is true. Used for:
+- Stopping the script if a critical value was not extracted (e.g., token is empty)
+- Branching flows based on business logic</p>
+<p>Example condition: <code>${__groovy("${token}" != "")}</code></p>
+<h3 id="loop-controller">Loop Controller<a class="headerlink" href="#loop-controller" title="Link to this section">&para;</a></h3>
+<p>Repeats child elements a specified number of times. Useful when a user action needs to repeat within a flow (e.g., add 3 items to cart).</p>
+<h3 id="simple-controller">Simple Controller<a class="headerlink" href="#simple-controller" title="Link to this section">&para;</a></h3>
+<p>A basic container for organizing samplers. No logic - just grouping for readability.</p>
+<hr />
+<h2 id="timers">Timers<a class="headerlink" href="#timers" title="Link to this section">&para;</a></h2>
+<p>Timers add <strong>delays between requests</strong> to simulate realistic user behavior. Without timers, JMeter fires requests as fast as possible, which is not how real users behave.</p>
+<h3 id="constant-timer">Constant Timer<a class="headerlink" href="#constant-timer" title="Link to this section">&para;</a></h3>
+<p>Adds a fixed delay (in milliseconds) between requests.</p>
+<h3 id="gaussian-random-timer">Gaussian Random Timer<a class="headerlink" href="#gaussian-random-timer" title="Link to this section">&para;</a></h3>
+<p>Adds a randomized delay based on a Gaussian distribution. More realistic than a constant timer since real users don't wait exactly the same time.</p>
+<h3 id="constant-throughput-timer">Constant Throughput Timer<a class="headerlink" href="#constant-throughput-timer" title="Link to this section">&para;</a></h3>
+<p>Controls the throughput (requests per minute) rather than the delay. Useful when you need to achieve a specific TPS.</p>
+<blockquote>
+<p><strong>Tip:</strong> Timers apply to all samplers in their scope (same level and below). Place them carefully.</p>
+</blockquote>
+<hr />
+<h2 id="assertions">Assertions<a class="headerlink" href="#assertions" title="Link to this section">&para;</a></h2>
+<p>Assertions <strong>validate the response</strong> from the server. A request might return HTTP 200 but still have the wrong content. Assertions catch this.</p>
+<h3 id="response-assertion">Response Assertion<a class="headerlink" href="#response-assertion" title="Link to this section">&para;</a></h3>
+<p>Checks the response body, headers, or status code for expected values (contains, matches, equals).</p>
+<h3 id="json-assertion">JSON Assertion<a class="headerlink" href="#json-assertion" title="Link to this section">&para;</a></h3>
+<p>Validates specific values in a JSON response using JSONPath.</p>
+<h3 id="duration-assertion">Duration Assertion<a class="headerlink" href="#duration-assertion" title="Link to this section">&para;</a></h3>
+<p>Fails if the response time exceeds a threshold.</p>
+<blockquote>
+<p><strong>Tip:</strong> Always add assertions for critical requests. Without them, you might be load testing error pages and think everything is fine.</p>
+</blockquote>
+<hr />
+<h2 id="listeners">Listeners<a class="headerlink" href="#listeners" title="Link to this section">&para;</a></h2>
+<p>Listeners <strong>collect and display test results</strong>. Used during debugging and analysis.</p>
+<h3 id="view-results-tree">View Results Tree<a class="headerlink" href="#view-results-tree" title="Link to this section">&para;</a></h3>
+<p>Shows detailed request/response data for each sampler. Essential for debugging - you can see exactly what was sent and received.</p>
+<blockquote>
+<p><strong>Warning:</strong> Disable this during actual load tests. It consumes a lot of memory and affects test performance.</p>
+</blockquote>
+<h3 id="summary-report">Summary Report<a class="headerlink" href="#summary-report" title="Link to this section">&para;</a></h3>
+<p>Shows aggregate results in a table - average response time, min, max, throughput, error rate per sampler.</p>
+<h3 id="aggregate-report">Aggregate Report<a class="headerlink" href="#aggregate-report" title="Link to this section">&para;</a></h3>
+<p>Similar to Summary Report but includes percentile data (90<sup>th</sup>, 95<sup>th</sup>, 99<sup>th</sup> percentile response times).</p>
+<h3 id="backend-listener">Backend Listener<a class="headerlink" href="#backend-listener" title="Link to this section">&para;</a></h3>
+<p>Sends results in real-time to an external system (e.g., InfluxDB) for live monitoring. Covered in <a href="../11-backend-listener/">Section 11</a>.</p>
+<hr />
+<h2 id="pre-processors-and-post-processors">Pre-Processors and Post-Processors<a class="headerlink" href="#pre-processors-and-post-processors" title="Link to this section">&para;</a></h2>
+<h3 id="pre-processors">Pre-Processors<a class="headerlink" href="#pre-processors" title="Link to this section">&para;</a></h3>
+<p>Execute <strong>before</strong> a sampler runs. Used to set up data or modify the request dynamically.</p>
+<ul>
+<li><strong>JSR223 PreProcessor</strong> - run Groovy/Java code before a request</li>
+</ul>
+<h3 id="post-processors">Post-Processors<a class="headerlink" href="#post-processors" title="Link to this section">&para;</a></h3>
+<p>Execute <strong>after</strong> a sampler runs. Used to extract values from responses for use in subsequent requests.</p>
+<ul>
+<li>
+<p><strong>Regular Expression Extractor</strong> - extract values using regex</p>
+</li>
+<li>
+<p><strong>JSON Extractor</strong> - extract values from JSON responses using JSONPath</p>
+</li>
+<li>
+<p><strong>CSS/jQuery Extractor</strong> - extract values from HTML using CSS selectors</p>
+</li>
+<li>
+<p><strong>JSR223 PostProcessor</strong> - run Groovy/Java code after a request</p>
+</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> Post-processors are the core of <strong>correlation</strong> - extracting dynamic values (tokens, session IDs) from responses and passing them to the next request. This is covered in detail in <a href="../05-correlation-parameterization/">Section 5</a>.</p>
+</blockquote>
+<hr />
+<h2 id="how-elements-relate-scope-and-hierarchy">How Elements Relate - Scope and Hierarchy<a class="headerlink" href="#how-elements-relate-scope-and-hierarchy" title="Link to this section">&para;</a></h2>
+<p>JMeter uses a <strong>tree structure</strong>. Where you place an element determines its scope:</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>Test Plan
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>└── Thread Group
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>    ├── HTTP Cookie Manager          ← applies to all requests in this Thread Group
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    ├── HTTP Request Defaults         ← applies to all requests in this Thread Group
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    ├── Transaction Controller: Login
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    │   ├── HTTP Request: GET /login
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    │   ├── HTTP Request: POST /auth
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    │   │   └── JSON Extractor        ← only applies to POST /auth
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    │   └── Response Assertion         ← only applies to POST /auth (last sibling)
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    ├── Constant Timer                 ← applies to all requests in this Thread Group
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    └── View Results Tree              ← collects results from all requests
+</span></code></pre></div>
+<p><strong>Key rules:</strong></p>
+<ul>
+<li>
+<p><strong>Config elements</strong> (Cookie Manager, Defaults, CSV) at Thread Group level apply to all samplers below</p>
+</li>
+<li>
+<p><strong>Extractors and assertions</strong> placed under a specific sampler only apply to that sampler</p>
+</li>
+<li>
+<p><strong>Timers</strong> apply to all samplers in their scope</p>
+</li>
+<li>
+<p><strong>Listeners</strong> collect data from all samplers in their scope</p>
+</li>
+</ul>
+<p>Understanding scope is critical - a misplaced element can cause hard-to-debug issues.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.sections", "navigation.top", "navigation.expand", "navigation.path", "navigation.instant", "navigation.instant.progress", "search.suggest", "search.highlight", "search.share", "content.code.copy", "content.code.annotate", "content.tabs.link", "toc.follow", "header.autohide"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
