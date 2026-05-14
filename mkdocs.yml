@@ -3,35 +3,110 @@ site_description: A practical, hands-on knowledge base for software testing tool
 
 theme:
   name: material
+  icon:
+    logo: material/flask-outline
   features:
     - navigation.sections
     - navigation.top
+    - navigation.expand
+    - navigation.path
+    - navigation.instant
+    - navigation.instant.progress
     - search.suggest
     - search.highlight
+    - search.share
     - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - toc.follow
+    - header.autohide
   palette:
-    - scheme: default
-      primary: deep purple
-      accent: deep purple
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
+    # Dark mode first (default)
     - scheme: slate
-      primary: deep purple
-      accent: deep purple
+      primary: custom
+      accent: custom
       toggle:
-        icon: material/brightness-4
+        icon: material/weather-night
         name: Switch to light mode
+    - scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to dark mode
+  font:
+    text: Inter
+    code: JetBrains Mono
 
 nav:
   - Home: index.md
+  - JMeter:
+    - Overview: jmeter/index.md
+    - Basics:
+      - Install Tools: jmeter/01-install-tools.md
+      - Understand Requirements: jmeter/02-understand-requirements.md
+      - JMeter Elements: jmeter/03-jmeter-elements.md
+      - Recording: jmeter/04-recording.md
+      - Correlation & Parameterization: jmeter/05-correlation-parameterization.md
+      - Script Enhancement: jmeter/06-script-enhancement.md
+      - Debug: jmeter/07-debug.md
+    - Applying Load:
+      - Load Model: jmeter/08-load-model.md
+      - Execute & Analyze: jmeter/09-execute-analyze.md
+      - Reporting: jmeter/10-reporting.md
+    - Advanced:
+      - Backend Listener: jmeter/11-backend-listener.md
+      - Distributed Testing: jmeter/12-distributed-testing.md
+      - Test Data (Python): jmeter/13-test-data-python.md
+      - Automation & Batch: jmeter/14-automation-batch.md
+      - OCI Linux Slave Setup: jmeter/15-oci-linux-slave-setup.md
+    - Appendix:
+      - Future Topics: jmeter/99-future-to-explore.md
 
 markdown_extensions:
+  # Standard markdown
   - admonition
-  - pymdownx.details
-  - pymdownx.superfences
   - attr_list
+  - def_list
+  - footnotes
   - md_in_html
+  - tables
+  - abbr
+  - toc:
+      permalink: true
+      permalink_title: Link to this section
+
+  # PyMdownx extensions
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.caret
+  - pymdownx.tilde
+  - pymdownx.smartsymbols
+  - pymdownx.critic
+  - pymdownx.arithmatex:
+      generic: true
 
 plugins:
   - search
+
+extra_css:
+  - stylesheets/custom.css

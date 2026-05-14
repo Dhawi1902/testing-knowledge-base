@@ -22,6 +22,10 @@ __pycache__/
 # MkDocs
 site/
 
+# Playwright MCP debug artifacts
+.playwright-mcp/
+temp/
+
 # GitLab Runner
 gitlab-runner/
 

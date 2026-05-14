@@ -1,37 +1,53 @@
+---
+hide:
+  - toc
+---
+
+<div class="hero" markdown>
+
 # Testing Knowledge Base
 
-A practical, hands-on knowledge base for software testing tools and methodologies.
+**Practical, hands-on guides** for software testing tools and methodologies.
+Built from real projects — not textbook theory.
+
+</div>
 
 ---
 
-## Topics
-
 <div class="grid cards" markdown>
 
--   :material-speedometer:{ .lg .middle } **JMeter**
+-   :material-speedometer:{ .lg .middle .card-icon } **JMeter**{ .card-title }
 
     ---
 
-    Performance testing with Apache JMeter — from setup to distributed execution.
+    Performance testing with Apache JMeter — from installation and recording through distributed execution on cloud infrastructure.
 
-    [:octicons-arrow-right-24: Go to JMeter docs](/jmeter/)
+    **15 guides** covering basics, load modeling, and advanced topics.
 
--   :material-test-tube:{ .lg .middle } **Playwright**
+    [:octicons-arrow-right-24: Explore JMeter](jmeter/index.md){ .card-link }
 
-    ---
-
-    UI automation testing. *(Coming soon)*
-
--   :material-chart-line:{ .lg .middle } **k6**
+-   :material-microsoft-visual-studio-code:{ .lg .middle .card-icon } **Playwright**{ .card-title }
 
     ---
 
-    Load testing. *(Coming soon)*
+    End-to-end UI automation testing with modern browser tooling.
 
--   :material-docker:{ .lg .middle } **Playground**
+    :material-clock-outline:{ .coming-soon-icon } *Coming soon*{ .coming-soon }
+
+-   :material-chart-areaspline:{ .lg .middle .card-icon } **k6**{ .card-title }
 
     ---
 
-    Docker-based target application for hands-on practice. *(Coming soon)*
+    Developer-centric load testing with JavaScript-based scripting.
+
+    :material-clock-outline:{ .coming-soon-icon } *Coming soon*{ .coming-soon }
+
+-   :material-docker:{ .lg .middle .card-icon } **Playground**{ .card-title }
+
+    ---
+
+    Docker-based target application for hands-on practice across all testing tools.
+
+    :material-clock-outline:{ .coming-soon-icon } *Coming soon*{ .coming-soon }
 
 </div>
