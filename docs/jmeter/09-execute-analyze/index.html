@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en" dir="ltr" class="docs-wrapper plugin-docs plugin-id-default docs-version-current docs-doc-page docs-doc-id-jmeter/09-execute-analyze" data-has-hydrated="false">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="Docusaurus v3.10.2">
+<title data-rh="true">Execute and Analyze Results | Testing KB</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:image" content="https://testing.dhawilabs.com/img/logo.svg"><meta data-rh="true" name="twitter:image" content="https://testing.dhawilabs.com/img/logo.svg"><meta data-rh="true" property="og:url" content="https://testing.dhawilabs.com/docs/jmeter/09-execute-analyze"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Execute and Analyze Results | Testing KB"><meta data-rh="true" name="description" content="The script is debugged, the load model is defined - now it&#x27;s time to run the actual load test and make sense of the results. Always run load tests in CLI mode (command line), never from the GUI."><meta data-rh="true" property="og:description" content="The script is debugged, the load model is defined - now it&#x27;s time to run the actual load test and make sense of the results. Always run load tests in CLI mode (command line), never from the GUI."><link data-rh="true" rel="icon" href="/img/logo.svg"><link data-rh="true" rel="canonical" href="https://testing.dhawilabs.com/docs/jmeter/09-execute-analyze"><link data-rh="true" rel="alternate" href="https://testing.dhawilabs.com/docs/jmeter/09-execute-analyze" hreflang="en"><link data-rh="true" rel="alternate" href="https://testing.dhawilabs.com/docs/jmeter/09-execute-analyze" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Apache JMeter","item":"https://testing.dhawilabs.com/docs/jmeter/"},{"@type":"ListItem","position":2,"name":"Execute and Analyze Results","item":"https://testing.dhawilabs.com/docs/jmeter/09-execute-analyze"}]}</script><link rel="stylesheet" href="/assets/css/styles.20db86a5.css">
+<script src="/assets/js/runtime~main.925e99c4.js" defer="defer"></script>
+<script src="/assets/js/main.73d585a6.js" defer="defer"></script>
+</head>
+<body>
+<svg style="display: none;"><defs>
+<symbol id="theme-svg-external-link" viewBox="0 0 24 24"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"/></symbol>
+</defs></svg>
+<script>!function(){var t=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme")}catch(t){}}();document.documentElement.setAttribute("data-theme",t||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")),document.documentElement.setAttribute("data-theme-choice",t||"system")}(),function(){try{const c=new URLSearchParams(window.location.search).entries();for(var[t,e]of c)if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}()</script><div id="__docusaurus"><div role="region" aria-label="Skip to main content"><a class="skipToContent_fXgn" href="#__docusaurus_skipToContent_fallback">Skip to main content</a></div><nav aria-label="Main" class="theme-layout-navbar navbar navbar--fixed-top"><div class="navbar__inner"><div class="theme-layout-navbar-left navbar__items"><button aria-label="Toggle navigation bar" aria-expanded="false" class="navbar__toggle clean-btn" type="button"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" href="/"><div class="navbar__logo"><img src="/img/logo.svg" alt="Testing Knowledge Base" class="themedComponent_mlkZ themedComponent--light_NVdE"><img src="/img/logo.svg" alt="Testing Knowledge Base" class="themedComponent_mlkZ themedComponent--dark_xIcU"></div><b class="navbar__title text--truncate">Testing KB</b></a><a class="navbar__item navbar__link" href="/">Home</a><a aria-current="page" class="navbar__item navbar__link navbar__link--active" href="/docs">Guides</a></div><div class="theme-layout-navbar-right navbar__items navbar__items--right"><a class="navbar__item navbar__link navbar-cta" href="/docs/jmeter/01-install-tools">Get started</a><div class="toggle_vylO colorModeToggle_DEke"><button class="clean-btn toggleButton_gllP toggleButtonDisabled_aARS" type="button" disabled="" title="system mode" aria-label="Switch between dark and light mode (currently system mode)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP lightToggleIcon_pyhR"><path fill="currentColor" d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP darkToggleIcon_wfgR"><path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP systemToggleIcon_QzmC"><path fill="currentColor" d="m12 21c4.971 0 9-4.029 9-9s-4.029-9-9-9-9 4.029-9 9 4.029 9 9 9zm4.95-13.95c1.313 1.313 2.05 3.093 2.05 4.95s-0.738 3.637-2.05 4.95c-1.313 1.313-3.093 2.05-4.95 2.05v-14c1.857 0 3.637 0.737 4.95 2.05z"></path></svg></button></div><div class="navbarSearchContainer_Bca1"><div class="navbar__search searchBarContainer_NW3z" dir="ltr"><input placeholder="Search" aria-label="Search" class="navbar__search-input" value=""><div class="loadingRing_RJI3 searchBarLoadingRing_YnHq"><div></div><div></div><div></div><div></div></div></div></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div id="__docusaurus_skipToContent_fallback" class="theme-layout-main main-wrapper mainWrapper_z2l0"><div class="docsWrapper_hBAB"><button aria-label="Scroll back to top" class="clean-btn theme-back-to-top-button backToTopButton_sjWU" type="button"></button><div class="docRoot_UBD9"><aside class="theme-doc-sidebar-container docSidebarContainer_YfHR"><div class="sidebarViewport_aRkj"><div class="sidebar_njMd"><nav aria-label="Docs sidebar" class="menu thin-scrollbar menu_SIkG"><ul class="theme-doc-sidebar-menu menu__list"><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--active" href="/docs/jmeter/"><span class="categoryLinkLabel_W154">Apache JMeter</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link" tabindex="0"><span class="categoryLinkLabel_W154">Basics</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/01-install-tools"><span class="linkLabel_WmDU">Install Tools</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/02-understand-requirements"><span class="linkLabel_WmDU">Understand Requirements and Flow</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/03-jmeter-elements"><span class="linkLabel_WmDU">JMeter Elements Overview</span></a></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-3 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="true" tabindex="0" href="/docs/jmeter/04-recording"><span class="categoryLinkLabel_W154">Recording</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-4 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/04-recording"><span class="linkLabel_WmDU">Recording with BlazeMeter + Fiddler</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-4 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/04a-recording-mitmproxy"><span class="linkLabel_WmDU">Recording with BlazeMeter + mitmproxy</span></a></li></ul></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/05-correlation-parameterization"><span class="linkLabel_WmDU">Correlation and Parameterization</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/06-script-enhancement"><span class="linkLabel_WmDU">Script Enhancement</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/07-debug"><span class="linkLabel_WmDU">Debug</span></a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--active" tabindex="0"><span class="categoryLinkLabel_W154">Applying Load</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/08-load-model"><span class="linkLabel_WmDU">Design Load Model</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link menu__link--active" aria-current="page" tabindex="0" href="/docs/jmeter/09-execute-analyze"><span class="linkLabel_WmDU">Execute and Analyze Results</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/10-reporting"><span class="linkLabel_WmDU">Reporting</span></a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link" tabindex="0"><span class="categoryLinkLabel_W154">Advanced</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/11-backend-listener"><span class="linkLabel_WmDU">Backend Listener - InfluxDB + Grafana</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/12-distributed-testing"><span class="linkLabel_WmDU">Distributed Testing</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/13-distributed-testing-hands-on"><span class="linkLabel_WmDU">Try Distributed Testing on Your Own Machine</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/14-test-data-python"><span class="linkLabel_WmDU">Test Data Preparation with Python</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/15-automation-batch"><span class="linkLabel_WmDU">Automation with Batch Files</span></a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link" tabindex="0"><span class="categoryLinkLabel_W154">Appendix</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/99-future-to-explore"><span class="linkLabel_WmDU">Future / To Explore</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/99-archive-oci-linux-slave-setup"><span class="linkLabel_WmDU">OCI Linux Slave Setup (Archived)</span></a></li></ul></li></ul></li></ul></nav></div></div></aside><main class="docMainContainer_TBSr"><div class="container padding-top--md padding-bottom--lg"><div class="row"><div class="col docItemCol_VOVn"><div class="docItemContainer_Djhp"><article><nav class="theme-doc-breadcrumbs breadcrumbsContainer_Z_bl" aria-label="Breadcrumbs"><ul class="breadcrumbs"><li class="breadcrumbs__item"><a aria-label="Home page" class="breadcrumbs__link" href="/"><svg viewBox="0 0 24 24" class="breadcrumbHomeIcon_YNFT"><path d="M10 19v-5h4v5c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-7h1.7c.46 0 .68-.57.33-.87L12.67 3.6c-.38-.34-.96-.34-1.34 0l-8.36 7.53c-.34.3-.13.87.33.87H5v7c0 .55.45 1 1 1h3c.55 0 1-.45 1-1z" fill="currentColor"></path></svg></a></li><li class="breadcrumbs__item"><a class="breadcrumbs__link" href="/docs/jmeter/"><span>Apache JMeter</span></a></li><li class="breadcrumbs__item"><span class="breadcrumbs__link">Applying Load</span></li><li class="breadcrumbs__item breadcrumbs__item--active"><span class="breadcrumbs__link">Execute and Analyze Results</span></li></ul></nav><div class="tocCollapsible_ETCw theme-doc-toc-mobile tocMobile_ITEo"><button type="button" class="clean-btn tocCollapsibleButton_TO0P">On this page</button></div><div class="theme-doc-markdown markdown"><header><h1>Execute and Analyze Results</h1></header>
+<p>The script is debugged, the load model is defined - now it&#x27;s time to run the actual load test and make sense of the results. Always run load tests in <strong>CLI mode</strong> (command line), never from the GUI.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="why-cli-mode">Why CLI Mode<a href="#why-cli-mode" class="hash-link" aria-label="Direct link to Why CLI Mode" title="Direct link to Why CLI Mode" translate="no">​</a></h2>
+<p>The JMeter GUI is for <strong>building and debugging</strong> scripts only. For actual load tests:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Mode</th><th>Purpose</th></tr></thead><tbody><tr><td><strong>GUI</strong></td><td>Script development, debugging with 1-3 threads</td></tr><tr><td><strong>CLI</strong></td><td>Running load tests with real thread counts</td></tr></tbody></table>
+<p><strong>Why not GUI for load tests?</strong></p>
+<ul>
+<li class="">GUI rendering (View Results Tree, graphs) consumes significant CPU and memory</li>
+<li class="">This overhead distorts the results - response times appear higher than they actually are</li>
+<li class="">The JMeter process can run out of memory and crash mid-test</li>
+<li class="">CLI mode uses minimal resources, giving you accurate results</li>
+</ul>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="cli-command">CLI Command<a href="#cli-command" class="hash-link" aria-label="Direct link to CLI Command" title="Direct link to CLI Command" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="basic-command">Basic Command<a href="#basic-command" class="hash-link" aria-label="Direct link to Basic Command" title="Direct link to Basic Command" translate="no">​</a></h3>
+<div class="language-bat codeBlockContainer_Ckt0 theme-code-block" style="--prism-background-color:hsl(220, 13%, 18%);--prism-color:hsl(220, 14%, 71%)"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bat codeBlock_bY9V thin-scrollbar" style="background-color:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">jmeter -n -t test-plan.jmx -l results.jtl -e -o report-folder</span><br></div></code></pre></div></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Flag</th><th>What it Does</th></tr></thead><tbody><tr><td><code>-n</code></td><td>Non-GUI (CLI) mode</td></tr><tr><td><code>-t</code></td><td>Path to the <code>.jmx</code> test plan</td></tr><tr><td><code>-l</code></td><td>Path to write the results file (<code>.jtl</code> or <code>.csv</code>)</td></tr><tr><td><code>-e</code></td><td>Generate HTML report after the test</td></tr><tr><td><code>-o</code></td><td>Output folder for the HTML report (must not exist or be empty)</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="example">Example<a href="#example" class="hash-link" aria-label="Direct link to Example" title="Direct link to Example" translate="no">​</a></h3>
+<div class="language-bat codeBlockContainer_Ckt0 theme-code-block" style="--prism-background-color:hsl(220, 13%, 18%);--prism-color:hsl(220, 14%, 71%)"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bat codeBlock_bY9V thin-scrollbar" style="background-color:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">jmeter -n -t scripts/login-flow.jmx -l results/login-test-run1.jtl -e -o results/report-run1</span><br></div></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="useful-additional-flags">Useful Additional Flags<a href="#useful-additional-flags" class="hash-link" aria-label="Direct link to Useful Additional Flags" title="Direct link to Useful Additional Flags" translate="no">​</a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Flag</th><th>What it Does</th></tr></thead><tbody><tr><td><code>-Jthreads=100</code></td><td>Override a JMeter property (if your script uses <code>${__P(threads,10)}</code>)</td></tr><tr><td><code>-Jduration=1800</code></td><td>Override test duration via property</td></tr><tr><td><code>-Jrampup=300</code></td><td>Override ramp-up via property</td></tr></tbody></table>
+<p>Using properties (<code>${__P(threads,10)}</code>) in your Thread Group instead of hardcoded values lets you change the load model from the command line without editing the <code>.jmx</code> file. The second value (e.g., <code>10</code>) is the default if no property is passed.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="capturing-variables-in-the-results">Capturing Variables in the Results<a href="#capturing-variables-in-the-results" class="hash-link" aria-label="Direct link to Capturing Variables in the Results" title="Direct link to Capturing Variables in the Results" translate="no">​</a></h3>
+<p>By default the <code>.jtl</code> tells you <strong>that</strong> a request failed, not <strong>who</strong> it failed for. Every row has a label, a response code, and a thread name - but nothing about the data that thread was using. When 40 of 5,000 logins fail, you are left guessing which accounts were involved.</p>
+<p>The <code>sample_variables</code> property fixes this. It writes the value of any JMeter variable into every row of the results file:</p>
+<div class="language-properties codeBlockContainer_Ckt0 theme-code-block" style="--prism-background-color:hsl(220, 13%, 18%);--prism-color:hsl(220, 14%, 71%)"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-properties codeBlock_bY9V thin-scrollbar" style="background-color:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain"># In user.properties (JMeter bin/ folder)</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">sample_variables=username,orderId,customerType</span><br></div></code></pre></div></div>
+<p>Or pass it at run time without editing any file:</p>
+<div class="language-bat codeBlockContainer_Ckt0 theme-code-block" style="--prism-background-color:hsl(220, 13%, 18%);--prism-color:hsl(220, 14%, 71%)"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bat codeBlock_bY9V thin-scrollbar" style="background-color:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">jmeter -n -t test.jmx -l results.jtl -Jsample_variables=username,orderId</span><br></div></code></pre></div></div>
+<p>Each name becomes <strong>one extra column appended to the end of every CSV row</strong> (in XML output they become extra attributes instead). So a failing row now tells you the label, the error, <em>and</em> that it was <code>user0417</code> placing order <code>SO-99821</code>.</p>
+<blockquote>
+<p><strong>Important:</strong> This adds a <strong>column, not extra rows</strong>. Naming a Transaction Controller after the user does the same job by adding a row per user, which then has to be filtered back out before reporting. A column costs you nothing at report time - see <a href="#filtering-the-jtl-before-generating-reports" class="">Filtering the .jtl</a> below.</p>
+</blockquote>
+<p><strong>Things worth knowing:</strong></p>
+<ul>
+<li class=""><strong>The variable is read at sample time.</strong> If it is not set yet when the request fires, the column is empty for that row. Variables from CSV Data Set Config and extractors behave as you would expect; anything set <em>after</em> the sampler will not appear.</li>
+<li class=""><strong>Column names appear in the header</strong> when <code>jmeter.save.saveservice.print_field_names=true</code> (the default), so the file stays self-describing.</li>
+<li class=""><strong>Keep the list short.</strong> Every name adds a column to every row, and a long test writes millions of rows. Capture what you need to diagnose a failure, not the whole variable space.</li>
+<li class=""><strong>It works in distributed mode.</strong> Set the property on the controller - JMeter &quot;sends the variable to all servers to ensure that the correct data is available at the client&quot; (<a href="https://jmeter.apache.org/usermanual/listeners.html" target="_blank" rel="noopener noreferrer" class="">Listeners</a>). See <a class="" href="/docs/jmeter/12-distributed-testing">Section 12</a> and <a class="" href="/docs/jmeter/13-distributed-testing-hands-on">Section 13</a>.</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="what-you-see-during-execution">What You See During Execution<a href="#what-you-see-during-execution" class="hash-link" aria-label="Direct link to What You See During Execution" title="Direct link to What You See During Execution" translate="no">​</a></h3>
+<p>While the test runs, JMeter prints a summary line every 30 seconds:</p>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-background-color:hsl(220, 13%, 18%);--prism-color:hsl(220, 14%, 71%)"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="background-color:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">summary +   1250 in 00:00:30 =   41.7/s Avg:   245 Min:    12 Max:  1823 Err:     0 (0.00%) Active: 100</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">summary =   5000 in 00:02:00 =   41.7/s Avg:   240 Min:    12 Max:  2105 Err:     3 (0.06%) Active: 200</span><br></div></code></pre></div></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Field</th><th>Meaning</th></tr></thead><tbody><tr><td><code>+</code> line</td><td>Stats for the last 30-second interval</td></tr><tr><td><code>=</code> line</td><td>Cumulative stats since the start</td></tr><tr><td><code>41.7/s</code></td><td>Throughput (requests per second)</td></tr><tr><td><code>Avg: 245</code></td><td>Average response time (ms)</td></tr><tr><td><code>Min / Max</code></td><td>Minimum and maximum response time (ms)</td></tr><tr><td><code>Err: 0 (0.00%)</code></td><td>Error count and percentage</td></tr><tr><td><code>Active: 100</code></td><td>Currently active threads</td></tr></tbody></table>
+<p>This gives you a live view of how the test is progressing. Watch for errors climbing or response times spiking.</p>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="key-metrics">Key Metrics<a href="#key-metrics" class="hash-link" aria-label="Direct link to Key Metrics" title="Direct link to Key Metrics" translate="no">​</a></h2>
+<p>These are the metrics that matter when analyzing results:</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="response-time">Response Time<a href="#response-time" class="hash-link" aria-label="Direct link to Response Time" title="Direct link to Response Time" translate="no">​</a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Metric</th><th>What it Tells You</th></tr></thead><tbody><tr><td><strong>Average</strong></td><td>Overall average response time - can be misleading if there are outliers</td></tr><tr><td><strong>Median (50th percentile)</strong></td><td>Half the requests were faster than this</td></tr><tr><td><strong>90th Percentile</strong></td><td>90% of requests were faster than this - the most commonly reported metric</td></tr><tr><td><strong>95th / 99th Percentile</strong></td><td>Used for stricter SLAs</td></tr><tr><td><strong>Min / Max</strong></td><td>The fastest and slowest individual requests</td></tr></tbody></table>
+<blockquote>
+<p><strong>Important:</strong> Always report percentiles, not just averages. An average of 500ms could mean all requests took ~500ms, or it could mean 99% took 200ms and 1% took 30 seconds. The percentile tells the real story.</p>
+</blockquote>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="throughput">Throughput<a href="#throughput" class="hash-link" aria-label="Direct link to Throughput" title="Direct link to Throughput" translate="no">​</a></h3>
+<p>Requests per second (or transactions per second if using Transaction Controllers). This tells you how much work the system is processing.</p>
+<ul>
+<li class="">Throughput should stabilize during steady state</li>
+<li class="">If throughput drops while users are constant, the server is struggling</li>
+<li class="">Compare actual throughput against the NFR target</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="error-rate">Error Rate<a href="#error-rate" class="hash-link" aria-label="Direct link to Error Rate" title="Direct link to Error Rate" translate="no">​</a></h3>
+<p>The percentage of requests that failed. Failures include:</p>
+<ul>
+<li class="">HTTP 4xx/5xx responses</li>
+<li class="">Connection errors / timeouts</li>
+<li class="">Assertion failures (if assertions are in the script)</li>
+</ul>
+<p>The NFR typically defines the acceptable error rate (e.g., &lt; 1%).</p>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="working-with-the-jtl">Working with the .jtl<a href="#working-with-the-jtl" class="hash-link" aria-label="Direct link to Working with the .jtl" title="Direct link to Working with the .jtl" translate="no">​</a></h2>
+<p>The <code>.jtl</code> is the raw output of the run and the input to everything else - the HTML report, the GUI listeners, and any custom analysis you do. Get it into shape before you generate anything from it.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="the-results-file-jtl">The Results File (.jtl)<a href="#the-results-file-jtl" class="hash-link" aria-label="Direct link to The Results File (.jtl)" title="Direct link to The Results File (.jtl)" translate="no">​</a></h3>
+<p>The <code>.jtl</code> file contains raw test data - one line per request. You can open it in JMeter&#x27;s GUI listeners (Aggregate Report, Summary Report) for quick analysis, or use it to regenerate the HTML report.</p>
+<p><strong>To open in JMeter GUI:</strong></p>
+<ol>
+<li class="">Open JMeter (GUI mode)</li>
+<li class="">Add a listener (e.g., Aggregate Report, Summary Report)</li>
+<li class="">Click <strong>Browse</strong> and select the <code>.jtl</code> file</li>
+</ol>
+<p><strong>To regenerate the HTML report from a <code>.jtl</code> file:</strong></p>
+<div class="language-bat codeBlockContainer_Ckt0 theme-code-block" style="--prism-background-color:hsl(220, 13%, 18%);--prism-color:hsl(220, 14%, 71%)"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bat codeBlock_bY9V thin-scrollbar" style="background-color:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">jmeter -g results.jtl -o report-folder</span><br></div></code></pre></div></div>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="filtering-the-jtl-before-generating-reports">Filtering the .jtl Before Generating Reports<a href="#filtering-the-jtl-before-generating-reports" class="hash-link" aria-label="Direct link to Filtering the .jtl Before Generating Reports" title="Direct link to Filtering the .jtl Before Generating Reports" translate="no">​</a></h3>
+<p>The raw <code>.jtl</code> file contains rows you don&#x27;t want in the web report. Always filter before generating reports — this both cleans the data and drastically reduces file size, which matters for report generation speed and memory usage.</p>
+<p><strong>What gets filtered:</strong></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Filter</th><th>What it Removes</th><th>Why</th></tr></thead><tbody><tr><td><strong>Sub-results</strong></td><td>Labels ending with <code>-0</code>, <code>-1</code>, etc.</td><td>Transaction Controllers with &quot;Generate parent sample&quot; unchecked produce child samples (e.g., <code>A - Login-0</code>, <code>A - Login-1</code>). These are duplicate data — the parent TC already captures the aggregate. Sub-results typically make up <strong>~80-85%</strong> of a raw JTL file.</td></tr><tr><td><strong>Unresolved variables</strong></td><td>Labels containing <code>${...}</code></td><td>Rows where JMeter variables weren&#x27;t resolved (e.g., <code>${username}</code>) — these are noise.</td></tr></tbody></table>
+<p><strong>Workflow:</strong></p>
+<ol>
+<li class="">
+<p>Keep the <strong>original <code>.jtl</code></strong> for per-user failure analysis and troubleshooting - this is where your <a href="#capturing-variables-in-the-results" class="">captured variable columns</a> live</p>
+</li>
+<li class="">
+<p>Run the filter script to create a <strong>filtered copy</strong></p>
+</li>
+<li class="">
+<p>Generate the web report from the filtered copy</p>
+</li>
+</ol>
+<div class="language-bat codeBlockContainer_Ckt0 theme-code-block" style="--prism-background-color:hsl(220, 13%, 18%);--prism-color:hsl(220, 14%, 71%)"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bat codeBlock_bY9V thin-scrollbar" style="background-color:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">REM Filter out sub-results and unresolved variables (always recommended)</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">python jtl_filter.py results.jtl filtered.jtl</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">REM Optionally also filter by label regex (e.g., exclude username rows)</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">python jtl_filter.py results.jtl filtered.jtl &quot;^(?!user\d+)&quot;</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">REM Generate report from the filtered file</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">jmeter -g filtered.jtl -o report-folder</span><br></div></code></pre></div></div>
+<blockquote>
+<p><strong>Impact:</strong> On a real test run with ~3.4 million rows (682 MB), filtering sub-results alone reduced the file to ~565K rows (153 MB) — an <strong>83% reduction</strong>. This makes report generation feasible where the unfiltered file would cause JMeter to run out of memory.</p>
+</blockquote>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="aggregate-report-columns">Aggregate Report Columns<a href="#aggregate-report-columns" class="hash-link" aria-label="Direct link to Aggregate Report Columns" title="Direct link to Aggregate Report Columns" translate="no">​</a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Column</th><th>Meaning</th></tr></thead><tbody><tr><td><strong>Label</strong></td><td>Sampler / Transaction Controller name</td></tr><tr><td><strong># Samples</strong></td><td>Total number of requests</td></tr><tr><td><strong>Average</strong></td><td>Average response time (ms)</td></tr><tr><td><strong>Median</strong></td><td>50th percentile response time</td></tr><tr><td><strong>90% Line</strong></td><td>90th percentile response time</td></tr><tr><td><strong>95% Line</strong></td><td>95th percentile response time</td></tr><tr><td><strong>99% Line</strong></td><td>99th percentile response time</td></tr><tr><td><strong>Min</strong></td><td>Fastest response</td></tr><tr><td><strong>Max</strong></td><td>Slowest response</td></tr><tr><td><strong>Error %</strong></td><td>Percentage of failed requests</td></tr><tr><td><strong>Throughput</strong></td><td>Requests per second</td></tr></tbody></table>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="jmeter-web-report">JMeter Web Report<a href="#jmeter-web-report" class="hash-link" aria-label="Direct link to JMeter Web Report" title="Direct link to JMeter Web Report" translate="no">​</a></h2>
+<p>There are two ways to get the HTML report: add <code>-e -o report-folder</code> to the test run so JMeter builds it at the end, or generate it afterwards from a <code>.jtl</code> with <code>jmeter -g</code>. The second is usually the better option - it lets you filter the <code>.jtl</code> first, and you can regenerate as often as you like without re-running the test. Either way, open <code>index.html</code> in the output folder.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="report-sections">Report Sections<a href="#report-sections" class="hash-link" aria-label="Direct link to Report Sections" title="Direct link to Report Sections" translate="no">​</a></h3>
+<p><strong>Dashboard:</strong></p>
+<ul>
+<li class="">Summary statistics (total requests, error %, throughput)</li>
+<li class="">APDEX (Application Performance Index) score</li>
+<li class="">Response time over time graph</li>
+</ul>
+<p><strong>Charts:</strong></p>
+<ul>
+<li class="">Response Times Over Time - shows how response times change during the test</li>
+<li class="">Active Threads Over Time - confirms the ramp-up profile</li>
+<li class="">Transactions Per Second - throughput over time</li>
+<li class="">Response Time Percentiles - distribution of response times</li>
+<li class="">Response Time vs Threads - how response time changes as load increases</li>
+</ul>
+<p><strong>Tables:</strong></p>
+<ul>
+<li class="">Statistics table - per-sampler breakdown with averages, percentiles, throughput, and error rates</li>
+<li class="">Errors table - breakdown of error types and which samplers they occurred on</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="how-transaction-controllers-appear-in-the-report">How Transaction Controllers Appear in the Report<a href="#how-transaction-controllers-appear-in-the-report" class="hash-link" aria-label="Direct link to How Transaction Controllers Appear in the Report" title="Direct link to How Transaction Controllers Appear in the Report" translate="no">​</a></h3>
+<p>With <strong>&quot;Generate parent sample&quot;</strong> unchecked on Transaction Controllers (see <a class="" href="/docs/jmeter/06-script-enhancement">Section 6</a>):</p>
+<ul>
+<li class="">
+<p>The report shows <strong>both</strong> the Transaction Controller name (e.g., <code>A - Login</code>) and each individual request inside it</p>
+</li>
+<li class="">
+<p>This lets you pinpoint exactly which request within a flow is slow</p>
+</li>
+<li class="">
+<p>The Transaction Controller entry shows the total time for the group, while individual requests show their own times</p>
+</li>
+</ul>
+<p>This is why naming conventions matter - <code>A - Login</code>, <code>B - Dashboard</code> appear sorted and readable in the report, and the numbered samplers (<code>01 - POST - Submit Login</code>) let you drill into specifics.</p>
+<hr>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="optimizing-the-html-report">Optimizing the HTML Report<a href="#optimizing-the-html-report" class="hash-link" aria-label="Direct link to Optimizing the HTML Report" title="Direct link to Optimizing the HTML Report" translate="no">​</a></h3>
+<p>The JMeter HTML report includes &quot;over time&quot; graphs that produce a very large <code>graph.js</code> file (can reach <strong>500+ MB</strong> for long test runs). This makes the report slow to open in a browser.</p>
+<p>To reduce report size, disable the heaviest graphs using JMeter properties:</p>
+<div class="language-bat codeBlockContainer_Ckt0 theme-code-block" style="--prism-background-color:hsl(220, 13%, 18%);--prism-color:hsl(220, 14%, 71%)"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bat codeBlock_bY9V thin-scrollbar" style="background-color:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">jmeter -g filtered.jtl -o report-folder ^</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">    -Jjmeter.reportgenerator.graph.responseTimeOverTime.enabled=false ^</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">    -Jjmeter.reportgenerator.graph.latenciesOverTime.enabled=false ^</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">    -Jjmeter.reportgenerator.graph.bytesThroughputOverTime.enabled=false ^</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">    -Jjmeter.reportgenerator.graph.connectTimeOverTime.enabled=false</span><br></div></code></pre></div></div>
+<p>This disables four over-time graphs that contribute the most to <code>graph.js</code> size. The dashboard summary, statistics table, percentile charts, and throughput summary are preserved — these are the charts you actually need for analysis.</p>
+<blockquote>
+<p><strong>When regenerating from .jtl:</strong> If the original test saved results in XML format (not CSV), add <code>-Jjmeter.save.saveservice.output_format=csv</code> to force CSV parsing.</p>
+</blockquote>
+<p>This gives you two views: the full <code>.jtl</code> for tracking which users failed, and a clean, fast-loading report for aggregate analysis.</p>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="identifying-bottlenecks">Identifying Bottlenecks<a href="#identifying-bottlenecks" class="hash-link" aria-label="Direct link to Identifying Bottlenecks" title="Direct link to Identifying Bottlenecks" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="high-response-times">High Response Times<a href="#high-response-times" class="hash-link" aria-label="Direct link to High Response Times" title="Direct link to High Response Times" translate="no">​</a></h3>
+<ul>
+<li class="">
+<p><strong>All requests are slow</strong> → likely a server-side issue (CPU, memory, database)</p>
+</li>
+<li class="">
+<p><strong>Specific requests are slow</strong> → focus on those endpoints. Could be a slow database query, external service call, or inefficient code</p>
+</li>
+<li class="">
+<p><strong>Response times increase over time</strong> → possible memory leak, connection pool exhaustion, or growing queue</p>
+</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="high-error-rate">High Error Rate<a href="#high-error-rate" class="hash-link" aria-label="Direct link to High Error Rate" title="Direct link to High Error Rate" translate="no">​</a></h3>
+<ul>
+<li class="">
+<p><strong>Errors from the start</strong> → script issue or environment problem (wrong URL, expired credentials)</p>
+</li>
+<li class="">
+<p><strong>Errors appear under load</strong> → server capacity issue (connection limits, thread pool exhaustion, timeouts)</p>
+</li>
+<li class="">
+<p><strong>Specific error codes:</strong></p>
+<ul>
+<li class=""><code>500</code> - server error, check server logs</li>
+<li class=""><code>502/503</code> - server overloaded or down</li>
+<li class=""><code>429</code> - rate limited</li>
+<li class=""><code>Connection reset / timeout</code> - server can&#x27;t accept more connections</li>
+</ul>
+</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="throughput-plateau">Throughput Plateau<a href="#throughput-plateau" class="hash-link" aria-label="Direct link to Throughput Plateau" title="Direct link to Throughput Plateau" translate="no">​</a></h3>
+<ul>
+<li class="">Throughput stops increasing even though more users are being added</li>
+<li class="">This means the server has reached its maximum capacity</li>
+<li class="">Look at response times at this point - they&#x27;ll be climbing</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="response-time-vs-threads">Response Time vs Threads<a href="#response-time-vs-threads" class="hash-link" aria-label="Direct link to Response Time vs Threads" title="Direct link to Response Time vs Threads" translate="no">​</a></h3>
+<p>The web report includes a &quot;Response Time vs Threads&quot; chart. The ideal pattern:</p>
+<ul>
+<li class="">Response time stays flat as threads increase → server handles the load well</li>
+<li class="">Response time starts climbing at a certain thread count → that&#x27;s the capacity threshold</li>
+</ul>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="tips">Tips<a href="#tips" class="hash-link" aria-label="Direct link to Tips" title="Direct link to Tips" translate="no">​</a></h2>
+<ul>
+<li class="">
+<p><strong>Never run load tests from GUI mode</strong> - even for &quot;quick&quot; tests. Use CLI from the start</p>
+</li>
+<li class="">
+<p><strong>Delete or empty the report folder</strong> before each run - JMeter won&#x27;t overwrite an existing report folder</p>
+</li>
+<li class="">
+<p><strong>Name your result files</strong> with the run number or timestamp (e.g., <code>results-run1.jtl</code>, <code>results-20260212.jtl</code>) so you don&#x27;t lose previous results</p>
+</li>
+<li class="">
+<p><strong>Watch the CLI output during the test</strong> - if errors spike or response times explode early, you may want to stop and investigate before wasting time on a full run</p>
+</li>
+<li class="">
+<p><strong>Run multiple iterations</strong> - one run is not enough. Run at least 2-3 times to confirm results are consistent</p>
+</li>
+<li class="">
+<p><strong>Decide what to capture before you run</strong> - add the variables you would need to diagnose a failure (username, order ID) to <code>sample_variables</code> up front. You cannot recover them from a finished <code>.jtl</code>, and re-running a two-hour test to find out who failed is a bad afternoon</p>
+</li>
+<li class="">
+<p><strong>Always filter the .jtl before generating reports</strong> - sub-results from Transaction Controllers inflate the file by ~80-85%. Filtering first makes report generation faster and prevents out-of-memory errors on large files</p>
+</li>
+<li class="">
+<p><strong>Compare against NFRs immediately</strong> - check the 90th percentile response time, throughput, and error rate against the targets from <a class="" href="/docs/jmeter/02-understand-requirements">Section 2</a></p>
+</li>
+</ul></div><footer class="theme-doc-footer docusaurus-mt-lg"><div class="row margin-top--sm theme-doc-footer-edit-meta-row"><div class="col noPrint_WFHX"></div><div class="col lastUpdated_JAkA"><span class="theme-last-updated">Last updated<!-- --> on <b><time datetime="2026-09-10T03:24:07.000Z" itemprop="dateModified">Sep 10, 2026</time></b></span></div></div></footer></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Docs pages"><a class="pagination-nav__link pagination-nav__link--prev" href="/docs/jmeter/08-load-model"><div class="pagination-nav__sublabel">Previous</div><div class="pagination-nav__label">Design Load Model</div></a><a class="pagination-nav__link pagination-nav__link--next" href="/docs/jmeter/10-reporting"><div class="pagination-nav__sublabel">Next</div><div class="pagination-nav__label">Reporting</div></a></nav></div></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#why-cli-mode" class="table-of-contents__link toc-highlight">Why CLI Mode</a></li><li><a href="#cli-command" class="table-of-contents__link toc-highlight">CLI Command</a><ul><li><a href="#basic-command" class="table-of-contents__link toc-highlight">Basic Command</a></li><li><a href="#example" class="table-of-contents__link toc-highlight">Example</a></li><li><a href="#useful-additional-flags" class="table-of-contents__link toc-highlight">Useful Additional Flags</a></li><li><a href="#capturing-variables-in-the-results" class="table-of-contents__link toc-highlight">Capturing Variables in the Results</a></li><li><a href="#what-you-see-during-execution" class="table-of-contents__link toc-highlight">What You See During Execution</a></li></ul></li><li><a href="#key-metrics" class="table-of-contents__link toc-highlight">Key Metrics</a><ul><li><a href="#response-time" class="table-of-contents__link toc-highlight">Response Time</a></li><li><a href="#throughput" class="table-of-contents__link toc-highlight">Throughput</a></li><li><a href="#error-rate" class="table-of-contents__link toc-highlight">Error Rate</a></li></ul></li><li><a href="#working-with-the-jtl" class="table-of-contents__link toc-highlight">Working with the .jtl</a><ul><li><a href="#the-results-file-jtl" class="table-of-contents__link toc-highlight">The Results File (.jtl)</a></li><li><a href="#filtering-the-jtl-before-generating-reports" class="table-of-contents__link toc-highlight">Filtering the .jtl Before Generating Reports</a></li><li><a href="#aggregate-report-columns" class="table-of-contents__link toc-highlight">Aggregate Report Columns</a></li></ul></li><li><a href="#jmeter-web-report" class="table-of-contents__link toc-highlight">JMeter Web Report</a><ul><li><a href="#report-sections" class="table-of-contents__link toc-highlight">Report Sections</a></li><li><a href="#how-transaction-controllers-appear-in-the-report" class="table-of-contents__link toc-highlight">How Transaction Controllers Appear in the Report</a></li><li><a href="#optimizing-the-html-report" class="table-of-contents__link toc-highlight">Optimizing the HTML Report</a></li></ul></li><li><a href="#identifying-bottlenecks" class="table-of-contents__link toc-highlight">Identifying Bottlenecks</a><ul><li><a href="#high-response-times" class="table-of-contents__link toc-highlight">High Response Times</a></li><li><a href="#high-error-rate" class="table-of-contents__link toc-highlight">High Error Rate</a></li><li><a href="#throughput-plateau" class="table-of-contents__link toc-highlight">Throughput Plateau</a></li><li><a href="#response-time-vs-threads" class="table-of-contents__link toc-highlight">Response Time vs Threads</a></li></ul></li><li><a href="#tips" class="table-of-contents__link toc-highlight">Tips</a></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer"><div class="container container-fluid"><div class="row footer__links"><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Guides</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/docs/performance-testing">Performance Testing</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter">JMeter</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/loadlitmus">LoadLitmus</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/playwright">Playwright</a></li><li class="footer__item"><a class="footer__link-item" href="/k6">k6</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/playground">Playground</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Start here</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter/01-install-tools">Install Tools</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter/03-jmeter-elements">JMeter Elements</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter/08-load-model">Design Load Model</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">More</div><ul class="footer__items clean-list"><li class="footer__item"><a href="https://github.com/Dhawi1902/testing-knowledge-base" target="_blank" rel="noopener noreferrer" class="footer__link-item">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div></div><div class="footer__bottom text--center"><div class="footer__copyright">Testing Knowledge Base — built by the QA team, from markdown.</div></div></div></footer></div>
+</body>
+</html>

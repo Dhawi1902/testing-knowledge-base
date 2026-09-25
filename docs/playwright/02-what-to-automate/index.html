@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en" dir="ltr" class="docs-wrapper plugin-docs plugin-id-default docs-version-current docs-doc-page docs-doc-id-playwright/02-what-to-automate" data-has-hydrated="false">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="Docusaurus v3.10.2">
+<title data-rh="true">Understand What to Automate | Testing KB</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:image" content="https://testing.dhawilabs.com/img/logo.svg"><meta data-rh="true" name="twitter:image" content="https://testing.dhawilabs.com/img/logo.svg"><meta data-rh="true" property="og:url" content="https://testing.dhawilabs.com/docs/playwright/02-what-to-automate"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Understand What to Automate | Testing KB"><meta data-rh="true" name="description" content="UI tests are the most expensive tests to write and the slowest to run. Before recording anything, decide which flows deserve one. This is the same thinking as understanding requirements for a performance test: the tool comes after the plan."><meta data-rh="true" property="og:description" content="UI tests are the most expensive tests to write and the slowest to run. Before recording anything, decide which flows deserve one. This is the same thinking as understanding requirements for a performance test: the tool comes after the plan."><link data-rh="true" rel="icon" href="/img/logo.svg"><link data-rh="true" rel="canonical" href="https://testing.dhawilabs.com/docs/playwright/02-what-to-automate"><link data-rh="true" rel="alternate" href="https://testing.dhawilabs.com/docs/playwright/02-what-to-automate" hreflang="en"><link data-rh="true" rel="alternate" href="https://testing.dhawilabs.com/docs/playwright/02-what-to-automate" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Playwright","item":"https://testing.dhawilabs.com/docs/playwright/"},{"@type":"ListItem","position":2,"name":"Understand What to Automate","item":"https://testing.dhawilabs.com/docs/playwright/02-what-to-automate"}]}</script><link rel="stylesheet" href="/assets/css/styles.20db86a5.css">
+<script src="/assets/js/runtime~main.925e99c4.js" defer="defer"></script>
+<script src="/assets/js/main.73d585a6.js" defer="defer"></script>
+</head>
+<body>
+<svg style="display: none;"><defs>
+<symbol id="theme-svg-external-link" viewBox="0 0 24 24"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"/></symbol>
+</defs></svg>
+<script>!function(){var t=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme")}catch(t){}}();document.documentElement.setAttribute("data-theme",t||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")),document.documentElement.setAttribute("data-theme-choice",t||"system")}(),function(){try{const c=new URLSearchParams(window.location.search).entries();for(var[t,e]of c)if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}()</script><div id="__docusaurus"><div role="region" aria-label="Skip to main content"><a class="skipToContent_fXgn" href="#__docusaurus_skipToContent_fallback">Skip to main content</a></div><nav aria-label="Main" class="theme-layout-navbar navbar navbar--fixed-top"><div class="navbar__inner"><div class="theme-layout-navbar-left navbar__items"><button aria-label="Toggle navigation bar" aria-expanded="false" class="navbar__toggle clean-btn" type="button"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" href="/"><div class="navbar__logo"><img src="/img/logo.svg" alt="Testing Knowledge Base" class="themedComponent_mlkZ themedComponent--light_NVdE"><img src="/img/logo.svg" alt="Testing Knowledge Base" class="themedComponent_mlkZ themedComponent--dark_xIcU"></div><b class="navbar__title text--truncate">Testing KB</b></a><a class="navbar__item navbar__link" href="/">Home</a><a aria-current="page" class="navbar__item navbar__link navbar__link--active" href="/docs">Guides</a></div><div class="theme-layout-navbar-right navbar__items navbar__items--right"><a class="navbar__item navbar__link navbar-cta" href="/docs/jmeter/01-install-tools">Get started</a><div class="toggle_vylO colorModeToggle_DEke"><button class="clean-btn toggleButton_gllP toggleButtonDisabled_aARS" type="button" disabled="" title="system mode" aria-label="Switch between dark and light mode (currently system mode)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP lightToggleIcon_pyhR"><path fill="currentColor" d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP darkToggleIcon_wfgR"><path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP systemToggleIcon_QzmC"><path fill="currentColor" d="m12 21c4.971 0 9-4.029 9-9s-4.029-9-9-9-9 4.029-9 9 4.029 9 9 9zm4.95-13.95c1.313 1.313 2.05 3.093 2.05 4.95s-0.738 3.637-2.05 4.95c-1.313 1.313-3.093 2.05-4.95 2.05v-14c1.857 0 3.637 0.737 4.95 2.05z"></path></svg></button></div><div class="navbarSearchContainer_Bca1"><div class="navbar__search searchBarContainer_NW3z" dir="ltr"><input placeholder="Search" aria-label="Search" class="navbar__search-input" value=""><div class="loadingRing_RJI3 searchBarLoadingRing_YnHq"><div></div><div></div><div></div><div></div></div></div></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div id="__docusaurus_skipToContent_fallback" class="theme-layout-main main-wrapper mainWrapper_z2l0"><div class="docsWrapper_hBAB"><button aria-label="Scroll back to top" class="clean-btn theme-back-to-top-button backToTopButton_sjWU" type="button"></button><div class="docRoot_UBD9"><aside class="theme-doc-sidebar-container docSidebarContainer_YfHR"><div class="sidebarViewport_aRkj"><div class="sidebar_njMd"><nav aria-label="Docs sidebar" class="menu thin-scrollbar menu_SIkG"><ul class="theme-doc-sidebar-menu menu__list"><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--active" href="/docs/playwright/"><span class="categoryLinkLabel_W154">Playwright</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--active" tabindex="0"><span class="categoryLinkLabel_W154">Basics</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/playwright/01-install-tools"><span class="linkLabel_WmDU">Install Tools</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link menu__link--active" aria-current="page" tabindex="0" href="/docs/playwright/02-what-to-automate"><span class="linkLabel_WmDU">Understand What to Automate</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/playwright/03-playwright-concepts"><span class="linkLabel_WmDU">Playwright Concepts</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/playwright/04-recording-with-codegen"><span class="linkLabel_WmDU">Recording with Codegen</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/playwright/05-locators-and-assertions"><span class="linkLabel_WmDU">Locators and Assertions</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/playwright/06-test-structure-and-page-objects"><span class="linkLabel_WmDU">Test Structure and Page Objects</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/playwright/07-debug"><span class="linkLabel_WmDU">Debug</span></a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link" tabindex="0"><span class="categoryLinkLabel_W154">Running</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/playwright/08-configuration-and-running"><span class="linkLabel_WmDU">Configuration and Running</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/playwright/09-authentication-and-state"><span class="linkLabel_WmDU">Authentication and State</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/playwright/10-running-in-ci"><span class="linkLabel_WmDU">Running in CI</span></a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link" tabindex="0"><span class="categoryLinkLabel_W154">Appendix</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/playwright/99-future-to-explore"><span class="linkLabel_WmDU">Future / To Explore</span></a></li></ul></li></ul></li></ul></nav></div></div></aside><main class="docMainContainer_TBSr"><div class="container padding-top--md padding-bottom--lg"><div class="row"><div class="col docItemCol_VOVn"><div class="docItemContainer_Djhp"><article><nav class="theme-doc-breadcrumbs breadcrumbsContainer_Z_bl" aria-label="Breadcrumbs"><ul class="breadcrumbs"><li class="breadcrumbs__item"><a aria-label="Home page" class="breadcrumbs__link" href="/"><svg viewBox="0 0 24 24" class="breadcrumbHomeIcon_YNFT"><path d="M10 19v-5h4v5c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-7h1.7c.46 0 .68-.57.33-.87L12.67 3.6c-.38-.34-.96-.34-1.34 0l-8.36 7.53c-.34.3-.13.87.33.87H5v7c0 .55.45 1 1 1h3c.55 0 1-.45 1-1z" fill="currentColor"></path></svg></a></li><li class="breadcrumbs__item"><a class="breadcrumbs__link" href="/docs/playwright/"><span>Playwright</span></a></li><li class="breadcrumbs__item"><span class="breadcrumbs__link">Basics</span></li><li class="breadcrumbs__item breadcrumbs__item--active"><span class="breadcrumbs__link">Understand What to Automate</span></li></ul></nav><div class="tocCollapsible_ETCw theme-doc-toc-mobile tocMobile_ITEo"><button type="button" class="clean-btn tocCollapsibleButton_TO0P">On this page</button></div><div class="theme-doc-markdown markdown"><header><h1>Understand What to Automate</h1></header>
+<p>UI tests are the most expensive tests to write and the slowest to run. Before recording anything, decide which flows deserve one. This is the same thinking as <a class="" href="/docs/jmeter/02-understand-requirements">understanding requirements for a performance test</a>: the tool comes after the plan.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="why-this-matters">Why This Matters<a href="#why-this-matters" class="hash-link" aria-label="Direct link to Why This Matters" title="Direct link to Why This Matters" translate="no">​</a></h2>
+<p>A UI test suite that tries to cover everything ends up slow, flaky and ignored. A small suite of the flows that matter, kept green, is what actually catches regressions. Aim for the second one.</p>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="questions-to-ask">Questions to Ask<a href="#questions-to-ask" class="hash-link" aria-label="Direct link to Questions to Ask" title="Direct link to Questions to Ask" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="what-are-the-critical-user-journeys">What are the critical user journeys?<a href="#what-are-the-critical-user-journeys" class="hash-link" aria-label="Direct link to What are the critical user journeys?" title="Direct link to What are the critical user journeys?" translate="no">​</a></h3>
+<p>List the flows that would be a production incident if they broke. Typical examples:</p>
+<ul>
+<li class="">Login and logout</li>
+<li class="">The main &quot;do the job&quot; flow (place an order, submit a claim, create a record)</li>
+<li class="">Search and open a record</li>
+<li class="">Payment or checkout</li>
+<li class="">Anything with a signature, approval or legal step</li>
+</ul>
+<p>Write them down as a numbered list with the steps a real user takes. This list becomes your test names later.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="what-already-has-coverage-lower-down">What already has coverage lower down?<a href="#what-already-has-coverage-lower-down" class="hash-link" aria-label="Direct link to What already has coverage lower down?" title="Direct link to What already has coverage lower down?" translate="no">​</a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Level</th><th>What it checks</th><th>Speed</th></tr></thead><tbody><tr><td>Unit tests</td><td>One function or component</td><td>Milliseconds</td></tr><tr><td>API tests</td><td>One endpoint, request and response</td><td>Milliseconds to seconds</td></tr><tr><td>UI tests (Playwright)</td><td>The whole stack through a real browser</td><td>Seconds per test</td></tr></tbody></table>
+<p>If a rule is already tested at the API level, the UI test only needs to check that the screen shows the result, not re-test every rule. Validation messages, edge cases and error codes are usually cheaper to cover at the API level.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="what-is-stable">What is stable?<a href="#what-is-stable" class="hash-link" aria-label="Direct link to What is stable?" title="Direct link to What is stable?" translate="no">​</a></h3>
+<p>Screens that change every sprint make bad UI test targets. Automate a flow once its UI has settled, or accept that you will be updating locators often. Section 5 shows how to choose locators that survive most redesigns.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="what-do-you-control">What do you control?<a href="#what-do-you-control" class="hash-link" aria-label="Direct link to What do you control?" title="Direct link to What do you control?" translate="no">​</a></h3>
+<ul>
+<li class=""><strong>Test data.</strong> Each test should create or own the data it needs, or run against a seeded environment that resets. A test that depends on &quot;the record someone created last week&quot; will break.</li>
+<li class=""><strong>Test accounts.</strong> One account per role (admin, normal user, read-only). Never a real person&#x27;s account.</li>
+<li class=""><strong>The environment.</strong> Test against staging or a dedicated test environment, not production. Third-party sites, payment gateways and email providers are mocked or stubbed, not driven for real.</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="what-is-the-pass-condition">What is the pass condition?<a href="#what-is-the-pass-condition" class="hash-link" aria-label="Direct link to What is the pass condition?" title="Direct link to What is the pass condition?" translate="no">​</a></h3>
+<p>For each flow, name the one thing that proves it worked. &quot;The order confirmation page shows the order number&quot; is a test. &quot;Click through checkout&quot; is not.</p>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="decide-the-scope">Decide the Scope<a href="#decide-the-scope" class="hash-link" aria-label="Direct link to Decide the Scope" title="Direct link to Decide the Scope" translate="no">​</a></h2>
+<p>Fill in a table like this before you touch the recorder:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>#</th><th>Flow</th><th>Steps</th><th>Pass condition</th><th>Data needed</th><th>Role</th></tr></thead><tbody><tr><td>1</td><td>Login</td><td>Open site, enter credentials, submit</td><td>Products page is shown</td><td>standard user</td><td>user</td></tr><tr><td>2</td><td>Add to cart</td><td>From products, add one item</td><td>Cart badge shows 1</td><td>none</td><td>user</td></tr><tr><td>3</td><td>Locked out user</td><td>Login with locked account</td><td>Error message shown</td><td>locked user</td><td>user</td></tr></tbody></table>
+<p>This is exactly the table the sample project implements. Keep the first version short. Five good tests that run on every pull request beat fifty that nobody trusts.</p>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="what-not-to-automate-in-the-ui">What Not to Automate in the UI<a href="#what-not-to-automate-in-the-ui" class="hash-link" aria-label="Direct link to What Not to Automate in the UI" title="Direct link to What Not to Automate in the UI" translate="no">​</a></h2>
+<ul>
+<li class="">Third-party pages you do not own (social login screens, payment provider pages). Stub them.</li>
+<li class="">Visual polish. Pixel comparisons are possible but fragile. Start without them.</li>
+<li class="">Every validation message on every field. Cover one happy path and one failure per form, push the rest down to API or unit tests.</li>
+<li class="">Flows that need a real email or SMS. Use a test inbox service or a stub.</li>
+</ul>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="tips">Tips<a href="#tips" class="hash-link" aria-label="Direct link to Tips" title="Direct link to Tips" translate="no">​</a></h2>
+<ul>
+<li class="">
+<p><strong>Name flows the way the business says them.</strong> &quot;Submit leave request&quot; not &quot;click button 3&quot;. These names end up in reports that non-testers read.</p>
+</li>
+<li class="">
+<p><strong>One flow, one test.</strong> Do not chain login, search, edit and delete into one long test. When it fails you will not know which part broke.</p>
+</li>
+<li class="">
+<p><strong>Write the pass condition first.</strong> If you cannot say what the screen should show at the end, you are not ready to automate it.</p>
+</li>
+</ul></div><footer class="theme-doc-footer docusaurus-mt-lg"><div class="row margin-top--sm theme-doc-footer-edit-meta-row"><div class="col noPrint_WFHX"></div><div class="col lastUpdated_JAkA"><span class="theme-last-updated">Last updated<!-- --> on <b><time datetime="2026-09-15T11:23:38.000Z" itemprop="dateModified">Sep 15, 2026</time></b></span></div></div></footer></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Docs pages"><a class="pagination-nav__link pagination-nav__link--prev" href="/docs/playwright/01-install-tools"><div class="pagination-nav__sublabel">Previous</div><div class="pagination-nav__label">Install Tools</div></a><a class="pagination-nav__link pagination-nav__link--next" href="/docs/playwright/03-playwright-concepts"><div class="pagination-nav__sublabel">Next</div><div class="pagination-nav__label">Playwright Concepts</div></a></nav></div></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#why-this-matters" class="table-of-contents__link toc-highlight">Why This Matters</a></li><li><a href="#questions-to-ask" class="table-of-contents__link toc-highlight">Questions to Ask</a><ul><li><a href="#what-are-the-critical-user-journeys" class="table-of-contents__link toc-highlight">What are the critical user journeys?</a></li><li><a href="#what-already-has-coverage-lower-down" class="table-of-contents__link toc-highlight">What already has coverage lower down?</a></li><li><a href="#what-is-stable" class="table-of-contents__link toc-highlight">What is stable?</a></li><li><a href="#what-do-you-control" class="table-of-contents__link toc-highlight">What do you control?</a></li><li><a href="#what-is-the-pass-condition" class="table-of-contents__link toc-highlight">What is the pass condition?</a></li></ul></li><li><a href="#decide-the-scope" class="table-of-contents__link toc-highlight">Decide the Scope</a></li><li><a href="#what-not-to-automate-in-the-ui" class="table-of-contents__link toc-highlight">What Not to Automate in the UI</a></li><li><a href="#tips" class="table-of-contents__link toc-highlight">Tips</a></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer"><div class="container container-fluid"><div class="row footer__links"><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Guides</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/docs/performance-testing">Performance Testing</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter">JMeter</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/loadlitmus">LoadLitmus</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/playwright">Playwright</a></li><li class="footer__item"><a class="footer__link-item" href="/k6">k6</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/playground">Playground</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Start here</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter/01-install-tools">Install Tools</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter/03-jmeter-elements">JMeter Elements</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter/08-load-model">Design Load Model</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">More</div><ul class="footer__items clean-list"><li class="footer__item"><a href="https://github.com/Dhawi1902/testing-knowledge-base" target="_blank" rel="noopener noreferrer" class="footer__link-item">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div></div><div class="footer__bottom text--center"><div class="footer__copyright">Testing Knowledge Base — built by the QA team, from markdown.</div></div></div></footer></div>
+</body>
+</html>

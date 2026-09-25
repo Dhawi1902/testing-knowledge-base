@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en" dir="ltr" class="docs-wrapper plugin-docs plugin-id-default docs-version-current docs-doc-page docs-doc-id-superpowers/specs/2026-09-24-pizza-playground-design" data-has-hydrated="false">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="Docusaurus v3.10.2">
+<title data-rh="true">Pizza Playground — Design Spec | Testing KB</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:image" content="https://testing.dhawilabs.com/img/logo.svg"><meta data-rh="true" name="twitter:image" content="https://testing.dhawilabs.com/img/logo.svg"><meta data-rh="true" property="og:url" content="https://testing.dhawilabs.com/docs/superpowers/specs/2026-09-24-pizza-playground-design"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Pizza Playground — Design Spec | Testing KB"><meta data-rh="true" name="description" content="Date: 2026-09-24"><meta data-rh="true" property="og:description" content="Date: 2026-09-24"><link data-rh="true" rel="icon" href="/img/logo.svg"><link data-rh="true" rel="canonical" href="https://testing.dhawilabs.com/docs/superpowers/specs/2026-09-24-pizza-playground-design"><link data-rh="true" rel="alternate" href="https://testing.dhawilabs.com/docs/superpowers/specs/2026-09-24-pizza-playground-design" hreflang="en"><link data-rh="true" rel="alternate" href="https://testing.dhawilabs.com/docs/superpowers/specs/2026-09-24-pizza-playground-design" hreflang="x-default"><link rel="stylesheet" href="/assets/css/styles.20db86a5.css">
+<script src="/assets/js/runtime~main.925e99c4.js" defer="defer"></script>
+<script src="/assets/js/main.73d585a6.js" defer="defer"></script>
+</head>
+<body>
+<svg style="display: none;"><defs>
+<symbol id="theme-svg-external-link" viewBox="0 0 24 24"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"/></symbol>
+</defs></svg>
+<script>!function(){var t=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme")}catch(t){}}();document.documentElement.setAttribute("data-theme",t||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")),document.documentElement.setAttribute("data-theme-choice",t||"system")}(),function(){try{const c=new URLSearchParams(window.location.search).entries();for(var[t,e]of c)if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}()</script><div id="__docusaurus"><div role="region" aria-label="Skip to main content"><a class="skipToContent_fXgn" href="#__docusaurus_skipToContent_fallback">Skip to main content</a></div><nav aria-label="Main" class="theme-layout-navbar navbar navbar--fixed-top"><div class="navbar__inner"><div class="theme-layout-navbar-left navbar__items"><button aria-label="Toggle navigation bar" aria-expanded="false" class="navbar__toggle clean-btn" type="button"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" href="/"><div class="navbar__logo"><img src="/img/logo.svg" alt="Testing Knowledge Base" class="themedComponent_mlkZ themedComponent--light_NVdE"><img src="/img/logo.svg" alt="Testing Knowledge Base" class="themedComponent_mlkZ themedComponent--dark_xIcU"></div><b class="navbar__title text--truncate">Testing KB</b></a><a class="navbar__item navbar__link" href="/">Home</a><a aria-current="page" class="navbar__item navbar__link navbar__link--active" href="/docs">Guides</a></div><div class="theme-layout-navbar-right navbar__items navbar__items--right"><a class="navbar__item navbar__link navbar-cta" href="/docs/jmeter/01-install-tools">Get started</a><div class="toggle_vylO colorModeToggle_DEke"><button class="clean-btn toggleButton_gllP toggleButtonDisabled_aARS" type="button" disabled="" title="system mode" aria-label="Switch between dark and light mode (currently system mode)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP lightToggleIcon_pyhR"><path fill="currentColor" d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP darkToggleIcon_wfgR"><path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP systemToggleIcon_QzmC"><path fill="currentColor" d="m12 21c4.971 0 9-4.029 9-9s-4.029-9-9-9-9 4.029-9 9 4.029 9 9 9zm4.95-13.95c1.313 1.313 2.05 3.093 2.05 4.95s-0.738 3.637-2.05 4.95c-1.313 1.313-3.093 2.05-4.95 2.05v-14c1.857 0 3.637 0.737 4.95 2.05z"></path></svg></button></div><div class="navbarSearchContainer_Bca1"><div class="navbar__search searchBarContainer_NW3z" dir="ltr"><input placeholder="Search" aria-label="Search" class="navbar__search-input" value=""><div class="loadingRing_RJI3 searchBarLoadingRing_YnHq"><div></div><div></div><div></div><div></div></div></div></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div id="__docusaurus_skipToContent_fallback" class="theme-layout-main main-wrapper mainWrapper_z2l0"><div class="docsWrapper_hBAB"><button aria-label="Scroll back to top" class="clean-btn theme-back-to-top-button backToTopButton_sjWU" type="button"></button><div class="docRoot_UBD9"><main class="docMainContainer_TBSr docMainContainerEnhanced_lQrH"><div class="container padding-top--md padding-bottom--lg"><div class="row"><div class="col docItemCol_VOVn"><div class="docItemContainer_Djhp"><article><div class="tocCollapsible_ETCw theme-doc-toc-mobile tocMobile_ITEo"><button type="button" class="clean-btn tocCollapsibleButton_TO0P">On this page</button></div><div class="theme-doc-markdown markdown"><header><h1>Pizza Playground — Design Spec</h1></header>
+<p><strong>Date:</strong> 2026-09-24
+<strong>Status:</strong> Approved in brainstorming, awaiting implementation plan
+<strong>Repo:</strong> separate repository <code>pizza-playground</code> (the KB links to it and pins a version tag)</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="1-purpose">1. Purpose<a href="#1-purpose" class="hash-link" aria-label="Direct link to 1. Purpose" title="Direct link to 1. Purpose" translate="no">​</a></h2>
+<p>A self-contained pizza ordering application that anyone can run locally with <code>docker compose up</code> and use as the target for the Testing Knowledge Base tracks: JMeter, k6 and Playwright. It replaces the Firebase and Billplz dependencies of the source project with a real backend, a real database and a mocked payment gateway, so no cloud accounts are needed.</p>
+<p><strong>Success looks like</strong></p>
+<ul>
+<li class=""><code>docker compose up</code> on a clean machine gives a working shop at <code>http://localhost:3000</code>, an API with Swagger UI at <code>http://localhost:8080/swagger-ui.html</code>, and a mock gateway.</li>
+<li class="">Every test run can start from an identical state with one API call.</li>
+<li class="">A load test can push order volume without the mock gateway being the bottleneck.</li>
+<li class="">A UI test can click through menu, cart, checkout, payment and confirmation.</li>
+</ul>
+<p><strong>Non-goals for version one:</strong> preorders, drinks, inventory limits, cashier manual orders, real email, image uploads, refunds, rate limiting, HTTPS.</p>
+<p><strong>Intellectual property:</strong> the original repository belongs to a client. The playground is a rewrite with a different name, no client copy, images or data, and no reference to the client in code or docs.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="2-architecture">2. Architecture<a href="#2-architecture" class="hash-link" aria-label="Direct link to 2. Architecture" title="Direct link to 2. Architecture" translate="no">​</a></h2>
+<p>Four containers defined in <code>docker-compose.yml</code>:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Service</th><th>Image</th><th>Port</th><th>Role</th></tr></thead><tbody><tr><td><code>web</code></td><td>Next.js 15, built from <code>web/</code></td><td>3000</td><td>Customer shop and admin UI, copied from the source project with all Firebase calls replaced by fetches to <code>api</code></td></tr><tr><td><code>api</code></td><td>Spring Boot 3, Java 21, built from <code>api/</code></td><td>8080</td><td>All business logic, auth, persistence, gateway client</td></tr><tr><td><code>db</code></td><td><code>postgres:16</code></td><td>5432</td><td>Single database, Flyway-managed schema and seed</td></tr><tr><td><code>mock-gateway</code></td><td>SoapUI open source, built from <code>mock-gateway/</code></td><td>8090</td><td>Mock payment gateway: bill creation, hosted pay page, signed callback</td></tr></tbody></table>
+<p>Single Spring Boot service, package-per-feature (<code>auth</code>, <code>catalog</code>, <code>orders</code>, <code>payments</code>, <code>admin</code>). No microservices, no message broker.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="3-data-model">3. Data model<a href="#3-data-model" class="hash-link" aria-label="Direct link to 3. Data model" title="Direct link to 3. Data model" translate="no">​</a></h2>
+<p>Postgres, migrations in <code>api/src/main/resources/db/migration/</code> via Flyway.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Table</th><th>Columns</th></tr></thead><tbody><tr><td><code>users</code></td><td>id, email (unique), password_hash, display_name, role (<code>CUSTOMER</code>, <code>OWNER</code>, <code>CASHIER</code>), created_at</td></tr><tr><td><code>pizzas</code></td><td>id, name, description, base_price, category, image_url, active</td></tr><tr><td><code>pizza_sizes</code></td><td>id, name, price_delta</td></tr><tr><td><code>crusts</code></td><td>id, name, price_delta</td></tr><tr><td><code>toppings</code></td><td>id, name, price_delta</td></tr><tr><td><code>orders</code></td><td>id, order_number (sequence from 1001), user_id (nullable), status, payment_status, type (<code>PICKUP</code>, <code>DELIVERY</code>), customer_name, customer_email, customer_phone, subtotal, service_fee, total, created_at, paid_at</td></tr><tr><td><code>order_items</code></td><td>id, order_id, pizza_name, size, crust, toppings (JSONB array of names), quantity, line_price</td></tr><tr><td><code>payments</code></td><td>id, order_id, gateway_bill_id, amount, status, raw_callback (JSONB), created_at</td></tr></tbody></table>
+<p>Rules:</p>
+<ul>
+<li class="">Order items are snapshots. They never reference <code>pizzas</code> by foreign key, so menu edits do not rewrite history.</li>
+<li class="">There is no <code>pending_orders</code> table. An order is <code>status = PENDING, payment_status = UNPAID</code> until the callback flips it.</li>
+<li class="">Order statuses: <code>PENDING</code>, <code>NEW</code>, <code>PREPARING</code>, <code>READY</code>, <code>COMPLETED</code>, <code>CANCELLED</code>. Payment statuses: <code>UNPAID</code>, <code>PAID</code>, <code>FAILED</code>.</li>
+<li class="">Prices are computed server-side from the lookup tables. The client sends ids and quantities only.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="4-api-surface">4. API surface<a href="#4-api-surface" class="hash-link" aria-label="Direct link to 4. API surface" title="Direct link to 4. API surface" translate="no">​</a></h2>
+<p>Base path <code>/api/v1</code>, JSON everywhere.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Area</th><th>Endpoint</th><th>Auth</th></tr></thead><tbody><tr><td>Auth</td><td><code>POST /auth/register</code></td><td>none</td></tr><tr><td>Auth</td><td><code>POST /auth/login</code> → <code>{ token, user }</code></td><td>none</td></tr><tr><td>Auth</td><td><code>GET /auth/me</code></td><td>any token</td></tr><tr><td>Catalog</td><td><code>GET /menu</code> → pizzas with sizes, crusts, toppings in one payload</td><td>none</td></tr><tr><td>Orders</td><td><code>POST /orders</code> → prices cart, creates order, calls gateway, returns <code>{ orderId, orderNumber, payUrl }</code></td><td>optional token</td></tr><tr><td>Orders</td><td><code>GET /orders/{id}</code></td><td>none (id is a UUID)</td></tr><tr><td>Orders</td><td><code>GET /orders/mine</code></td><td>CUSTOMER</td></tr><tr><td>Payments</td><td><code>POST /payments/callback</code> (gateway webhook)</td><td>HMAC signature</td></tr><tr><td>Payments</td><td><code>GET /payments/{orderId}/status</code></td><td>none</td></tr><tr><td>Admin</td><td><code>GET /admin/orders?status=</code></td><td>OWNER, CASHIER</td></tr><tr><td>Admin</td><td><code>PATCH /admin/orders/{id}/status</code></td><td>OWNER, CASHIER</td></tr><tr><td>Admin</td><td><code>GET /admin/orders/history?from=&amp;to=</code></td><td>OWNER</td></tr><tr><td>Playground</td><td><code>POST /admin/reset[?full=true]</code></td><td>OWNER</td></tr><tr><td>Ops</td><td><code>GET /actuator/health</code></td><td>none</td></tr></tbody></table>
+<p>Swagger UI is served at <code>/swagger-ui.html</code> from springdoc-openapi.</p>
+<p><code>POST /orders</code> request body:</p>
+<div class="language-json codeBlockContainer_Ckt0 theme-code-block" style="--prism-background-color:hsl(220, 13%, 18%);--prism-color:hsl(220, 14%, 71%)"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-json codeBlock_bY9V thin-scrollbar" style="background-color:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token punctuation" style="color:hsl(220, 14%, 71%)">{</span><span class="token plain"></span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">  </span><span class="token property" style="color:hsl(355, 65%, 65%)">&quot;type&quot;</span><span class="token operator" style="color:hsl(207, 82%, 66%)">:</span><span class="token plain"> </span><span class="token string" style="color:hsl(95, 38%, 62%)">&quot;PICKUP&quot;</span><span class="token punctuation" style="color:hsl(220, 14%, 71%)">,</span><span class="token plain"></span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">  </span><span class="token property" style="color:hsl(355, 65%, 65%)">&quot;customer&quot;</span><span class="token operator" style="color:hsl(207, 82%, 66%)">:</span><span class="token plain"> </span><span class="token punctuation" style="color:hsl(220, 14%, 71%)">{</span><span class="token plain"> </span><span class="token property" style="color:hsl(355, 65%, 65%)">&quot;name&quot;</span><span class="token operator" style="color:hsl(207, 82%, 66%)">:</span><span class="token plain"> </span><span class="token string" style="color:hsl(95, 38%, 62%)">&quot;…&quot;</span><span class="token punctuation" style="color:hsl(220, 14%, 71%)">,</span><span class="token plain"> </span><span class="token property" style="color:hsl(355, 65%, 65%)">&quot;email&quot;</span><span class="token operator" style="color:hsl(207, 82%, 66%)">:</span><span class="token plain"> </span><span class="token string" style="color:hsl(95, 38%, 62%)">&quot;…&quot;</span><span class="token punctuation" style="color:hsl(220, 14%, 71%)">,</span><span class="token plain"> </span><span class="token property" style="color:hsl(355, 65%, 65%)">&quot;phone&quot;</span><span class="token operator" style="color:hsl(207, 82%, 66%)">:</span><span class="token plain"> </span><span class="token string" style="color:hsl(95, 38%, 62%)">&quot;…&quot;</span><span class="token plain"> </span><span class="token punctuation" style="color:hsl(220, 14%, 71%)">}</span><span class="token punctuation" style="color:hsl(220, 14%, 71%)">,</span><span class="token plain"></span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">  </span><span class="token property" style="color:hsl(355, 65%, 65%)">&quot;items&quot;</span><span class="token operator" style="color:hsl(207, 82%, 66%)">:</span><span class="token plain"> </span><span class="token punctuation" style="color:hsl(220, 14%, 71%)">[</span><span class="token plain"></span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">    </span><span class="token punctuation" style="color:hsl(220, 14%, 71%)">{</span><span class="token plain"> </span><span class="token property" style="color:hsl(355, 65%, 65%)">&quot;pizzaId&quot;</span><span class="token operator" style="color:hsl(207, 82%, 66%)">:</span><span class="token plain"> </span><span class="token number" style="color:hsl(29, 54%, 61%)">1</span><span class="token punctuation" style="color:hsl(220, 14%, 71%)">,</span><span class="token plain"> </span><span class="token property" style="color:hsl(355, 65%, 65%)">&quot;sizeId&quot;</span><span class="token operator" style="color:hsl(207, 82%, 66%)">:</span><span class="token plain"> </span><span class="token number" style="color:hsl(29, 54%, 61%)">2</span><span class="token punctuation" style="color:hsl(220, 14%, 71%)">,</span><span class="token plain"> </span><span class="token property" style="color:hsl(355, 65%, 65%)">&quot;crustId&quot;</span><span class="token operator" style="color:hsl(207, 82%, 66%)">:</span><span class="token plain"> </span><span class="token number" style="color:hsl(29, 54%, 61%)">1</span><span class="token punctuation" style="color:hsl(220, 14%, 71%)">,</span><span class="token plain"> </span><span class="token property" style="color:hsl(355, 65%, 65%)">&quot;toppingIds&quot;</span><span class="token operator" style="color:hsl(207, 82%, 66%)">:</span><span class="token plain"> </span><span class="token punctuation" style="color:hsl(220, 14%, 71%)">[</span><span class="token number" style="color:hsl(29, 54%, 61%)">3</span><span class="token punctuation" style="color:hsl(220, 14%, 71%)">,</span><span class="token plain"> </span><span class="token number" style="color:hsl(29, 54%, 61%)">5</span><span class="token punctuation" style="color:hsl(220, 14%, 71%)">]</span><span class="token punctuation" style="color:hsl(220, 14%, 71%)">,</span><span class="token plain"> </span><span class="token property" style="color:hsl(355, 65%, 65%)">&quot;quantity&quot;</span><span class="token operator" style="color:hsl(207, 82%, 66%)">:</span><span class="token plain"> </span><span class="token number" style="color:hsl(29, 54%, 61%)">2</span><span class="token plain"> </span><span class="token punctuation" style="color:hsl(220, 14%, 71%)">}</span><span class="token plain"></span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">  </span><span class="token punctuation" style="color:hsl(220, 14%, 71%)">]</span><span class="token punctuation" style="color:hsl(220, 14%, 71%)">,</span><span class="token plain"></span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">  </span><span class="token property" style="color:hsl(355, 65%, 65%)">&quot;autoPay&quot;</span><span class="token operator" style="color:hsl(207, 82%, 66%)">:</span><span class="token plain"> </span><span class="token boolean" style="color:hsl(29, 54%, 61%)">false</span><span class="token plain"></span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain"></span><span class="token punctuation" style="color:hsl(220, 14%, 71%)">}</span><br></div></code></pre></div></div>
+<p><code>autoPay: true</code> skips the gateway and marks the order <code>PAID</code> / <code>NEW</code> inside the same transaction. It exists so JMeter and k6 can drive order volume without the mock gateway in the loop.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="5-payment-flow">5. Payment flow<a href="#5-payment-flow" class="hash-link" aria-label="Direct link to 5. Payment flow" title="Direct link to 5. Payment flow" translate="no">​</a></h2>
+<ol>
+<li class=""><code>POST /orders</code> validates and prices the cart, inserts the order as <code>PENDING</code> / <code>UNPAID</code>, then calls <code>POST {MOCK_GATEWAY_URL}/bills</code> with <code>{ amount, orderId, callbackUrl, redirectUrl }</code>.</li>
+<li class="">The mock returns <code>{ id, url }</code>. The API stores the bill id in <code>payments</code> and returns <code>url</code> to the browser as <code>payUrl</code>.</li>
+<li class=""><code>payUrl</code> is the mock&#x27;s own <code>GET /pay/{billId}</code> page: a minimal HTML form with two buttons, <strong>Pay</strong> and <strong>Fail</strong>. This gives Playwright something to click and JMeter a plain POST.</li>
+<li class=""><strong>Pay</strong> makes the mock <code>POST</code> the callback to <code>http://api:8080/api/v1/payments/callback</code> with Billplz-shaped fields (<code>id</code>, <code>paid</code>, <code>paid_at</code>, <code>amount</code>, <code>x_signature</code>) where <code>x_signature</code> is HMAC-SHA256 over the sorted fields using <code>GATEWAY_SIGNATURE_KEY</code> from <code>.env</code>. The mock then redirects the browser to <code>redirectUrl</code>.</li>
+<li class="">The callback handler verifies the signature, sets <code>payment_status = PAID</code>, <code>status = NEW</code>, <code>paid_at = now()</code>, stores the raw callback, and logs a <code>would send email to …</code> line. A callback for an order that is already <code>PAID</code> returns 200 and changes nothing, so retries are safe. <strong>Fail</strong> sends <code>paid=false</code> and the order becomes <code>FAILED</code> while staying <code>PENDING</code>.</li>
+<li class="">The confirmation page polls <code>GET /payments/{orderId}/status</code> every second until <code>PAID</code> or <code>FAILED</code>.</li>
+</ol>
+<p>Mock extras:</p>
+<ul>
+<li class="">The mock honours an <code>X-Mock-Delay: &lt;ms&gt;</code> request header on <code>/bills</code> and <code>/pay/{billId}</code> to simulate a slow gateway.</li>
+<li class="">The mock is a REST MockService defined in <code>mock-gateway/gateway-mock-soapui-project.xml</code>. Groovy scripts compute the signature and fire the callback. The same file opens in desktop SoapUI so anyone can edit responses.</li>
+<li class=""><code>mock-gateway/Dockerfile</code> downloads SoapUI open source and runs <code>mockservicerunner.sh</code> against the project file. It is the one custom image in the stack.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="6-auth">6. Auth<a href="#6-auth" class="hash-link" aria-label="Direct link to 6. Auth" title="Direct link to 6. Auth" translate="no">​</a></h2>
+<ul>
+<li class="">Passwords hashed with BCrypt. JWT signed with HS256 using <code>JWT_SECRET</code> from <code>.env</code>, twelve-hour expiry, no refresh tokens.</li>
+<li class="">Roles: <code>CUSTOMER</code> for shop endpoints, <code>OWNER</code> and <code>CASHIER</code> for admin endpoints, <code>OWNER</code> only for reset and order history.</li>
+<li class="">Guest checkout stays allowed: <code>POST /orders</code> without a token creates an order with <code>user_id = null</code>.</li>
+<li class="">Seed accounts, all with password <code>Password123!</code>:
+<ul>
+<li class=""><code>owner@playground.local</code> (OWNER)</li>
+<li class=""><code>cashier@playground.local</code> (CASHIER)</li>
+<li class=""><code>customer01@playground.local</code> … <code>customer20@playground.local</code> (CUSTOMER)</li>
+</ul>
+</li>
+<li class=""><code>test-data/customers.csv</code> holds the twenty customer logins for JMeter and k6.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="7-reset-and-seeding">7. Reset and seeding<a href="#7-reset-and-seeding" class="hash-link" aria-label="Direct link to 7. Reset and seeding" title="Direct link to 7. Reset and seeding" translate="no">​</a></h2>
+<ul>
+<li class="">Flyway <code>V1__schema.sql</code> creates the tables and sequence. <code>V2__seed.sql</code> inserts about twelve pizzas, three sizes, three crusts, eight toppings, and the seed accounts.</li>
+<li class=""><code>POST /admin/reset</code> truncates <code>orders</code>, <code>order_items</code>, <code>payments</code> and restarts the order number sequence at 1001. With <code>?full=true</code> it also truncates <code>users</code> and the catalog tables and re-runs the seed inserts. Runs in one transaction and returns <code>{ resetAt, full }</code>.</li>
+<li class="">Reset is API-only. The UI has no reset button so test suites own the lifecycle.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="8-error-handling">8. Error handling<a href="#8-error-handling" class="hash-link" aria-label="Direct link to 8. Error handling" title="Direct link to 8. Error handling" translate="no">​</a></h2>
+<ul>
+<li class="">One <code>@ControllerAdvice</code> produces <code>{ &quot;error&quot;: &quot;&lt;message&gt;&quot;, &quot;requestId&quot;: &quot;&lt;uuid&gt;&quot; }</code> for every error. Status mapping: validation 400, missing or invalid token 401, wrong role 403, unknown id 404, unhandled 500. The request id is also in the log line.</li>
+<li class="">Gateway unreachable during <code>POST /orders</code> returns 502. The order stays <code>PENDING</code> / <code>UNPAID</code> so the client can retry.</li>
+<li class="">Callback with a bad signature returns 401 and logs a warning. The order does not change.</li>
+<li class="">Cart validation rejects unknown ids, inactive pizzas, quantity below 1, and an empty item list.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="9-frontend-changes">9. Frontend changes<a href="#9-frontend-changes" class="hash-link" aria-label="Direct link to 9. Frontend changes" title="Direct link to 9. Frontend changes" translate="no">​</a></h2>
+<ul>
+<li class="">Copy <code>src/app</code>, <code>src/components</code>, <code>src/contexts</code>, <code>src/types</code> and styling from the source project into <code>web/</code>. Rename the brand to Pizza Playground and drop client images and copy.</li>
+<li class="">Delete <code>src/lib/firebase.ts</code>, <code>src/lib/firestore/</code>, <code>src/lib/storage/</code>, <code>src/emails/</code>, the Firebase config files and all Next.js API routes.</li>
+<li class="">Add <code>src/lib/api.ts</code>, one fetch wrapper that attaches the JWT from <code>localStorage</code> and maps error bodies. Every page calls the API through it.</li>
+<li class="">Pages kept: home, menu, checkout, order confirmation, customer login and register, <code>orders/mine</code>, admin login, admin dashboard kanban, admin order history. Pages dropped: drinks, inventory, preorders, manual order, users, examples.</li>
+<li class=""><code>AdminContext</code> becomes an <code>AuthContext</code> that holds the token and user for both customers and admins.</li>
+<li class="">Environment: <code>NEXT_PUBLIC_API_URL</code> defaults to <code>http://localhost:8080</code>.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="10-repository-layout">10. Repository layout<a href="#10-repository-layout" class="hash-link" aria-label="Direct link to 10. Repository layout" title="Direct link to 10. Repository layout" translate="no">​</a></h2>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-background-color:hsl(220, 13%, 18%);--prism-color:hsl(220, 14%, 71%)"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="background-color:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">pizza-playground/</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">├── docker-compose.yml</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">├── .env.example</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">├── README.md</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">├── api/</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">│   ├── Dockerfile                      # multi-stage Maven build, JRE runtime</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">│   ├── pom.xml</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">│   └── src/main/java/…/{auth,catalog,orders,payments,admin,common}</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">│   └── src/main/resources/db/migration/{V1__schema.sql,V2__seed.sql}</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">├── web/</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">│   ├── Dockerfile</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">│   └── src/lib/api.ts</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">├── mock-gateway/</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">│   ├── Dockerfile</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">│   └── gateway-mock-soapui-project.xml</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">├── test-data/</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">│   └── customers.csv</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">└── .github/workflows/smoke.yml</span><br></div></code></pre></div></div>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="11-testing">11. Testing<a href="#11-testing" class="hash-link" aria-label="Direct link to 11. Testing" title="Direct link to 11. Testing" translate="no">​</a></h2>
+<ul>
+<li class=""><strong>API:</strong> JUnit 5 with Testcontainers Postgres for order creation, callback handling, <code>autoPay</code>, reset, and role enforcement. MockMvc for validation and auth errors. One test per behaviour, no coverage target.</li>
+<li class=""><strong>Web:</strong> keep the Vitest unit tests that survive the Firebase removal (currency, cart pricing, cart operations), delete the rest.</li>
+<li class=""><strong>Smoke (CI):</strong> GitHub Actions runs <code>docker compose up -d</code>, waits on <code>/actuator/health</code>, logs in as a customer, places one <code>autoPay</code> order, calls reset, and tears down. This is the only job that proves the whole stack boots.</li>
+<li class="">KB-facing test scripts (JMeter plans, k6 scripts, Playwright specs) live in the KB, not in this repo.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="12-configuration">12. Configuration<a href="#12-configuration" class="hash-link" aria-label="Direct link to 12. Configuration" title="Direct link to 12. Configuration" translate="no">​</a></h2>
+<p><code>.env.example</code> with working defaults:</p>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-background-color:hsl(220, 13%, 18%);--prism-color:hsl(220, 14%, 71%)"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="background-color:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">POSTGRES_USER=playground</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">POSTGRES_PASSWORD=playground</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">POSTGRES_DB=playground</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">JWT_SECRET=change-me-but-it-works-as-is</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">GATEWAY_SIGNATURE_KEY=mock-signature-key</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">MOCK_GATEWAY_URL=http://mock-gateway:8090</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">PUBLIC_BASE_URL=http://localhost:3000</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">NEXT_PUBLIC_API_URL=http://localhost:8080</span><br></div></code></pre></div></div>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="13-deferred-items">13. Deferred items<a href="#13-deferred-items" class="hash-link" aria-label="Direct link to 13. Deferred items" title="Direct link to 13. Deferred items" translate="no">​</a></h2>
+<p>Each is an isolated later addition: drinks as a second item type, daily inventory limits with sold-out state, preorders, cashier manual orders, a mocked mail service, image uploads, refunds.</p></div><footer class="theme-doc-footer docusaurus-mt-lg"><div class="row margin-top--sm theme-doc-footer-edit-meta-row"><div class="col noPrint_WFHX"></div><div class="col lastUpdated_JAkA"><span class="theme-last-updated">Last updated<!-- --> on <b><time datetime="2026-09-24T17:06:06.000Z" itemprop="dateModified">Sep 24, 2026</time></b></span></div></div></footer></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Docs pages"></nav></div></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#1-purpose" class="table-of-contents__link toc-highlight">1. Purpose</a></li><li><a href="#2-architecture" class="table-of-contents__link toc-highlight">2. Architecture</a></li><li><a href="#3-data-model" class="table-of-contents__link toc-highlight">3. Data model</a></li><li><a href="#4-api-surface" class="table-of-contents__link toc-highlight">4. API surface</a></li><li><a href="#5-payment-flow" class="table-of-contents__link toc-highlight">5. Payment flow</a></li><li><a href="#6-auth" class="table-of-contents__link toc-highlight">6. Auth</a></li><li><a href="#7-reset-and-seeding" class="table-of-contents__link toc-highlight">7. Reset and seeding</a></li><li><a href="#8-error-handling" class="table-of-contents__link toc-highlight">8. Error handling</a></li><li><a href="#9-frontend-changes" class="table-of-contents__link toc-highlight">9. Frontend changes</a></li><li><a href="#10-repository-layout" class="table-of-contents__link toc-highlight">10. Repository layout</a></li><li><a href="#11-testing" class="table-of-contents__link toc-highlight">11. Testing</a></li><li><a href="#12-configuration" class="table-of-contents__link toc-highlight">12. Configuration</a></li><li><a href="#13-deferred-items" class="table-of-contents__link toc-highlight">13. Deferred items</a></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer"><div class="container container-fluid"><div class="row footer__links"><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Guides</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/docs/performance-testing">Performance Testing</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter">JMeter</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/loadlitmus">LoadLitmus</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/playwright">Playwright</a></li><li class="footer__item"><a class="footer__link-item" href="/k6">k6</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/playground">Playground</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Start here</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter/01-install-tools">Install Tools</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter/03-jmeter-elements">JMeter Elements</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter/08-load-model">Design Load Model</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">More</div><ul class="footer__items clean-list"><li class="footer__item"><a href="https://github.com/Dhawi1902/testing-knowledge-base" target="_blank" rel="noopener noreferrer" class="footer__link-item">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div></div><div class="footer__bottom text--center"><div class="footer__copyright">Testing Knowledge Base — built by the QA team, from markdown.</div></div></div></footer></div>
+</body>
+</html>

@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en" dir="ltr" class="docs-wrapper plugin-docs plugin-id-default docs-version-current docs-doc-page docs-doc-id-loadlitmus/99-script-template" data-has-hydrated="false">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="Docusaurus v3.10.2">
+<title data-rh="true">Starter Script Template | Testing KB</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:image" content="https://testing.dhawilabs.com/img/logo.svg"><meta data-rh="true" name="twitter:image" content="https://testing.dhawilabs.com/img/logo.svg"><meta data-rh="true" property="og:url" content="https://testing.dhawilabs.com/docs/loadlitmus/99-script-template"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Starter Script Template | Testing KB"><meta data-rh="true" name="description" content="A ready-made JMeter .jmx skeleton built for LoadLitmus - download it, fill in the placeholders, and start a project with the Load card, guards and portable paths already wired up."><meta data-rh="true" property="og:description" content="A ready-made JMeter .jmx skeleton built for LoadLitmus - download it, fill in the placeholders, and start a project with the Load card, guards and portable paths already wired up."><link data-rh="true" rel="icon" href="/img/logo.svg"><link data-rh="true" rel="canonical" href="https://testing.dhawilabs.com/docs/loadlitmus/99-script-template"><link data-rh="true" rel="alternate" href="https://testing.dhawilabs.com/docs/loadlitmus/99-script-template" hreflang="en"><link data-rh="true" rel="alternate" href="https://testing.dhawilabs.com/docs/loadlitmus/99-script-template" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"LoadLitmus","item":"https://testing.dhawilabs.com/docs/loadlitmus/"},{"@type":"ListItem","position":2,"name":"Starter Script Template","item":"https://testing.dhawilabs.com/docs/loadlitmus/99-script-template"}]}</script><link rel="stylesheet" href="/assets/css/styles.20db86a5.css">
+<script src="/assets/js/runtime~main.925e99c4.js" defer="defer"></script>
+<script src="/assets/js/main.73d585a6.js" defer="defer"></script>
+</head>
+<body>
+<svg style="display: none;"><defs>
+<symbol id="theme-svg-external-link" viewBox="0 0 24 24"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"/></symbol>
+</defs></svg>
+<script>!function(){var t=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme")}catch(t){}}();document.documentElement.setAttribute("data-theme",t||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")),document.documentElement.setAttribute("data-theme-choice",t||"system")}(),function(){try{const c=new URLSearchParams(window.location.search).entries();for(var[t,e]of c)if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}()</script><div id="__docusaurus"><div role="region" aria-label="Skip to main content"><a class="skipToContent_fXgn" href="#__docusaurus_skipToContent_fallback">Skip to main content</a></div><nav aria-label="Main" class="theme-layout-navbar navbar navbar--fixed-top"><div class="navbar__inner"><div class="theme-layout-navbar-left navbar__items"><button aria-label="Toggle navigation bar" aria-expanded="false" class="navbar__toggle clean-btn" type="button"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" href="/"><div class="navbar__logo"><img src="/img/logo.svg" alt="Testing Knowledge Base" class="themedComponent_mlkZ themedComponent--light_NVdE"><img src="/img/logo.svg" alt="Testing Knowledge Base" class="themedComponent_mlkZ themedComponent--dark_xIcU"></div><b class="navbar__title text--truncate">Testing KB</b></a><a class="navbar__item navbar__link" href="/">Home</a><a aria-current="page" class="navbar__item navbar__link navbar__link--active" href="/docs">Guides</a></div><div class="theme-layout-navbar-right navbar__items navbar__items--right"><a class="navbar__item navbar__link navbar-cta" href="/docs/jmeter/01-install-tools">Get started</a><div class="toggle_vylO colorModeToggle_DEke"><button class="clean-btn toggleButton_gllP toggleButtonDisabled_aARS" type="button" disabled="" title="system mode" aria-label="Switch between dark and light mode (currently system mode)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP lightToggleIcon_pyhR"><path fill="currentColor" d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP darkToggleIcon_wfgR"><path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP systemToggleIcon_QzmC"><path fill="currentColor" d="m12 21c4.971 0 9-4.029 9-9s-4.029-9-9-9-9 4.029-9 9 4.029 9 9 9zm4.95-13.95c1.313 1.313 2.05 3.093 2.05 4.95s-0.738 3.637-2.05 4.95c-1.313 1.313-3.093 2.05-4.95 2.05v-14c1.857 0 3.637 0.737 4.95 2.05z"></path></svg></button></div><div class="navbarSearchContainer_Bca1"><div class="navbar__search searchBarContainer_NW3z" dir="ltr"><input placeholder="Search" aria-label="Search" class="navbar__search-input" value=""><div class="loadingRing_RJI3 searchBarLoadingRing_YnHq"><div></div><div></div><div></div><div></div></div></div></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div id="__docusaurus_skipToContent_fallback" class="theme-layout-main main-wrapper mainWrapper_z2l0"><div class="docsWrapper_hBAB"><button aria-label="Scroll back to top" class="clean-btn theme-back-to-top-button backToTopButton_sjWU" type="button"></button><div class="docRoot_UBD9"><aside class="theme-doc-sidebar-container docSidebarContainer_YfHR"><div class="sidebarViewport_aRkj"><div class="sidebar_njMd"><nav aria-label="Docs sidebar" class="menu thin-scrollbar menu_SIkG"><ul class="theme-doc-sidebar-menu menu__list"><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--active" href="/docs/loadlitmus/"><span class="categoryLinkLabel_W154">LoadLitmus</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link" tabindex="0"><span class="categoryLinkLabel_W154">Basics</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/loadlitmus/01-what-is-loadlitmus"><span class="linkLabel_WmDU">What LoadLitmus Is</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/loadlitmus/02-install-and-first-project"><span class="linkLabel_WmDU">Install and First Project</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/loadlitmus/03-script-requirements"><span class="linkLabel_WmDU">Script Requirements</span></a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link" tabindex="0"><span class="categoryLinkLabel_W154">Running Tests</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/loadlitmus/04-running-a-test"><span class="linkLabel_WmDU">Running a Test</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/loadlitmus/05-results-and-monitoring"><span class="linkLabel_WmDU">Results and Monitoring</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/loadlitmus/06-fleet-and-distributed"><span class="linkLabel_WmDU">Fleet and Distributed Runs</span></a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--active" tabindex="0"><span class="categoryLinkLabel_W154">Appendix</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link menu__link--active" aria-current="page" tabindex="0" href="/docs/loadlitmus/99-script-template"><span class="linkLabel_WmDU">Starter Script Template</span></a></li></ul></li></ul></li></ul></nav></div></div></aside><main class="docMainContainer_TBSr"><div class="container padding-top--md padding-bottom--lg"><div class="row"><div class="col docItemCol_VOVn"><div class="docItemContainer_Djhp"><article><nav class="theme-doc-breadcrumbs breadcrumbsContainer_Z_bl" aria-label="Breadcrumbs"><ul class="breadcrumbs"><li class="breadcrumbs__item"><a aria-label="Home page" class="breadcrumbs__link" href="/"><svg viewBox="0 0 24 24" class="breadcrumbHomeIcon_YNFT"><path d="M10 19v-5h4v5c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-7h1.7c.46 0 .68-.57.33-.87L12.67 3.6c-.38-.34-.96-.34-1.34 0l-8.36 7.53c-.34.3-.13.87.33.87H5v7c0 .55.45 1 1 1h3c.55 0 1-.45 1-1z" fill="currentColor"></path></svg></a></li><li class="breadcrumbs__item"><a class="breadcrumbs__link" href="/docs/loadlitmus/"><span>LoadLitmus</span></a></li><li class="breadcrumbs__item"><span class="breadcrumbs__link">Appendix</span></li><li class="breadcrumbs__item breadcrumbs__item--active"><span class="breadcrumbs__link">Starter Script Template</span></li></ul></nav><div class="tocCollapsible_ETCw theme-doc-toc-mobile tocMobile_ITEo"><button type="button" class="clean-btn tocCollapsibleButton_TO0P">On this page</button></div><div class="theme-doc-markdown markdown"><header><h1>Starter Script Template</h1></header>
+<p>Rather than starting a new project from an empty Test Plan, start from this one. It has the whole checklist from <a class="" href="/docs/loadlitmus/03-script-requirements">Script Requirements</a> already wired in.</p>
+<p><strong>📥 <a href="/assets/files/loadlitmus-starter-7369254937bce5e77eb47488c94a6fba.jmx" target="_blank" class="">Download <code>loadlitmus-starter.jmx</code></a></strong> — source: <code>static/templates/loadlitmus-starter.jmx</code> in this repository.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="what-is-in-it">What is in it<a href="#what-is-in-it" class="hash-link" aria-label="Direct link to What is in it" title="Direct link to What is in it" translate="no">​</a></h2>
+<p><img decoding="async" loading="lazy" alt="The template opened in the LoadLitmus Test Editor" src="/assets/images/editor-tree-b3c93c1732f02edf65f840e5be17b35c.jpg" width="1440" height="807" class="img_ev3q"></p>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-background-color:hsl(220, 13%, 18%);--prism-color:hsl(220, 14%, 71%)"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="background-color:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">Test Plan  ← comment: what this test answers, and what it does NOT</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">├── UDV &quot;Environment&quot;        host · port · protocol · password · smoke · thinkMin · thinkMax</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">├── HTTP Request Defaults · Global Headers · Cookie Manager · Cache Manager</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">└── Thread Group &quot;01 - &lt;PERSONA A&gt;&quot;     users/ramp/loops = ${__P(a.users)} etc.</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">    ├── CSV - users                     ${__P(user.dir)}/${__P(a.csv,test_data/users.csv)}</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">    ├── TC01_Login</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">    │   ├── 01_GET_Login     Init all vars = NOT_FOUND · extract csrf · assert 200</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">    │   └── 02_POST_Login    think time · extract landing_url · assert not bounced · save failed response</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">    ├── If: logged in        ${__jexl3(&quot;${landing_url}&quot; != &quot;NOT_FOUND&quot;)}</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">    │   └── TC02_&lt;READ_ONLY_JOURNEY&gt;    03_GET_&lt;PAGE&gt; · assert 200 · assert content · save failed response</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">    └── If: smoke == false</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">        └── TC03_&lt;SUBMIT&gt;    04_POST_&lt;SUBMIT&gt; · assert saved · save failed response</span><br></div></code></pre></div></div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Feature</th><th>Why it is there</th></tr></thead><tbody><tr><td><code>${__P(...)}</code> directly in the Thread Group</td><td>Keeps the Load card editable</td></tr><tr><td>UDV control panel with a description per row</td><td>One place to change settings; explains itself to the next person</td></tr><tr><td><code>password</code> with <strong>no default</strong></td><td>Typed into the parameter form, never stored in the file</td></tr><tr><td><code>${__P(user.dir)}/...</code> CSV path</td><td>Same path works on the master and on every slave</td></tr><tr><td><code>NOT_FOUND</code> init + If guards</td><td>A failed login stops that user instead of flooding the error rate</td></tr><tr><td><code>smoke</code> flag around the write steps</td><td>Smoke runs leave the system untouched</td></tr><tr><td>Result Savers, failures only</td><td>Fleet can collect the actual failing pages</td></tr><tr><td>Content assertions, not just HTTP 200</td><td>A 200 carrying an error page is still a 200</td></tr><tr><td>No listeners, no Backend Listener</td><td>LoadLitmus writes the JTL and injects monitoring itself</td></tr></tbody></table>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="fill-in">Fill in<a href="#fill-in" class="hash-link" aria-label="Direct link to Fill in" title="Direct link to Fill in" translate="no">​</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Placeholder</th><th>Where</th></tr></thead><tbody><tr><td><code>&lt;CLIENT&gt; &lt;SYSTEM&gt; - &lt;the one question...&gt;</code></td><td>Test Plan name and its comment</td></tr><tr><td><code>host</code>, <code>protocol</code>, <code>port</code> defaults</td><td>UDV &quot;Environment&quot;</td></tr><tr><td><code>/login</code>, <code>/home</code>, <code>/submit</code></td><td>Sampler paths</td></tr><tr><td><code>name=&quot;_token&quot; value=&quot;([^&quot;]+)&quot;</code></td><td>The csrf extractor&#x27;s regex</td></tr><tr><td><code>&lt;SOMETHING ONLY THIS PAGE CONTAINS&gt;</code></td><td>Content assertions</td></tr><tr><td><code>USERNAME</code></td><td>CSV column names</td></tr><tr><td><code>01 - &lt;PERSONA A&gt;</code>, <code>TC02_&lt;READ_ONLY_JOURNEY&gt;</code></td><td>Thread group and transaction names</td></tr></tbody></table>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="adding-a-second-persona">Adding a second persona<a href="#adding-a-second-persona" class="hash-link" aria-label="Direct link to Adding a second persona" title="Direct link to Adding a second persona" translate="no">​</a></h2>
+<p>Copy the whole Thread Group, rename it <code>02 - &lt;PERSONA B&gt;</code>, and rename its parameters <code>a.users</code> → <code>b.users</code>, <code>a.ramp</code> → <code>b.ramp</code>, <code>a.loops</code> → <code>b.loops</code>, <code>a.csv</code> → <code>b.csv</code>. The Runner then shows one load row per persona.</p>
+<p>Keep every group a <strong>classic Thread Group</strong>. A setUp or tearDown group switches the Load card off, and you go back to setting load from the parameter form.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="running-it">Running it<a href="#running-it" class="hash-link" aria-label="Direct link to Running it" title="Direct link to Running it" translate="no">​</a></h2>
+<ol>
+<li class="">Copy the file into <code>data/projects/&lt;slug&gt;/test_plan/</code> and rename it.</li>
+<li class="">Put the CSV in <code>test_data/</code> with a <code>USERNAME</code> header.</li>
+<li class="">On the Runner page, select it and check the <strong>CLI-ready</strong> and <strong>CSV-ready</strong> badges.</li>
+<li class="">Smoke run: 1 user, 1 iteration, <code>smoke=true</code>.</li>
+<li class="">Real run: raise the load, set <code>smoke=false</code> when the write steps should fire.</li>
+</ol>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="what-was-verified">What was verified<a href="#what-was-verified" class="hash-link" aria-label="Direct link to What was verified" title="Direct link to What was verified" translate="no">​</a></h2>
+<p>Run against a local stub server with JMeter 5.6.3 on 2026-09-23, and through LoadLitmus 1.4.5:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Check</th><th>Result</th></tr></thead><tbody><tr><td>2 users, <code>smoke=false</code></td><td>All 4 samplers and 3 transactions pass</td></tr><tr><td><code>smoke=true</code> (default)</td><td>The submit step is skipped</td></tr><tr><td>Broken login</td><td>The guard stops the user after <code>02_POST_Login</code>; the failing page lands in <code>failed_response/02_login/alice.unknown</code></td></tr><tr><td>LoadLitmus Load card</td><td>Editable; a 50 VU / 60 s ramp / 5 iteration override was applied to the run</td></tr><tr><td>Secret scan</td><td>No tokens, hosts or absolute paths in the file</td></tr></tbody></table>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="habits-worth-keeping">Habits worth keeping<a href="#habits-worth-keeping" class="hash-link" aria-label="Direct link to Habits worth keeping" title="Direct link to Habits worth keeping" translate="no">​</a></h2>
+<p>The template is the distillation of several scripts from finished projects. Habits worth naming:</p>
+<ul>
+<li class="">A Test Plan comment stating the one question the test answers, a description on every variable, and a setUp &quot;preflight&quot; check that catches a wrong environment before any load starts.</li>
+<li class="">One OAuth token fetched once and shared through <code>props.put()</code>, so thousands of users do not each log in.</li>
+<li class="">Retry loops around an unreliable SSO, and a Synchronizing Timer to release users together.</li>
+<li class=""><code>NOT_FOUND</code> guards, and failed responses saved per user and per step.</li>
+<li class=""><code>${persona}</code> in every sampler name, so the report splits by role.</li>
+</ul></div><footer class="theme-doc-footer docusaurus-mt-lg"><div class="row margin-top--sm theme-doc-footer-tags-row"><div class="col"><b>Tags:</b><ul class="tags_jXut padding--none margin-left--sm"><li class="tag_QGVx"><a rel="tag" class="tag_zVej tagRegular_sFm0" href="/docs/tags/loadlitmus">loadlitmus</a></li><li class="tag_QGVx"><a rel="tag" class="tag_zVej tagRegular_sFm0" href="/docs/tags/jmeter">jmeter</a></li><li class="tag_QGVx"><a rel="tag" class="tag_zVej tagRegular_sFm0" href="/docs/tags/jmx">jmx</a></li><li class="tag_QGVx"><a rel="tag" class="tag_zVej tagRegular_sFm0" href="/docs/tags/template">template</a></li></ul></div></div><div class="row margin-top--sm theme-doc-footer-edit-meta-row"><div class="col noPrint_WFHX"></div><div class="col lastUpdated_JAkA"><span class="theme-last-updated">Last updated<!-- --> on <b><time datetime="2026-09-24T14:05:29.000Z" itemprop="dateModified">Sep 24, 2026</time></b></span></div></div></footer></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Docs pages"><a class="pagination-nav__link pagination-nav__link--prev" href="/docs/loadlitmus/06-fleet-and-distributed"><div class="pagination-nav__sublabel">Previous</div><div class="pagination-nav__label">Fleet and Distributed Runs</div></a></nav></div></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#what-is-in-it" class="table-of-contents__link toc-highlight">What is in it</a></li><li><a href="#fill-in" class="table-of-contents__link toc-highlight">Fill in</a></li><li><a href="#adding-a-second-persona" class="table-of-contents__link toc-highlight">Adding a second persona</a></li><li><a href="#running-it" class="table-of-contents__link toc-highlight">Running it</a></li><li><a href="#what-was-verified" class="table-of-contents__link toc-highlight">What was verified</a></li><li><a href="#habits-worth-keeping" class="table-of-contents__link toc-highlight">Habits worth keeping</a></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer"><div class="container container-fluid"><div class="row footer__links"><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Guides</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/docs/performance-testing">Performance Testing</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter">JMeter</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/loadlitmus">LoadLitmus</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/playwright">Playwright</a></li><li class="footer__item"><a class="footer__link-item" href="/k6">k6</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/playground">Playground</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Start here</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter/01-install-tools">Install Tools</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter/03-jmeter-elements">JMeter Elements</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter/08-load-model">Design Load Model</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">More</div><ul class="footer__items clean-list"><li class="footer__item"><a href="https://github.com/Dhawi1902/testing-knowledge-base" target="_blank" rel="noopener noreferrer" class="footer__link-item">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div></div><div class="footer__bottom text--center"><div class="footer__copyright">Testing Knowledge Base — built by the QA team, from markdown.</div></div></div></footer></div>
+</body>
+</html>

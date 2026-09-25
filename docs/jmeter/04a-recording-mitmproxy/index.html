@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en" dir="ltr" class="docs-wrapper plugin-docs plugin-id-default docs-version-current docs-doc-page docs-doc-id-jmeter/04a-recording-mitmproxy" data-has-hydrated="false">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="Docusaurus v3.10.2">
+<title data-rh="true">Recording with BlazeMeter + mitmproxy | Testing KB</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:image" content="https://testing.dhawilabs.com/img/logo.svg"><meta data-rh="true" name="twitter:image" content="https://testing.dhawilabs.com/img/logo.svg"><meta data-rh="true" property="og:url" content="https://testing.dhawilabs.com/docs/jmeter/04a-recording-mitmproxy"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Recording with BlazeMeter + mitmproxy | Testing KB"><meta data-rh="true" name="description" content="This page is the dual recording workflow with mitmproxy in place of Fiddler Classic. It works on macOS and Windows. The only change is the evidence-capture tool. BlazeMeter stays exactly as it is in Section 4 - Recording."><meta data-rh="true" property="og:description" content="This page is the dual recording workflow with mitmproxy in place of Fiddler Classic. It works on macOS and Windows. The only change is the evidence-capture tool. BlazeMeter stays exactly as it is in Section 4 - Recording."><link data-rh="true" rel="icon" href="/img/logo.svg"><link data-rh="true" rel="canonical" href="https://testing.dhawilabs.com/docs/jmeter/04a-recording-mitmproxy"><link data-rh="true" rel="alternate" href="https://testing.dhawilabs.com/docs/jmeter/04a-recording-mitmproxy" hreflang="en"><link data-rh="true" rel="alternate" href="https://testing.dhawilabs.com/docs/jmeter/04a-recording-mitmproxy" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Apache JMeter","item":"https://testing.dhawilabs.com/docs/jmeter/"},{"@type":"ListItem","position":2,"name":"Recording with BlazeMeter + mitmproxy","item":"https://testing.dhawilabs.com/docs/jmeter/04a-recording-mitmproxy"}]}</script><link rel="stylesheet" href="/assets/css/styles.20db86a5.css">
+<script src="/assets/js/runtime~main.925e99c4.js" defer="defer"></script>
+<script src="/assets/js/main.73d585a6.js" defer="defer"></script>
+</head>
+<body>
+<svg style="display: none;"><defs>
+<symbol id="theme-svg-external-link" viewBox="0 0 24 24"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"/></symbol>
+</defs></svg>
+<script>!function(){var t=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme")}catch(t){}}();document.documentElement.setAttribute("data-theme",t||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")),document.documentElement.setAttribute("data-theme-choice",t||"system")}(),function(){try{const c=new URLSearchParams(window.location.search).entries();for(var[t,e]of c)if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}()</script><div id="__docusaurus"><div role="region" aria-label="Skip to main content"><a class="skipToContent_fXgn" href="#__docusaurus_skipToContent_fallback">Skip to main content</a></div><nav aria-label="Main" class="theme-layout-navbar navbar navbar--fixed-top"><div class="navbar__inner"><div class="theme-layout-navbar-left navbar__items"><button aria-label="Toggle navigation bar" aria-expanded="false" class="navbar__toggle clean-btn" type="button"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" href="/"><div class="navbar__logo"><img src="/img/logo.svg" alt="Testing Knowledge Base" class="themedComponent_mlkZ themedComponent--light_NVdE"><img src="/img/logo.svg" alt="Testing Knowledge Base" class="themedComponent_mlkZ themedComponent--dark_xIcU"></div><b class="navbar__title text--truncate">Testing KB</b></a><a class="navbar__item navbar__link" href="/">Home</a><a aria-current="page" class="navbar__item navbar__link navbar__link--active" href="/docs">Guides</a></div><div class="theme-layout-navbar-right navbar__items navbar__items--right"><a class="navbar__item navbar__link navbar-cta" href="/docs/jmeter/01-install-tools">Get started</a><div class="toggle_vylO colorModeToggle_DEke"><button class="clean-btn toggleButton_gllP toggleButtonDisabled_aARS" type="button" disabled="" title="system mode" aria-label="Switch between dark and light mode (currently system mode)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP lightToggleIcon_pyhR"><path fill="currentColor" d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP darkToggleIcon_wfgR"><path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP systemToggleIcon_QzmC"><path fill="currentColor" d="m12 21c4.971 0 9-4.029 9-9s-4.029-9-9-9-9 4.029-9 9 4.029 9 9 9zm4.95-13.95c1.313 1.313 2.05 3.093 2.05 4.95s-0.738 3.637-2.05 4.95c-1.313 1.313-3.093 2.05-4.95 2.05v-14c1.857 0 3.637 0.737 4.95 2.05z"></path></svg></button></div><div class="navbarSearchContainer_Bca1"><div class="navbar__search searchBarContainer_NW3z" dir="ltr"><input placeholder="Search" aria-label="Search" class="navbar__search-input" value=""><div class="loadingRing_RJI3 searchBarLoadingRing_YnHq"><div></div><div></div><div></div><div></div></div></div></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div id="__docusaurus_skipToContent_fallback" class="theme-layout-main main-wrapper mainWrapper_z2l0"><div class="docsWrapper_hBAB"><button aria-label="Scroll back to top" class="clean-btn theme-back-to-top-button backToTopButton_sjWU" type="button"></button><div class="docRoot_UBD9"><aside class="theme-doc-sidebar-container docSidebarContainer_YfHR"><div class="sidebarViewport_aRkj"><div class="sidebar_njMd"><nav aria-label="Docs sidebar" class="menu thin-scrollbar menu_SIkG"><ul class="theme-doc-sidebar-menu menu__list"><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--active" href="/docs/jmeter/"><span class="categoryLinkLabel_W154">Apache JMeter</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--active" tabindex="0"><span class="categoryLinkLabel_W154">Basics</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/01-install-tools"><span class="linkLabel_WmDU">Install Tools</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/02-understand-requirements"><span class="linkLabel_WmDU">Understand Requirements and Flow</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/03-jmeter-elements"><span class="linkLabel_WmDU">JMeter Elements Overview</span></a></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-3 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret menu__link--active" role="button" aria-expanded="true" tabindex="0" href="/docs/jmeter/04-recording"><span class="categoryLinkLabel_W154">Recording</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-4 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/04-recording"><span class="linkLabel_WmDU">Recording with BlazeMeter + Fiddler</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-4 menu__list-item"><a class="menu__link menu__link--active" aria-current="page" tabindex="0" href="/docs/jmeter/04a-recording-mitmproxy"><span class="linkLabel_WmDU">Recording with BlazeMeter + mitmproxy</span></a></li></ul></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/05-correlation-parameterization"><span class="linkLabel_WmDU">Correlation and Parameterization</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/06-script-enhancement"><span class="linkLabel_WmDU">Script Enhancement</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/07-debug"><span class="linkLabel_WmDU">Debug</span></a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link" tabindex="0"><span class="categoryLinkLabel_W154">Applying Load</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/08-load-model"><span class="linkLabel_WmDU">Design Load Model</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/09-execute-analyze"><span class="linkLabel_WmDU">Execute and Analyze Results</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/10-reporting"><span class="linkLabel_WmDU">Reporting</span></a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link" tabindex="0"><span class="categoryLinkLabel_W154">Advanced</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/11-backend-listener"><span class="linkLabel_WmDU">Backend Listener - InfluxDB + Grafana</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/12-distributed-testing"><span class="linkLabel_WmDU">Distributed Testing</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/13-distributed-testing-hands-on"><span class="linkLabel_WmDU">Try Distributed Testing on Your Own Machine</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/14-test-data-python"><span class="linkLabel_WmDU">Test Data Preparation with Python</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/15-automation-batch"><span class="linkLabel_WmDU">Automation with Batch Files</span></a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link" tabindex="0"><span class="categoryLinkLabel_W154">Appendix</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/99-future-to-explore"><span class="linkLabel_WmDU">Future / To Explore</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/99-archive-oci-linux-slave-setup"><span class="linkLabel_WmDU">OCI Linux Slave Setup (Archived)</span></a></li></ul></li></ul></li></ul></nav></div></div></aside><main class="docMainContainer_TBSr"><div class="container padding-top--md padding-bottom--lg"><div class="row"><div class="col docItemCol_VOVn"><div class="docItemContainer_Djhp"><article><nav class="theme-doc-breadcrumbs breadcrumbsContainer_Z_bl" aria-label="Breadcrumbs"><ul class="breadcrumbs"><li class="breadcrumbs__item"><a aria-label="Home page" class="breadcrumbs__link" href="/"><svg viewBox="0 0 24 24" class="breadcrumbHomeIcon_YNFT"><path d="M10 19v-5h4v5c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-7h1.7c.46 0 .68-.57.33-.87L12.67 3.6c-.38-.34-.96-.34-1.34 0l-8.36 7.53c-.34.3-.13.87.33.87H5v7c0 .55.45 1 1 1h3c.55 0 1-.45 1-1z" fill="currentColor"></path></svg></a></li><li class="breadcrumbs__item"><a class="breadcrumbs__link" href="/docs/jmeter/"><span>Apache JMeter</span></a></li><li class="breadcrumbs__item"><span class="breadcrumbs__link">Basics</span></li><li class="breadcrumbs__item"><span class="breadcrumbs__link">Recording</span></li><li class="breadcrumbs__item breadcrumbs__item--active"><span class="breadcrumbs__link">Recording with BlazeMeter + mitmproxy</span></li></ul></nav><div class="tocCollapsible_ETCw theme-doc-toc-mobile tocMobile_ITEo"><button type="button" class="clean-btn tocCollapsibleButton_TO0P">On this page</button></div><div class="theme-doc-markdown markdown"><header><h1>Recording with BlazeMeter + mitmproxy</h1></header>
+<p>This page is the dual recording workflow with mitmproxy in place of Fiddler Classic. It works on macOS and Windows. The only change is the evidence-capture tool. BlazeMeter stays exactly as it is in <a class="" href="/docs/jmeter/04-recording">Section 4 - Recording</a>.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="when-to-use-this-page">When to Use This Page<a href="#when-to-use-this-page" class="hash-link" aria-label="Direct link to When to Use This Page" title="Direct link to When to Use This Page" translate="no">​</a></h2>
+<ul>
+<li class="">You are on macOS. Fiddler Classic does not run on Mac.</li>
+<li class="">You are on Windows but do not have access to Fiddler, or you cannot use Fiddler Classic for work under its current license. Since 3 August 2026, Progress limits Fiddler Classic to non-commercial use (see <a href="https://www.telerik.com/fiddler/fiddler-classic/commercial-use" target="_blank" rel="noopener noreferrer" class="">Progress&#x27;s commercial use page</a>).</li>
+<li class="">You want the same workflow as the Windows guide: BlazeMeter records the <code>.jmx</code>, mitmproxy captures the evidence session (<code>.flow</code> instead of <code>.saz</code>) for correlation.</li>
+</ul>
+<p>mitmproxy is free, open source and cross-platform. It fills the Fiddler role one to one:</p>
+<p>Most steps are the same on both systems. Where they differ, each step shows a <strong>macOS</strong> and a <strong>Windows</strong> choice.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Role</th><th>Fiddler</th><th>mitmproxy</th></tr></thead><tbody><tr><td>Recording the <code>.jmx</code></td><td>BlazeMeter extension</td><td>BlazeMeter extension (unchanged)</td></tr><tr><td>Evidence capture</td><td>Fiddler Classic</td><td>mitmweb (mitmproxy&#x27;s web UI)</td></tr><tr><td>Saved session</td><td><code>.saz</code> file</td><td><code>.flow</code> file</td></tr><tr><td>Search for dynamic values</td><td>Ctrl+F highlight</td><td><strong>Highlight</strong> filter box</td></tr><tr><td>Proxy port</td><td><code>8888</code></td><td><code>8080</code></td></tr></tbody></table>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="one-time-setup">One-Time Setup<a href="#one-time-setup" class="hash-link" aria-label="Direct link to One-Time Setup" title="Direct link to One-Time Setup" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="1-install-mitmproxy">1. Install mitmproxy<a href="#1-install-mitmproxy" class="hash-link" aria-label="Direct link to 1. Install mitmproxy" title="Direct link to 1. Install mitmproxy" translate="no">​</a></h3>
+<p><strong>macOS:</strong></p>
+<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-background-color:hsl(220, 13%, 18%);--prism-color:hsl(220, 14%, 71%)"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="background-color:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">brew </span><span class="token function" style="color:hsl(207, 82%, 66%)">install</span><span class="token plain"> mitmproxy</span><br></div></code></pre></div></div>
+<p><strong>Windows:</strong> download the installer from <a href="https://mitmproxy.org" target="_blank" rel="noopener noreferrer" class="">https://mitmproxy.org</a>, or run:</p>
+<div class="language-powershell codeBlockContainer_Ckt0 theme-code-block" style="--prism-background-color:hsl(220, 13%, 18%);--prism-color:hsl(220, 14%, 71%)"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-powershell codeBlock_bY9V thin-scrollbar" style="background-color:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">winget install mitmproxy.mitmproxy</span><br></div></code></pre></div></div>
+<p>Both add <code>mitmproxy</code>, <code>mitmweb</code> and <code>mitmdump</code> to your PATH. Open a new terminal after installing.</p>
+<p>JMeter install stays as in <a class="" href="/docs/jmeter/01-install-tools">Section 1 - Install Tools</a>. On Mac you can also run <code>brew install jmeter</code> instead of downloading the zip.</p>
+<p><strong>Verify:</strong> <code>mitmproxy --version</code> prints the version (this guide was checked against 12.2.3).</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="2-start-the-proxy">2. Start the Proxy<a href="#2-start-the-proxy" class="hash-link" aria-label="Direct link to 2. Start the Proxy" title="Direct link to 2. Start the Proxy" translate="no">​</a></h3>
+<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-background-color:hsl(220, 13%, 18%);--prism-color:hsl(220, 14%, 71%)"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="background-color:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">mitmweb --listen-port </span><span class="token number" style="color:hsl(29, 54%, 61%)">8080</span><br></div></code></pre></div></div>
+<p>The terminal must stay open while you record. mitmweb opens its web UI in your browser, usually at <code>http://127.0.0.1:8081</code>. This UI is where you will read the captured traffic, the same way you read the Fiddler session list.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="3-launch-a-dedicated-proxied-chrome">3. Launch a Dedicated Proxied Chrome<a href="#3-launch-a-dedicated-proxied-chrome" class="hash-link" aria-label="Direct link to 3. Launch a Dedicated Proxied Chrome" title="Direct link to 3. Launch a Dedicated Proxied Chrome" translate="no">​</a></h3>
+<p>This is the same idea as the <code>chrome.exe --proxy-server</code> step in the Fiddler guide, with two changes: port <code>8080</code> and a separate profile.</p>
+<p><strong>macOS:</strong></p>
+<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-background-color:hsl(220, 13%, 18%);--prism-color:hsl(220, 14%, 71%)"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="background-color:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token function" style="color:hsl(207, 82%, 66%)">open</span><span class="token plain"> </span><span class="token parameter variable" style="color:hsl(207, 82%, 66%)">-na</span><span class="token plain"> </span><span class="token string" style="color:hsl(95, 38%, 62%)">&quot;Google Chrome&quot;</span><span class="token plain"> </span><span class="token parameter variable" style="color:hsl(207, 82%, 66%)">--args</span><span class="token plain"> </span><span class="token punctuation" style="color:hsl(220, 14%, 71%)">\</span><span class="token plain"></span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">  --proxy-server</span><span class="token operator" style="color:hsl(207, 82%, 66%)">=</span><span class="token string" style="color:hsl(95, 38%, 62%)">&quot;127.0.0.1:8080&quot;</span><span class="token plain"> </span><span class="token punctuation" style="color:hsl(220, 14%, 71%)">\</span><span class="token plain"></span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">  --user-data-dir</span><span class="token operator" style="color:hsl(207, 82%, 66%)">=</span><span class="token string" style="color:hsl(95, 38%, 62%)">&quot;</span><span class="token string environment constant" style="color:hsl(29, 54%, 61%)">$HOME</span><span class="token string" style="color:hsl(95, 38%, 62%)">/chrome-mitm-profile&quot;</span><br></div></code></pre></div></div>
+<p><strong>Windows</strong> (Command Prompt or PowerShell):</p>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-background-color:hsl(220, 13%, 18%);--prism-color:hsl(220, 14%, 71%)"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="background-color:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">&quot;C:\Program Files\Google\Chrome\Application\chrome.exe&quot; --proxy-server=&quot;127.0.0.1:8080&quot; --user-data-dir=&quot;%USERPROFILE%\chrome-mitm-profile&quot;</span><br></div></code></pre></div></div>
+<p>The separate <code>--user-data-dir</code> is required. If Chrome is already running, a new window without its own profile just attaches to the running instance and silently ignores the proxy flag. The separate profile gives you a clean Chrome that only talks through mitmproxy, so only your test flow shows up in mitmweb.</p>
+<blockquote>
+<p><strong>Tip:</strong> Save this so you do not have to type it every time: a shell alias or small script on Mac (for example <code>~/bin/chrome-mitm</code>), a desktop shortcut with the flags on Windows. Same idea as the &quot;create a shortcut&quot; tip in the Fiddler section.</p>
+</blockquote>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="4-trust-the-mitmproxy-certificate">4. Trust the mitmproxy Certificate<a href="#4-trust-the-mitmproxy-certificate" class="hash-link" aria-label="Direct link to 4. Trust the mitmproxy Certificate" title="Direct link to 4. Trust the mitmproxy Certificate" translate="no">​</a></h3>
+<p>Without this, HTTPS sites show certificate warnings and you cannot read the request and response content.</p>
+<ol>
+<li class="">In the proxied Chrome, open <code>http://mitm.it</code> (type the <code>http://</code> explicitly)</li>
+<li class="">Download the certificate for your system, then trust it:</li>
+</ol>
+<p><strong>macOS:</strong></p>
+<ol>
+<li class="">Open the downloaded file. It opens in <strong>Keychain Access</strong> and is added to your login keychain</li>
+<li class="">In Keychain Access, find the <code>mitmproxy</code> certificate and double-click it</li>
+<li class="">Expand <strong>Trust</strong> and set <strong>When using this certificate</strong> to <strong>Always Trust</strong></li>
+<li class="">Close the window and save with your Mac password</li>
+</ol>
+<p><strong>Windows:</strong></p>
+<ol>
+<li class="">Double-click the downloaded <code>.p12</code> file to start the Certificate Import Wizard</li>
+<li class="">Choose <strong>Current User</strong>, leave the password empty when asked</li>
+<li class="">Choose <strong>Place all certificates in the following store</strong> &gt; <strong>Trusted Root Certification Authorities</strong></li>
+<li class="">Finish and click <strong>Yes</strong> on the security warning</li>
+</ol>
+<p>Then fully quit the proxied Chrome and relaunch it with the command from step 3.</p>
+<p><strong>Verify:</strong> In the proxied Chrome, open any HTTPS site. It loads without a certificate warning, and the request appears in mitmweb with readable headers and body.</p>
+<blockquote>
+<p><strong>Important:</strong> Only trust the mitmproxy certificate on machines you control. Remove it (Keychain Access on Mac, <code>certmgr.msc</code> &gt; Trusted Root Certification Authorities on Windows) when you no longer need it.</p>
+</blockquote>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="5-install-blazemeter-in-the-proxied-profile">5. Install BlazeMeter in the Proxied Profile<a href="#5-install-blazemeter-in-the-proxied-profile" class="hash-link" aria-label="Direct link to 5. Install BlazeMeter in the Proxied Profile" title="Direct link to 5. Install BlazeMeter in the Proxied Profile" translate="no">​</a></h3>
+<p>The proxied profile is a fresh Chrome profile, so it has no extensions. Repeat the Blazemeter steps from <a class="" href="/docs/jmeter/01-install-tools#blazemeter-chrome-extension">Section 1 - Install Tools</a> inside this profile:</p>
+<ol>
+<li class="">Install the BlazeMeter extension from the Chrome Web Store</li>
+<li class="">Sign in to your Blazemeter account</li>
+<li class="">Pin the extension to the toolbar</li>
+<li class="">Click the extension icon &gt; <strong>Advanced Options</strong> and make sure:
+<ul>
+<li class=""><strong>Record Ajax Requests</strong> is enabled</li>
+<li class=""><strong>Randomize Recorded Think Time</strong> is disabled</li>
+</ul>
+</li>
+</ol>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="recording-dual-recording">Recording (Dual Recording)<a href="#recording-dual-recording" class="hash-link" aria-label="Direct link to Recording (Dual Recording)" title="Direct link to Recording (Dual Recording)" translate="no">​</a></h2>
+<p>Same idea as the Windows workflow: one session, captured by both tools at the same time.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="1-start-mitmweb-with-saving-enabled">1. Start mitmweb with Saving Enabled<a href="#1-start-mitmweb-with-saving-enabled" class="hash-link" aria-label="Direct link to 1. Start mitmweb with Saving Enabled" title="Direct link to 1. Start mitmweb with Saving Enabled" translate="no">​</a></h3>
+<p>Create a working folder for this recording, then start the proxy so it writes every flow to a file:</p>
+<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-background-color:hsl(220, 13%, 18%);--prism-color:hsl(220, 14%, 71%)"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="background-color:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">mitmweb --listen-port </span><span class="token number" style="color:hsl(29, 54%, 61%)">8080</span><span class="token plain"> </span><span class="token parameter variable" style="color:hsl(207, 82%, 66%)">-w</span><span class="token plain"> session.flow</span><br></div></code></pre></div></div>
+<p>Run this from inside the working folder so <code>session.flow</code> lands next to the <code>.jmx</code>.</p>
+<p><code>-w</code> (<code>--save-stream-file</code>) streams flows to <code>session.flow</code> as they happen. This is the <code>.saz</code> equivalent.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="2-clear-the-flow-list">2. Clear the Flow List<a href="#2-clear-the-flow-list" class="hash-link" aria-label="Direct link to 2. Clear the Flow List" title="Direct link to 2. Clear the Flow List" translate="no">​</a></h3>
+<p>In the mitmweb UI, clear any existing flows before you start so the session only contains your test flow.</p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="3-launch-the-proxied-chrome-and-start-blazemeter">3. Launch the Proxied Chrome and Start BlazeMeter<a href="#3-launch-the-proxied-chrome-and-start-blazemeter" class="hash-link" aria-label="Direct link to 3. Launch the Proxied Chrome and Start BlazeMeter" title="Direct link to 3. Launch the Proxied Chrome and Start BlazeMeter" translate="no">​</a></h3>
+<ul>
+<li class="">Launch the proxied Chrome with the command from setup step 3 (or your alias / shortcut)</li>
+<li class="">Click the Blazemeter extension icon</li>
+<li class="">Give your test a name (e.g., &quot;Login Flow&quot;)</li>
+<li class="">Click the <strong>record</strong> button (red circle)</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="4-perform-the-user-flow">4. Perform the User Flow<a href="#4-perform-the-user-flow" class="hash-link" aria-label="Direct link to 4. Perform the User Flow" title="Direct link to 4. Perform the User Flow" translate="no">​</a></h3>
+<ul>
+<li class="">Name each step before you perform the business action (<code>01_Home</code>, <code>02_Login</code>, <code>03_Dashboard</code>, and so on). This keeps the recording consistent with <a class="" href="/docs/jmeter/04-recording">Section 4 - Recording</a></li>
+<li class="">Navigate as a real user would, at a normal pace</li>
+<li class="">Watch mitmweb: every request you make should appear in the list</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="5-stop-and-export">5. Stop and Export<a href="#5-stop-and-export" class="hash-link" aria-label="Direct link to 5. Stop and Export" title="Direct link to 5. Stop and Export" translate="no">​</a></h3>
+<ul>
+<li class="">Click the <strong>stop</strong> button in Blazemeter (square icon)</li>
+<li class="">Click the <code>.jmx</code> export button and save the file into the working folder</li>
+<li class="">Go back to the terminal running mitmweb and press <strong>Ctrl+C</strong>. This finalizes <code>session.flow</code></li>
+</ul>
+<p><strong>Result:</strong> <code>recording.jmx</code> + <code>session.flow</code> in the same folder. This is the same pair as <code>.jmx</code> + <code>.saz</code> in the Fiddler workflow. Open the <code>.jmx</code> in JMeter as described in <a class="" href="/docs/jmeter/04-recording#open-the-recording-in-jmeter">Section 4 - Open the Recording in JMeter</a>.</p>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="correlation-with-mitmproxy">Correlation with mitmproxy<a href="#correlation-with-mitmproxy" class="hash-link" aria-label="Direct link to Correlation with mitmproxy" title="Direct link to Correlation with mitmproxy" translate="no">​</a></h2>
+<p>These steps mirror <a class="" href="/docs/jmeter/05-correlation-parameterization#how-to-find-dynamic-values-using-fiddler">How to Find Dynamic Values Using Fiddler</a> one to one, so you can follow that section and swap in the mitmproxy step where it differs.</p>
+<p><strong>Steps:</strong></p>
+<ol>
+<li class="">Reopen the saved session in mitmweb (no proxy needed, you are only reading):
+<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-background-color:hsl(220, 13%, 18%);--prism-color:hsl(220, 14%, 71%)"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="background-color:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">mitmweb </span><span class="token parameter variable" style="color:hsl(207, 82%, 66%)">-r</span><span class="token plain"> session.flow</span><br></div></code></pre></div></div>
+</li>
+<li class="">Reduce noise. In the <strong>Search</strong> box at the top of mitmweb, type:
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-background-color:hsl(220, 13%, 18%);--prism-color:hsl(220, 14%, 71%)"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="background-color:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">~d yourapp.com &amp; !~a</span><br></div></code></pre></div></div>
+This hides everything except your application&#x27;s traffic, and hides static assets (CSS, JavaScript, images, fonts).</li>
+<li class="">Replay the <code>.jmx</code> once in JMeter (1 user, 1 loop, with View Results Tree, see <a class="" href="/docs/jmeter/07-debug">Section 7 - Debug</a>) and find the first request that fails</li>
+<li class="">Copy the suspicious dynamic value from that request. Take a distinctive chunk of it, 10 to 20 characters, with no special characters</li>
+<li class="">Put the chunk in the <strong>Highlight</strong> box (not Search, so all flows stay visible in order):
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-background-color:hsl(220, 13%, 18%);--prism-color:hsl(220, 14%, 71%)"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="background-color:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">~bs CHUNK | ~hs CHUNK</span><br></div></code></pre></div></div>
+This highlights every flow whose <strong>response</strong> body or header contains the value. The <strong>first highlighted flow</strong> is where the value first appeared. Cookies are covered too, because they arrive in <code>Set-Cookie</code> response headers</li>
+<li class="">Click that flow and open the <strong>Response</strong> tab. Check whether the value lives in the body (JSON or HTML) or in a header. That decides which extractor you use</li>
+<li class="">To find every request that <strong>sends</strong> the value (the places you will replace with <code>${variable}</code>), change the highlight to:
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-background-color:hsl(220, 13%, 18%);--prism-color:hsl(220, 14%, 71%)"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="background-color:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">~bq CHUNK | ~hq CHUNK</span><br></div></code></pre></div></div>
+</li>
+<li class="">In JMeter, add the extractor to the request from step 5 and replace the hardcoded value in the requests from step 7. The extractor configuration is the same as the Fiddler workflow, see <a class="" href="/docs/jmeter/05-correlation-parameterization#extractors">Extractors</a></li>
+</ol>
+<blockquote>
+<p><strong>Tip:</strong> Search and Highlight take the same filter language. Search hides non-matching flows, Highlight keeps everything and colours the matches. Use Search for noise, Highlight for tracing a value.</p>
+</blockquote>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="filter-cheat-sheet">Filter Cheat Sheet<a href="#filter-cheat-sheet" class="hash-link" aria-label="Direct link to Filter Cheat Sheet" title="Direct link to Filter Cheat Sheet" translate="no">​</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Filter</th><th>Matches</th></tr></thead><tbody><tr><td><code>~u regex</code></td><td>URL</td></tr><tr><td><code>~d regex</code></td><td>Domain</td></tr><tr><td><code>~m regex</code></td><td>Method (<code>GET</code>, <code>POST</code>)</td></tr><tr><td><code>~c code</code></td><td>Status code, exact number</td></tr><tr><td><code>~t regex</code></td><td>Content-Type header</td></tr><tr><td><code>~b regex</code></td><td>Body, request or response</td></tr><tr><td><code>~bq regex</code></td><td>Request body</td></tr><tr><td><code>~bs regex</code></td><td>Response body</td></tr><tr><td><code>~h regex</code></td><td>Header, request or response (matched as <code>name: value</code>)</td></tr><tr><td><code>~hq regex</code></td><td>Request header</td></tr><tr><td><code>~hs regex</code></td><td>Response header</td></tr><tr><td><code>~a</code></td><td>Static assets: CSS, JavaScript, images, fonts</td></tr><tr><td><code>~e</code></td><td>Flows that errored</td></tr></tbody></table>
+<p><strong>Operators:</strong> <code>&amp;</code> AND, <code>|</code> OR, <code>!</code> NOT, parentheses for grouping.</p>
+<p><strong>Memory aid:</strong> <code>q</code> = re<strong>q</strong>uest, <code>s</code> = re<strong>s</strong>ponse, no suffix = both. A value without a tilde searches the URL.</p>
+<p><strong>Examples:</strong></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Filter</th><th>Meaning</th></tr></thead><tbody><tr><td><code>~d yourapp.com &amp; !~a</code></td><td>Only app traffic, no static files</td></tr><tr><td><code>~m POST &amp; ~u /login</code></td><td>The login submission</td></tr><tr><td><code>(~c 401 | ~c 403) &amp; ~d yourapp.com</code></td><td>Auth failures on your app</td></tr></tbody></table>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="gotchas">Gotchas<a href="#gotchas" class="hash-link" aria-label="Direct link to Gotchas" title="Direct link to Gotchas" translate="no">​</a></h2>
+<ul>
+<li class=""><strong>Filter values are regular expressions</strong>, and case-insensitive by default. Tokens often contain <code>+ ? ( ) $</code>. Escape them with a backslash, or search a chunk that has no symbols</li>
+<li class=""><strong>URL encoding.</strong> A value can appear as <code>abc%2Bdef</code> in a request but <code>abc+def</code> in a response. Searching a symbol-free chunk avoids this</li>
+<li class=""><strong>Spaces.</strong> Wrap values that contain spaces in quotes: <code>~b &quot;hello world&quot;</code></li>
+<li class=""><strong><code>~c</code> takes an exact code.</strong> Use <code>~c 500 | ~c 502</code>, not a pattern like <code>~c 5..</code></li>
+<li class=""><strong>Compressed bodies</strong> (gzip, br) are decoded before matching. No extra step needed</li>
+</ul>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="troubleshooting">Troubleshooting<a href="#troubleshooting" class="hash-link" aria-label="Direct link to Troubleshooting" title="Direct link to Troubleshooting" translate="no">​</a></h2>
+<ul>
+<li class="">
+<p><strong>Chrome shows &quot;No internet&quot; and mentions &quot;If you use a proxy server... check System Settings &gt; Network&quot;</strong> (or &quot;check your proxy settings&quot; on Windows). This is Chrome&#x27;s generic &quot;proxy not reachable&quot; page. Do <strong>not</strong> change the system proxy settings. We only use a Chrome flag. Check that mitmweb is still running in its terminal and listening on the same port as the Chrome flag</p>
+</li>
+<li class="">
+<p><strong>Port already in use.</strong> Check what is holding it:</p>
+<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-background-color:hsl(220, 13%, 18%);--prism-color:hsl(220, 14%, 71%)"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="background-color:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token comment" style="color:hsl(220, 10%, 40%)"># macOS</span><span class="token plain"></span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain"></span><span class="token function" style="color:hsl(207, 82%, 66%)">lsof</span><span class="token plain"> </span><span class="token parameter variable" style="color:hsl(207, 82%, 66%)">-nP</span><span class="token plain"> </span><span class="token parameter variable" style="color:hsl(207, 82%, 66%)">-iTCP:8080</span><span class="token plain"> </span><span class="token parameter variable" style="color:hsl(207, 82%, 66%)">-sTCP:LISTEN</span><br></div></code></pre></div></div>
+<div class="language-powershell codeBlockContainer_Ckt0 theme-code-block" style="--prism-background-color:hsl(220, 13%, 18%);--prism-color:hsl(220, 14%, 71%)"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-powershell codeBlock_bY9V thin-scrollbar" style="background-color:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain"># Windows</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">netstat -ano | findstr :8080</span><br></div></code></pre></div></div>
+<p>Either stop that process, or switch both mitmweb (<code>--listen-port 8888</code>) and the Chrome flag (<code>--proxy-server=&quot;127.0.0.1:8888&quot;</code>) to another port</p>
+</li>
+<li class="">
+<p><strong>Test the proxy without Chrome</strong> (curl ships with both macOS and Windows 10+):</p>
+<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-background-color:hsl(220, 13%, 18%);--prism-color:hsl(220, 14%, 71%)"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="background-color:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token function" style="color:hsl(207, 82%, 66%)">curl</span><span class="token plain"> </span><span class="token parameter variable" style="color:hsl(207, 82%, 66%)">-x</span><span class="token plain"> http://127.0.0.1:8080 http://mitm.it</span><br></div></code></pre></div></div>
+<p>An HTML response means the proxy works. &quot;Connection refused&quot; means mitmweb is not listening</p>
+</li>
+<li class="">
+<p><strong>mitm.it does not load.</strong> Fully quit the proxied Chrome (Cmd+Q on Mac, close every window on Windows), relaunch it with the command from setup step 3, and type <code>http://mitm.it</code> with <code>http://</code> explicitly</p>
+</li>
+<li class="">
+<p><strong>Certificate warnings on HTTPS sites.</strong> The certificate is not trusted yet (Always Trust in Keychain Access on Mac, Trusted Root Certification Authorities on Windows). Redo step 4 of the setup</p>
+</li>
+<li class="">
+<p><strong>Nothing appears in mitmweb.</strong> You are probably browsing in your normal Chrome window instead of the proxied profile. The proxied window is the one launched with the separate <code>--user-data-dir</code></p>
+</li>
+</ul>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="optional-extras">Optional Extras<a href="#optional-extras" class="hash-link" aria-label="Direct link to Optional Extras" title="Direct link to Optional Extras" translate="no">​</a></h2>
+<ul>
+<li class="">
+<p><strong>Record only app traffic from the CLI</strong>, no web UI:</p>
+<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-background-color:hsl(220, 13%, 18%);--prism-color:hsl(220, 14%, 71%)"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="background-color:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">mitmdump </span><span class="token parameter variable" style="color:hsl(207, 82%, 66%)">-w</span><span class="token plain"> session.flow </span><span class="token string" style="color:hsl(95, 38%, 62%)">&quot;~d yourapp.com &amp; !~a&quot;</span><br></div></code></pre></div></div>
+</li>
+<li class="">
+<p><strong>List flows in a saved session that contain a value</strong>, without opening the UI:</p>
+<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-background-color:hsl(220, 13%, 18%);--prism-color:hsl(220, 14%, 71%)"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="background-color:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">mitmdump </span><span class="token parameter variable" style="color:hsl(207, 82%, 66%)">-nr</span><span class="token plain"> session.flow </span><span class="token string" style="color:hsl(95, 38%, 62%)">&quot;~bs CHUNK&quot;</span><br></div></code></pre></div></div>
+<p><code>-n</code> means no proxy server, <code>-r</code> reads the file.</p>
+</li>
+<li class="">
+<p><strong>Share evidence with teammates who still use Fiddler</strong> by exporting the session as HAR, which Fiddler and browser dev tools can open:</p>
+<div class="language-bash codeBlockContainer_Ckt0 theme-code-block" style="--prism-background-color:hsl(220, 13%, 18%);--prism-color:hsl(220, 14%, 71%)"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-bash codeBlock_bY9V thin-scrollbar" style="background-color:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">mitmdump </span><span class="token parameter variable" style="color:hsl(207, 82%, 66%)">-nr</span><span class="token plain"> session.flow </span><span class="token parameter variable" style="color:hsl(207, 82%, 66%)">--set</span><span class="token plain"> </span><span class="token assign-left variable" style="color:hsl(207, 82%, 66%)">hardump</span><span class="token operator" style="color:hsl(207, 82%, 66%)">=</span><span class="token plain">session.har</span><br></div></code></pre></div></div>
+</li>
+</ul>
+<blockquote>
+<p><strong>Note:</strong> The <code>hardump</code> option is available from mitmproxy 10.1 onward. Run <code>mitmdump --options | grep hardump</code> to confirm your version has it.</p>
+</blockquote>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="tips">Tips<a href="#tips" class="hash-link" aria-label="Direct link to Tips" title="Direct link to Tips" translate="no">​</a></h2>
+<ul>
+<li class="">
+<p><strong>Keep the <code>.flow</code> file</strong> next to the <code>.jmx</code>. You will keep going back to it during correlation, exactly like the <code>.saz</code> in the Fiddler workflow</p>
+</li>
+<li class="">
+<p><strong>One terminal per job.</strong> Recording (<code>-w</code>) and reading (<code>-r</code>) are different commands. Do not open a session file for reading while another mitmweb is still writing to it</p>
+</li>
+<li class="">
+<p><strong>Highlight, not Search, when tracing.</strong> If you hide flows, you lose the order, and order is what tells you where a value first appeared</p>
+</li>
+<li class="">
+<p><strong>Same skills, different tool.</strong> Everything after this page (extractors, script enhancement, debug) is identical to the Fiddler guide</p>
+</li>
+</ul></div><footer class="theme-doc-footer docusaurus-mt-lg"><div class="row margin-top--sm theme-doc-footer-edit-meta-row"><div class="col noPrint_WFHX"></div><div class="col lastUpdated_JAkA"><span class="theme-last-updated">Last updated<!-- --> on <b><time datetime="2026-09-15T11:00:08.000Z" itemprop="dateModified">Sep 15, 2026</time></b></span></div></div></footer></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Docs pages"><a class="pagination-nav__link pagination-nav__link--prev" href="/docs/jmeter/04-recording"><div class="pagination-nav__sublabel">Previous</div><div class="pagination-nav__label">Recording with BlazeMeter + Fiddler</div></a><a class="pagination-nav__link pagination-nav__link--next" href="/docs/jmeter/05-correlation-parameterization"><div class="pagination-nav__sublabel">Next</div><div class="pagination-nav__label">Correlation and Parameterization</div></a></nav></div></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#when-to-use-this-page" class="table-of-contents__link toc-highlight">When to Use This Page</a></li><li><a href="#one-time-setup" class="table-of-contents__link toc-highlight">One-Time Setup</a><ul><li><a href="#1-install-mitmproxy" class="table-of-contents__link toc-highlight">1. Install mitmproxy</a></li><li><a href="#2-start-the-proxy" class="table-of-contents__link toc-highlight">2. Start the Proxy</a></li><li><a href="#3-launch-a-dedicated-proxied-chrome" class="table-of-contents__link toc-highlight">3. Launch a Dedicated Proxied Chrome</a></li><li><a href="#4-trust-the-mitmproxy-certificate" class="table-of-contents__link toc-highlight">4. Trust the mitmproxy Certificate</a></li><li><a href="#5-install-blazemeter-in-the-proxied-profile" class="table-of-contents__link toc-highlight">5. Install BlazeMeter in the Proxied Profile</a></li></ul></li><li><a href="#recording-dual-recording" class="table-of-contents__link toc-highlight">Recording (Dual Recording)</a><ul><li><a href="#1-start-mitmweb-with-saving-enabled" class="table-of-contents__link toc-highlight">1. Start mitmweb with Saving Enabled</a></li><li><a href="#2-clear-the-flow-list" class="table-of-contents__link toc-highlight">2. Clear the Flow List</a></li><li><a href="#3-launch-the-proxied-chrome-and-start-blazemeter" class="table-of-contents__link toc-highlight">3. Launch the Proxied Chrome and Start BlazeMeter</a></li><li><a href="#4-perform-the-user-flow" class="table-of-contents__link toc-highlight">4. Perform the User Flow</a></li><li><a href="#5-stop-and-export" class="table-of-contents__link toc-highlight">5. Stop and Export</a></li></ul></li><li><a href="#correlation-with-mitmproxy" class="table-of-contents__link toc-highlight">Correlation with mitmproxy</a></li><li><a href="#filter-cheat-sheet" class="table-of-contents__link toc-highlight">Filter Cheat Sheet</a></li><li><a href="#gotchas" class="table-of-contents__link toc-highlight">Gotchas</a></li><li><a href="#troubleshooting" class="table-of-contents__link toc-highlight">Troubleshooting</a></li><li><a href="#optional-extras" class="table-of-contents__link toc-highlight">Optional Extras</a></li><li><a href="#tips" class="table-of-contents__link toc-highlight">Tips</a></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer"><div class="container container-fluid"><div class="row footer__links"><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Guides</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/docs/performance-testing">Performance Testing</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter">JMeter</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/loadlitmus">LoadLitmus</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/playwright">Playwright</a></li><li class="footer__item"><a class="footer__link-item" href="/k6">k6</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/playground">Playground</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Start here</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter/01-install-tools">Install Tools</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter/03-jmeter-elements">JMeter Elements</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter/08-load-model">Design Load Model</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">More</div><ul class="footer__items clean-list"><li class="footer__item"><a href="https://github.com/Dhawi1902/testing-knowledge-base" target="_blank" rel="noopener noreferrer" class="footer__link-item">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div></div><div class="footer__bottom text--center"><div class="footer__copyright">Testing Knowledge Base — built by the QA team, from markdown.</div></div></div></footer></div>
+</body>
+</html>

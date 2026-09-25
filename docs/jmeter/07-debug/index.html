@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en" dir="ltr" class="docs-wrapper plugin-docs plugin-id-default docs-version-current docs-doc-page docs-doc-id-jmeter/07-debug" data-has-hydrated="false">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="Docusaurus v3.10.2">
+<title data-rh="true">Debug | Testing KB</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:image" content="https://testing.dhawilabs.com/img/logo.svg"><meta data-rh="true" name="twitter:image" content="https://testing.dhawilabs.com/img/logo.svg"><meta data-rh="true" property="og:url" content="https://testing.dhawilabs.com/docs/jmeter/07-debug"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Debug | Testing KB"><meta data-rh="true" name="description" content="After enhancing the script with transaction controllers, assertions, extractors, and timers, you need to verify it actually works end-to-end before running any load. Debugging is about running the script with a single user and making sure every request succeeds, every extraction works, and every assertion passes."><meta data-rh="true" property="og:description" content="After enhancing the script with transaction controllers, assertions, extractors, and timers, you need to verify it actually works end-to-end before running any load. Debugging is about running the script with a single user and making sure every request succeeds, every extraction works, and every assertion passes."><link data-rh="true" rel="icon" href="/img/logo.svg"><link data-rh="true" rel="canonical" href="https://testing.dhawilabs.com/docs/jmeter/07-debug"><link data-rh="true" rel="alternate" href="https://testing.dhawilabs.com/docs/jmeter/07-debug" hreflang="en"><link data-rh="true" rel="alternate" href="https://testing.dhawilabs.com/docs/jmeter/07-debug" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Apache JMeter","item":"https://testing.dhawilabs.com/docs/jmeter/"},{"@type":"ListItem","position":2,"name":"Debug","item":"https://testing.dhawilabs.com/docs/jmeter/07-debug"}]}</script><link rel="stylesheet" href="/assets/css/styles.20db86a5.css">
+<script src="/assets/js/runtime~main.925e99c4.js" defer="defer"></script>
+<script src="/assets/js/main.73d585a6.js" defer="defer"></script>
+</head>
+<body>
+<svg style="display: none;"><defs>
+<symbol id="theme-svg-external-link" viewBox="0 0 24 24"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"/></symbol>
+</defs></svg>
+<script>!function(){var t=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme")}catch(t){}}();document.documentElement.setAttribute("data-theme",t||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")),document.documentElement.setAttribute("data-theme-choice",t||"system")}(),function(){try{const c=new URLSearchParams(window.location.search).entries();for(var[t,e]of c)if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}()</script><div id="__docusaurus"><div role="region" aria-label="Skip to main content"><a class="skipToContent_fXgn" href="#__docusaurus_skipToContent_fallback">Skip to main content</a></div><nav aria-label="Main" class="theme-layout-navbar navbar navbar--fixed-top"><div class="navbar__inner"><div class="theme-layout-navbar-left navbar__items"><button aria-label="Toggle navigation bar" aria-expanded="false" class="navbar__toggle clean-btn" type="button"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" href="/"><div class="navbar__logo"><img src="/img/logo.svg" alt="Testing Knowledge Base" class="themedComponent_mlkZ themedComponent--light_NVdE"><img src="/img/logo.svg" alt="Testing Knowledge Base" class="themedComponent_mlkZ themedComponent--dark_xIcU"></div><b class="navbar__title text--truncate">Testing KB</b></a><a class="navbar__item navbar__link" href="/">Home</a><a aria-current="page" class="navbar__item navbar__link navbar__link--active" href="/docs">Guides</a></div><div class="theme-layout-navbar-right navbar__items navbar__items--right"><a class="navbar__item navbar__link navbar-cta" href="/docs/jmeter/01-install-tools">Get started</a><div class="toggle_vylO colorModeToggle_DEke"><button class="clean-btn toggleButton_gllP toggleButtonDisabled_aARS" type="button" disabled="" title="system mode" aria-label="Switch between dark and light mode (currently system mode)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP lightToggleIcon_pyhR"><path fill="currentColor" d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP darkToggleIcon_wfgR"><path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP systemToggleIcon_QzmC"><path fill="currentColor" d="m12 21c4.971 0 9-4.029 9-9s-4.029-9-9-9-9 4.029-9 9 4.029 9 9 9zm4.95-13.95c1.313 1.313 2.05 3.093 2.05 4.95s-0.738 3.637-2.05 4.95c-1.313 1.313-3.093 2.05-4.95 2.05v-14c1.857 0 3.637 0.737 4.95 2.05z"></path></svg></button></div><div class="navbarSearchContainer_Bca1"><div class="navbar__search searchBarContainer_NW3z" dir="ltr"><input placeholder="Search" aria-label="Search" class="navbar__search-input" value=""><div class="loadingRing_RJI3 searchBarLoadingRing_YnHq"><div></div><div></div><div></div><div></div></div></div></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div id="__docusaurus_skipToContent_fallback" class="theme-layout-main main-wrapper mainWrapper_z2l0"><div class="docsWrapper_hBAB"><button aria-label="Scroll back to top" class="clean-btn theme-back-to-top-button backToTopButton_sjWU" type="button"></button><div class="docRoot_UBD9"><aside class="theme-doc-sidebar-container docSidebarContainer_YfHR"><div class="sidebarViewport_aRkj"><div class="sidebar_njMd"><nav aria-label="Docs sidebar" class="menu thin-scrollbar menu_SIkG"><ul class="theme-doc-sidebar-menu menu__list"><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--active" href="/docs/jmeter/"><span class="categoryLinkLabel_W154">Apache JMeter</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--active" tabindex="0"><span class="categoryLinkLabel_W154">Basics</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/01-install-tools"><span class="linkLabel_WmDU">Install Tools</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/02-understand-requirements"><span class="linkLabel_WmDU">Understand Requirements and Flow</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/03-jmeter-elements"><span class="linkLabel_WmDU">JMeter Elements Overview</span></a></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-3 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="true" tabindex="0" href="/docs/jmeter/04-recording"><span class="categoryLinkLabel_W154">Recording</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-4 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/04-recording"><span class="linkLabel_WmDU">Recording with BlazeMeter + Fiddler</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-4 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/04a-recording-mitmproxy"><span class="linkLabel_WmDU">Recording with BlazeMeter + mitmproxy</span></a></li></ul></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/05-correlation-parameterization"><span class="linkLabel_WmDU">Correlation and Parameterization</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/06-script-enhancement"><span class="linkLabel_WmDU">Script Enhancement</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link menu__link--active" aria-current="page" tabindex="0" href="/docs/jmeter/07-debug"><span class="linkLabel_WmDU">Debug</span></a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link" tabindex="0"><span class="categoryLinkLabel_W154">Applying Load</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/08-load-model"><span class="linkLabel_WmDU">Design Load Model</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/09-execute-analyze"><span class="linkLabel_WmDU">Execute and Analyze Results</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/10-reporting"><span class="linkLabel_WmDU">Reporting</span></a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link" tabindex="0"><span class="categoryLinkLabel_W154">Advanced</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/11-backend-listener"><span class="linkLabel_WmDU">Backend Listener - InfluxDB + Grafana</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/12-distributed-testing"><span class="linkLabel_WmDU">Distributed Testing</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/13-distributed-testing-hands-on"><span class="linkLabel_WmDU">Try Distributed Testing on Your Own Machine</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/14-test-data-python"><span class="linkLabel_WmDU">Test Data Preparation with Python</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/15-automation-batch"><span class="linkLabel_WmDU">Automation with Batch Files</span></a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link" tabindex="0"><span class="categoryLinkLabel_W154">Appendix</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/99-future-to-explore"><span class="linkLabel_WmDU">Future / To Explore</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item"><a class="menu__link" tabindex="0" href="/docs/jmeter/99-archive-oci-linux-slave-setup"><span class="linkLabel_WmDU">OCI Linux Slave Setup (Archived)</span></a></li></ul></li></ul></li></ul></nav></div></div></aside><main class="docMainContainer_TBSr"><div class="container padding-top--md padding-bottom--lg"><div class="row"><div class="col docItemCol_VOVn"><div class="docItemContainer_Djhp"><article><nav class="theme-doc-breadcrumbs breadcrumbsContainer_Z_bl" aria-label="Breadcrumbs"><ul class="breadcrumbs"><li class="breadcrumbs__item"><a aria-label="Home page" class="breadcrumbs__link" href="/"><svg viewBox="0 0 24 24" class="breadcrumbHomeIcon_YNFT"><path d="M10 19v-5h4v5c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-7h1.7c.46 0 .68-.57.33-.87L12.67 3.6c-.38-.34-.96-.34-1.34 0l-8.36 7.53c-.34.3-.13.87.33.87H5v7c0 .55.45 1 1 1h3c.55 0 1-.45 1-1z" fill="currentColor"></path></svg></a></li><li class="breadcrumbs__item"><a class="breadcrumbs__link" href="/docs/jmeter/"><span>Apache JMeter</span></a></li><li class="breadcrumbs__item"><span class="breadcrumbs__link">Basics</span></li><li class="breadcrumbs__item breadcrumbs__item--active"><span class="breadcrumbs__link">Debug</span></li></ul></nav><div class="tocCollapsible_ETCw theme-doc-toc-mobile tocMobile_ITEo"><button type="button" class="clean-btn tocCollapsibleButton_TO0P">On this page</button></div><div class="theme-doc-markdown markdown"><header><h1>Debug</h1></header>
+<p>After enhancing the script with transaction controllers, assertions, extractors, and timers, you need to verify it actually works end-to-end before running any load. Debugging is about running the script with a single user and making sure every request succeeds, every extraction works, and every assertion passes.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="run-with-1-thread">Run with 1 Thread<a href="#run-with-1-thread" class="hash-link" aria-label="Direct link to Run with 1 Thread" title="Direct link to Run with 1 Thread" translate="no">​</a></h2>
+<p>Always debug with a <strong>single thread</strong> (1 user) running <strong>1 loop</strong>. This isolates script issues from load-related issues.</p>
+<p><strong>Thread Group settings for debugging:</strong></p>
+<ul>
+<li class="">
+<p><strong>Number of Threads:</strong> <code>1</code></p>
+</li>
+<li class="">
+<p><strong>Ramp-Up Period:</strong> <code>0</code></p>
+</li>
+<li class="">
+<p><strong>Loop Count:</strong> <code>1</code></p>
+</li>
+</ul>
+<p>Run the test from the <strong>GUI</strong> during debugging - this is one of the few times GUI mode is appropriate. You need the visual feedback from listeners to inspect what&#x27;s happening.</p>
+<blockquote>
+<p><strong>Important:</strong> GUI mode is for debugging only. Never use it for actual load testing - it consumes too much memory and distorts results.</p>
+</blockquote>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="view-results-tree">View Results Tree<a href="#view-results-tree" class="hash-link" aria-label="Direct link to View Results Tree" title="Direct link to View Results Tree" translate="no">​</a></h2>
+<p>This is your primary debugging tool. It shows every request and response in detail.</p>
+<p><strong>Add it:</strong> Right-click Thread Group &gt; Add &gt; Listener &gt; <strong>View Results Tree</strong></p>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="what-to-check-for-each-request">What to Check for Each Request<a href="#what-to-check-for-each-request" class="hash-link" aria-label="Direct link to What to Check for Each Request" title="Direct link to What to Check for Each Request" translate="no">​</a></h3>
+<p><strong>Sampler Result tab:</strong></p>
+<ul>
+<li class="">
+<p><strong>Response code</strong> - should be <code>200</code> (or the expected code for that endpoint)</p>
+</li>
+<li class="">
+<p><strong>Response message</strong> - <code>OK</code>, not error messages</p>
+</li>
+<li class="">
+<p><strong>Load time</strong> - sanity check, not a performance measurement in GUI mode</p>
+</li>
+</ul>
+<p><strong>Request tab:</strong></p>
+<ul>
+<li class="">
+<p>Verify the <strong>URL</strong> is correct</p>
+</li>
+<li class="">
+<p>Verify <strong>headers</strong> are present (Authorization, Content-Type, etc.)</p>
+</li>
+<li class="">
+<p>Verify the <strong>request body</strong> has the correct data - check that variables like <code>${token}</code> are resolved to actual values, not sent as literal <code>${token}</code></p>
+</li>
+</ul>
+<p><strong>Response Data tab:</strong></p>
+<ul>
+<li class="">Verify the response body contains expected data</li>
+<li class="">If extracting values from this response, confirm the target value is actually present</li>
+</ul>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="reading-the-colors">Reading the Colors<a href="#reading-the-colors" class="hash-link" aria-label="Direct link to Reading the Colors" title="Direct link to Reading the Colors" translate="no">​</a></h3>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Color</th><th>Meaning</th></tr></thead><tbody><tr><td><strong>Green</strong></td><td>Request succeeded and all assertions passed</td></tr><tr><td><strong>Red</strong></td><td>Request failed or an assertion failed</td></tr></tbody></table>
+<p>A red entry doesn&#x27;t always mean the server returned an error. It could mean:</p>
+<ul>
+<li class="">The request returned <code>200</code> but an assertion failed (e.g., response didn&#x27;t contain expected text)</li>
+<li class="">The request returned a non-2xx status code</li>
+<li class="">A connection error occurred</li>
+</ul>
+<p>Click on the red entry and check the <strong>Sampler Result</strong> tab for the actual failure reason.</p>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="debug-sampler">Debug Sampler<a href="#debug-sampler" class="hash-link" aria-label="Direct link to Debug Sampler" title="Direct link to Debug Sampler" translate="no">​</a></h2>
+<p>The Debug Sampler dumps all JMeter variables at a specific point in the test. This is essential for verifying that extractors captured the correct values.</p>
+<p><strong>Add it:</strong> Right-click on a sampler (after the one with the extractor) &gt; Add &gt; Sampler &gt; <strong>Debug Sampler</strong></p>
+<p><strong>Debug Sampler settings:</strong></p>
+<ul>
+<li class="">
+<p><strong>JMeter properties:</strong> <code>False</code> (you usually don&#x27;t need these)</p>
+</li>
+<li class="">
+<p><strong>JMeter variables:</strong> <code>True</code> (this is what you want)</p>
+</li>
+<li class="">
+<p><strong>System properties:</strong> <code>False</code></p>
+</li>
+</ul>
+<p>Place the Debug Sampler <strong>after the request that extracts a value</strong>. Then look at it in the View Results Tree - the Response Data tab will show all variables and their current values.</p>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-background-color:hsl(220, 13%, 18%);--prism-color:hsl(220, 14%, 71%)"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="background-color:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">Thread Group</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">├── A - Login</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">│   ├── 01 - POST - Submit Login</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">│   │   └── JSON Extractor: authToken</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">│   ├── Debug Sampler              ← check authToken here</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">│   └── 02 - GET - Fetch Profile</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">│       └── JSON Extractor: userId</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">├── Debug Sampler                  ← check userId here</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">├── B - Dashboard</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">│   └── ...</span><br></div></code></pre></div></div>
+<p><strong>What to look for in the Debug Sampler output:</strong></p>
+<ul>
+<li class="">Your variable name appears with the correct value: <code>authToken=eyJhbGciOi...</code></li>
+<li class="">If the variable shows <code>NOT_FOUND</code> or is missing entirely, the extraction failed</li>
+<li class="">Check <code>variableName_matchNr</code> - this tells you how many matches the extractor found. <code>0</code> means no match</li>
+</ul>
+<blockquote>
+<p><strong>Tip:</strong> Remove or disable Debug Samplers before running load tests. They add unnecessary overhead and clutter the results.</p>
+</blockquote>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="common-issues-and-fixes">Common Issues and Fixes<a href="#common-issues-and-fixes" class="hash-link" aria-label="Direct link to Common Issues and Fixes" title="Direct link to Common Issues and Fixes" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="unresolved-variables">Unresolved Variables<a href="#unresolved-variables" class="hash-link" aria-label="Direct link to Unresolved Variables" title="Direct link to Unresolved Variables" translate="no">​</a></h3>
+<p><strong>Symptom:</strong> Request body or URL contains literal <code>${variableName}</code> instead of the actual value.</p>
+<p><strong>Cause:</strong> The variable was never set - either the extractor didn&#x27;t run, didn&#x27;t match, or is scoped incorrectly.</p>
+<p><strong>Fix:</strong></p>
+<ol>
+<li class="">
+<p>Check the extractor is attached to the correct request (the one whose response contains the value)</p>
+</li>
+<li class="">
+<p>Check the extractor configuration - JSON path, regex, or CSS selector might be wrong</p>
+</li>
+<li class="">
+<p>Check the <strong>scope</strong> - an extractor under a sampler only applies to that sampler&#x27;s response. If the variable needs to be available to later requests, make sure it&#x27;s in the right place in the hierarchy</p>
+</li>
+<li class="">
+<p>Run the Debug Sampler after the extractor to see what value (if any) was captured</p>
+</li>
+</ol>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="assertion-failures-on-valid-responses">Assertion Failures on Valid Responses<a href="#assertion-failures-on-valid-responses" class="hash-link" aria-label="Direct link to Assertion Failures on Valid Responses" title="Direct link to Assertion Failures on Valid Responses" translate="no">​</a></h3>
+<p><strong>Symptom:</strong> Request shows red in View Results Tree but the response looks correct.</p>
+<p><strong>Cause:</strong> The assertion is too strict or checking the wrong thing.</p>
+<p><strong>Fix:</strong></p>
+<ol>
+<li class="">
+<p>Click the red entry and check the <strong>Assertion Result</strong> section in the Sampler Result tab</p>
+</li>
+<li class="">
+<p>Common mistakes:</p>
+<ul>
+<li class="">Checking for exact text that varies (e.g., timestamp in the response)</li>
+<li class="">Wrong JSON path in JSON Assertion</li>
+<li class="">Response Assertion checking Response Body when the value is in the headers</li>
+</ul>
+</li>
+<li class="">
+<p>Adjust the assertion to match what the server actually returns</p>
+</li>
+</ol>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="authentication-failures-partway-through-the-script">Authentication Failures Partway Through the Script<a href="#authentication-failures-partway-through-the-script" class="hash-link" aria-label="Direct link to Authentication Failures Partway Through the Script" title="Direct link to Authentication Failures Partway Through the Script" translate="no">​</a></h3>
+<p><strong>Symptom:</strong> First few requests succeed, then subsequent requests fail with <code>401</code> or <code>403</code>.</p>
+<p><strong>Cause:</strong> Token extraction failed or the token expired between requests.</p>
+<p><strong>Fix:</strong></p>
+<ol>
+<li class="">Use Debug Sampler to verify the token was extracted correctly</li>
+<li class="">Check that the <code>Authorization</code> header in subsequent requests uses <code>${token}</code> and not a hardcoded value from the recording</li>
+<li class="">Check that <code>HTTP Header Manager</code> with the token is scoped correctly - it should be at Thread Group level or under a controller that covers all requests needing it</li>
+<li class="">If using cookies, check that <strong>HTTP Cookie Manager</strong> is present at the Thread Group level</li>
+</ol>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="redirect-issues">Redirect Issues<a href="#redirect-issues" class="hash-link" aria-label="Direct link to Redirect Issues" title="Direct link to Redirect Issues" translate="no">​</a></h3>
+<p><strong>Symptom:</strong> Getting <code>302</code> responses or unexpected HTML instead of the expected API response.</p>
+<p><strong>Cause:</strong> JMeter follows redirects by default. The extractor might be running on the original response, not the final redirected response.</p>
+<p><strong>Fix:</strong></p>
+<ol>
+<li class="">
+<p>Check <strong>&quot;Follow Redirects&quot;</strong> and <strong>&quot;Redirect Automatically&quot;</strong> settings on the HTTP Request sampler</p>
+</li>
+<li class="">
+<p>If you need to extract from the redirect response, you may need to uncheck &quot;Follow Redirects&quot; and handle the redirect manually</p>
+</li>
+<li class="">
+<p>Check if the redirect URL is different from what was recorded (e.g., environment-specific URL)</p>
+</li>
+</ol>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="encoding-issues">Encoding Issues<a href="#encoding-issues" class="hash-link" aria-label="Direct link to Encoding Issues" title="Direct link to Encoding Issues" translate="no">​</a></h3>
+<p><strong>Symptom:</strong> Special characters in request bodies appear garbled, or the server rejects the request.</p>
+<p><strong>Cause:</strong> Character encoding mismatch - the request is not sending UTF-8 or the expected encoding.</p>
+<p><strong>Fix:</strong></p>
+<ol>
+<li class="">
+<p>Check the <code>Content-Type</code> header includes charset: <code>Content-Type: application/json; charset=UTF-8</code></p>
+</li>
+<li class="">
+<p>In the HTTP Request sampler, check the <strong>&quot;Content encoding&quot;</strong> field</p>
+</li>
+<li class="">
+<p>If sending form data, make sure URL-encoded values are properly encoded</p>
+</li>
+</ol>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="verify-the-script-is-ready">Verify the Script is Ready<a href="#verify-the-script-is-ready" class="hash-link" aria-label="Direct link to Verify the Script is Ready" title="Direct link to Verify the Script is Ready" translate="no">​</a></h2>
+<p>Before moving to load testing, go through this checklist:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Check</th><th>How to Verify</th></tr></thead><tbody><tr><td>All requests are green</td><td>Run with 1 thread and check View Results Tree - no red entries</td></tr><tr><td>Variables are resolved</td><td>Debug Samplers show correct values, no <code>${literal}</code> in requests</td></tr><tr><td>Assertions pass</td><td>No assertion failures in the results</td></tr><tr><td>Flow completes end-to-end</td><td>The last request in the script executes successfully</td></tr><tr><td>Multiple users work</td><td>Run with 2-3 threads to verify CSV parameterization and concurrency</td></tr><tr><td>No hardcoded dynamic values</td><td>Search the <code>.jmx</code> for any remaining hardcoded tokens, session IDs, or timestamps from the recording</td></tr><tr><td>Debug elements removed/disabled</td><td>Remove or disable Debug Samplers and View Results Tree before load testing</td></tr></tbody></table>
+<h3 class="anchor anchorTargetStickyNavbar_Vzrq" id="quick-multi-user-validation">Quick Multi-User Validation<a href="#quick-multi-user-validation" class="hash-link" aria-label="Direct link to Quick Multi-User Validation" title="Direct link to Quick Multi-User Validation" translate="no">​</a></h3>
+<p>After the single-thread run passes, bump it to <strong>2-3 threads</strong> with your CSV data:</p>
+<ul>
+<li class="">Verify each thread picks up a different row from the CSV</li>
+<li class="">Verify there are no conflicts between threads (e.g., shared state issues)</li>
+<li class="">This catches parameterization mistakes before you scale to full load</li>
+</ul>
+<hr>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="tips">Tips<a href="#tips" class="hash-link" aria-label="Direct link to Tips" title="Direct link to Tips" translate="no">​</a></h2>
+<ul>
+<li class="">
+<p><strong>Debug one issue at a time</strong> - fix the first red request, run again, fix the next one. Don&#x27;t try to fix everything at once</p>
+</li>
+<li class="">
+<p><strong>Use the Debug Sampler liberally during development</strong> - add them after every extractor until the flow works, then remove them</p>
+</li>
+<li class="">
+<p><strong>Save the Fiddler session</strong> - having the original <code>.saz</code> file open while debugging lets you compare what the real browser sent vs what JMeter is sending</p>
+</li>
+<li class="">
+<p><strong>Check the JMeter log</strong> - if something fails silently, look at <code>jmeter.log</code> in the <code>bin/</code> folder (or the log panel at the bottom of the GUI). Groovy errors, plugin issues, and file-not-found errors often show up here</p>
+</li>
+<li class="">
+<p><strong>Compare against Fiddler</strong> - if a request fails in JMeter but worked during recording, open the Fiddler <code>.saz</code> and compare headers, cookies, and body side by side. The difference is usually the cause</p>
+</li>
+</ul></div><footer class="theme-doc-footer docusaurus-mt-lg"><div class="row margin-top--sm theme-doc-footer-edit-meta-row"><div class="col noPrint_WFHX"></div><div class="col lastUpdated_JAkA"><span class="theme-last-updated">Last updated<!-- --> on <b><time datetime="2026-07-22T06:29:56.000Z" itemprop="dateModified">Jul 22, 2026</time></b></span></div></div></footer></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Docs pages"><a class="pagination-nav__link pagination-nav__link--prev" href="/docs/jmeter/06-script-enhancement"><div class="pagination-nav__sublabel">Previous</div><div class="pagination-nav__label">Script Enhancement</div></a><a class="pagination-nav__link pagination-nav__link--next" href="/docs/jmeter/08-load-model"><div class="pagination-nav__sublabel">Next</div><div class="pagination-nav__label">Design Load Model</div></a></nav></div></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#run-with-1-thread" class="table-of-contents__link toc-highlight">Run with 1 Thread</a></li><li><a href="#view-results-tree" class="table-of-contents__link toc-highlight">View Results Tree</a><ul><li><a href="#what-to-check-for-each-request" class="table-of-contents__link toc-highlight">What to Check for Each Request</a></li><li><a href="#reading-the-colors" class="table-of-contents__link toc-highlight">Reading the Colors</a></li></ul></li><li><a href="#debug-sampler" class="table-of-contents__link toc-highlight">Debug Sampler</a></li><li><a href="#common-issues-and-fixes" class="table-of-contents__link toc-highlight">Common Issues and Fixes</a><ul><li><a href="#unresolved-variables" class="table-of-contents__link toc-highlight">Unresolved Variables</a></li><li><a href="#assertion-failures-on-valid-responses" class="table-of-contents__link toc-highlight">Assertion Failures on Valid Responses</a></li><li><a href="#authentication-failures-partway-through-the-script" class="table-of-contents__link toc-highlight">Authentication Failures Partway Through the Script</a></li><li><a href="#redirect-issues" class="table-of-contents__link toc-highlight">Redirect Issues</a></li><li><a href="#encoding-issues" class="table-of-contents__link toc-highlight">Encoding Issues</a></li></ul></li><li><a href="#verify-the-script-is-ready" class="table-of-contents__link toc-highlight">Verify the Script is Ready</a><ul><li><a href="#quick-multi-user-validation" class="table-of-contents__link toc-highlight">Quick Multi-User Validation</a></li></ul></li><li><a href="#tips" class="table-of-contents__link toc-highlight">Tips</a></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer"><div class="container container-fluid"><div class="row footer__links"><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Guides</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/docs/performance-testing">Performance Testing</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter">JMeter</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/loadlitmus">LoadLitmus</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/playwright">Playwright</a></li><li class="footer__item"><a class="footer__link-item" href="/k6">k6</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/playground">Playground</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Start here</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter/01-install-tools">Install Tools</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter/03-jmeter-elements">JMeter Elements</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter/08-load-model">Design Load Model</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">More</div><ul class="footer__items clean-list"><li class="footer__item"><a href="https://github.com/Dhawi1902/testing-knowledge-base" target="_blank" rel="noopener noreferrer" class="footer__link-item">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div></div><div class="footer__bottom text--center"><div class="footer__copyright">Testing Knowledge Base — built by the QA team, from markdown.</div></div></div></footer></div>
+</body>
+</html>
