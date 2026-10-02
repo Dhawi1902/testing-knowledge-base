@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en" dir="ltr" class="docs-wrapper plugin-docs plugin-id-default docs-version-current docs-doc-page docs-doc-id-superpowers/specs/2026-09-28-k6-track-design" data-has-hydrated="false">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="Docusaurus v3.10.2">
+<title data-rh="true">k6 Track — Design Spec | Testing KB</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:image" content="https://testing.dhawilabs.com/img/logo.svg"><meta data-rh="true" name="twitter:image" content="https://testing.dhawilabs.com/img/logo.svg"><meta data-rh="true" property="og:url" content="https://testing.dhawilabs.com/docs/superpowers/specs/2026-09-28-k6-track-design"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="k6 Track — Design Spec | Testing KB"><meta data-rh="true" name="description" content="Date: 2026-09-28"><meta data-rh="true" property="og:description" content="Date: 2026-09-28"><link data-rh="true" rel="icon" href="/img/logo.svg"><link data-rh="true" rel="canonical" href="https://testing.dhawilabs.com/docs/superpowers/specs/2026-09-28-k6-track-design"><link data-rh="true" rel="alternate" href="https://testing.dhawilabs.com/docs/superpowers/specs/2026-09-28-k6-track-design" hreflang="en"><link data-rh="true" rel="alternate" href="https://testing.dhawilabs.com/docs/superpowers/specs/2026-09-28-k6-track-design" hreflang="x-default"><link rel="stylesheet" href="/assets/css/styles.3b2dd252.css">
+<script src="/assets/js/runtime~main.c1af30cf.js" defer="defer"></script>
+<script src="/assets/js/main.08a65027.js" defer="defer"></script>
+</head>
+<body>
+<svg style="display: none;"><defs>
+<symbol id="theme-svg-external-link" viewBox="0 0 24 24"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"/></symbol>
+</defs></svg>
+<script>!function(){var t=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme")}catch(t){}}();document.documentElement.setAttribute("data-theme",t||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")),document.documentElement.setAttribute("data-theme-choice",t||"system")}(),function(){try{const c=new URLSearchParams(window.location.search).entries();for(var[t,e]of c)if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}()</script><div id="__docusaurus"><div role="region" aria-label="Skip to main content"><a class="skipToContent_fXgn" href="#__docusaurus_skipToContent_fallback">Skip to main content</a></div><nav aria-label="Main" class="theme-layout-navbar navbar navbar--fixed-top"><div class="navbar__inner"><div class="theme-layout-navbar-left navbar__items"><button aria-label="Toggle navigation bar" aria-expanded="false" class="navbar__toggle clean-btn" type="button"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" href="/"><div class="navbar__logo"><img src="/img/logo.svg" alt="Testing Knowledge Base" class="themedComponent_mlkZ themedComponent--light_NVdE"><img src="/img/logo.svg" alt="Testing Knowledge Base" class="themedComponent_mlkZ themedComponent--dark_xIcU"></div><b class="navbar__title text--truncate">Testing KB</b></a><a class="navbar__item navbar__link" href="/">Home</a><a aria-current="page" class="navbar__item navbar__link navbar__link--active" href="/docs">Guides</a></div><div class="theme-layout-navbar-right navbar__items navbar__items--right"><a class="navbar__item navbar__link navbar-cta" href="/docs/jmeter/01-install-tools">Get started</a><div class="toggle_vylO colorModeToggle_DEke"><button class="clean-btn toggleButton_gllP toggleButtonDisabled_aARS" type="button" disabled="" title="system mode" aria-label="Switch between dark and light mode (currently system mode)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP lightToggleIcon_pyhR"><path fill="currentColor" d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP darkToggleIcon_wfgR"><path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP systemToggleIcon_QzmC"><path fill="currentColor" d="m12 21c4.971 0 9-4.029 9-9s-4.029-9-9-9-9 4.029-9 9 4.029 9 9 9zm4.95-13.95c1.313 1.313 2.05 3.093 2.05 4.95s-0.738 3.637-2.05 4.95c-1.313 1.313-3.093 2.05-4.95 2.05v-14c1.857 0 3.637 0.737 4.95 2.05z"></path></svg></button></div><div class="navbarSearchContainer_Bca1"><div class="navbar__search searchBarContainer_NW3z" dir="ltr"><input placeholder="Search" aria-label="Search" class="navbar__search-input" value=""><div class="loadingRing_RJI3 searchBarLoadingRing_YnHq"><div></div><div></div><div></div><div></div></div></div></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div id="__docusaurus_skipToContent_fallback" class="theme-layout-main main-wrapper mainWrapper_z2l0"><div class="docsWrapper_hBAB"><button aria-label="Scroll back to top" class="clean-btn theme-back-to-top-button backToTopButton_sjWU" type="button"></button><div class="docRoot_UBD9"><main class="docMainContainer_TBSr docMainContainerEnhanced_lQrH"><div class="container padding-top--md padding-bottom--lg"><div class="row"><div class="col docItemCol_VOVn"><div class="docItemContainer_Djhp"><article><div class="tocCollapsible_ETCw theme-doc-toc-mobile tocMobile_ITEo"><button type="button" class="clean-btn tocCollapsibleButton_TO0P">On this page</button></div><div class="theme-doc-markdown markdown"><header><h1>k6 Track — Design Spec</h1></header>
+<p><strong>Date:</strong> 2026-09-28
+<strong>Status:</strong> Approved in brainstorming, awaiting implementation plan
+<strong>Scope:</strong> Basics + Applying Load (option 1). Advanced topics go to a <code>99-future</code> page.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="1-purpose">1. Purpose<a href="#1-purpose" class="hash-link" aria-label="Direct link to 1. Purpose" title="Direct link to 1. Purpose" translate="no">​</a></h2>
+<p>A k6 track in the same style as the JMeter and Playwright tracks. It teaches a tester to script, load and report a k6 test end to end, using the Pizza Playground as the target.</p>
+<p>It builds on the Performance Testing module:</p>
+<ul>
+<li class=""><code>performance-testing/01-fundamentals</code> defines the six test types.</li>
+<li class=""><code>performance-testing/03-mapping-to-k6</code> shows the one-script, <code>-e PROFILE=...</code> idea.</li>
+</ul>
+<p>The k6 track goes deeper: every k6 setting needed to run each test type, plus auth, correlation, test data, checks, thresholds, debugging and reporting.</p>
+<p><strong>Success looks like</strong></p>
+<ul>
+<li class="">A reader with Docker and k6 installed can clone this repo, start the playground, and run every sample script.</li>
+<li class="">Every code block on a doc page is taken from a file in <code>k6/sample/</code> that was run against the playground.</li>
+<li class="">Each of the six test types has a run command that works with the sample.</li>
+</ul>
+<p><strong>Non-goals for this version:</strong> Grafana/InfluxDB live monitoring, distributed runs (k6-operator), CI pipelines, the k6 browser module, k6 Cloud, TypeScript. All of them are listed in <code>99-future-to-explore</code>.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="2-decisions">2. Decisions<a href="#2-decisions" class="hash-link" aria-label="Direct link to 2. Decisions" title="Direct link to 2. Decisions" translate="no">​</a></h2>
+<ul>
+<li class=""><strong>k6 version:</strong> v2.2.0 (installed locally). Stated on the index page.</li>
+<li class=""><strong>Language:</strong> plain JavaScript (ES modules), as k6 runs it. No bundler, no npm.</li>
+<li class=""><strong>Target:</strong> Pizza Playground running locally via <code>docker compose up</code>. <code>BASE_URL</code> defaults to <code>http://127.0.0.1:8080</code> (IPv4 to avoid the <code>localhost</code> quirk).</li>
+<li class=""><strong>Sample location:</strong> <code>k6/sample/</code> in this repo, next to the docs that quote it (same as <code>playwright/sample/</code>).</li>
+<li class=""><strong>No mirror copy</strong> of docs in <code>k6/docs/</code>. The Docusaurus pages under <code>docs/k6/</code> are the only copy.</li>
+<li class=""><strong>Existing mapping page stays.</strong> <code>performance-testing/03-mapping-to-k6</code> is unchanged; page 08 links to it and goes deeper.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="3-sample-project">3. Sample project<a href="#3-sample-project" class="hash-link" aria-label="Direct link to 3. Sample project" title="Direct link to 3. Sample project" translate="no">​</a></h2>
+<div class="language-text codeBlockContainer_Ckt0 theme-code-block" style="--prism-background-color:hsl(220, 13%, 18%);--prism-color:hsl(220, 14%, 71%)"><div class="codeBlockContent_QJqH"><pre tabindex="0" class="prism-code language-text codeBlock_bY9V thin-scrollbar" style="background-color:hsl(220, 13%, 18%);color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><code class="codeBlockLines_e6Vv"><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">k6/</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">├── PLAN.md               Progress table and next steps (like playwright/PLAN.md)</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">├── README.md             How to run the sample</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">└── sample/</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">    ├── lib/config.js     BASE_URL, load profiles for the six test types</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">    ├── lib/auth.js       login(email, password) -&gt; token, authHeaders(token), resetPlayground()</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">    ├── data/customers.csv  Copied from pizza-playground/test-data/</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">    ├── 01-first-test.js  GET /menu, one check</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">    ├── 02-auth.js        Shared token from setup() vs one customer login per VU</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">    ├── 03-order-flow.js  Login -&gt; menu -&gt; create order -&gt; poll payment status</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">    ├── 04-thresholds.js  Order flow with groups, tags, per-endpoint thresholds, custom metrics</span><br></div><div class="token-line" style="color:hsl(220, 14%, 71%);text-shadow:0 1px rgba(0, 0, 0, 0.3)"><span class="token plain">    └── 05-load-model.js  Order flow under any profile or executor, chosen with -e</span><br></div></code></pre></div></div>
+<p><strong>Behaviour shared by scripts 02–05</strong></p>
+<ul>
+<li class=""><code>setup()</code> logs in as <code>owner@playground.local</code> and calls <code>POST /api/v1/admin/reset</code>, so each run starts at order 1001.</li>
+<li class="">Customers come from <code>customers.csv</code> through <code>SharedArray</code>. Each VU uses the row matching its VU number, wrapping around the 20 customers.</li>
+<li class="">Orders are created with <code>autoPay: true</code> by default. <code>-e AUTOPAY=false</code> sends orders through the mock gateway instead, and <code>-e MOCK_DELAY=&lt;ms&gt;</code> adds the <code>X-Mock-Delay</code> header.</li>
+<li class="">Scripts fail fast with a clear message if the playground is not reachable (the check in <code>setup()</code>).</li>
+</ul>
+<p><strong>Auth patterns taught (page 05, script 02)</strong></p>
+<ol>
+<li class=""><strong>Shared token:</strong> one login in <code>setup()</code>, returned as data and used by every VU. Fits admin endpoints; the JWT lasts 12 hours.</li>
+<li class=""><strong>Per-VU login:</strong> each VU logs in as its own customer on its first iteration and keeps the token in a module-level variable. Fits <code>/orders/mine</code>, where the user matters.</li>
+</ol>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="4-pages">4. Pages<a href="#4-pages" class="hash-link" aria-label="Direct link to 4. Pages" title="Direct link to 4. Pages" translate="no">​</a></h2>
+<p>All under <code>docs/k6/</code>. Each has a table of contents and follows Why → How → Tips, in a practical first-person tone.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>#</th><th>Page</th><th>Content</th><th>Sample file</th></tr></thead><tbody><tr><td>—</td><td><code>index.md</code></td><td>Landing, version, status table</td><td>—</td></tr><tr><td>01</td><td><code>01-install-tools.md</code></td><td>k6 via brew / winget / Docker, VS Code, starting the playground, first <code>k6 version</code></td><td>—</td></tr><tr><td>02</td><td><code>02-understand-requirements.md</code></td><td>Short page: what to collect before scripting; links to JMeter 02 and the Performance Testing module</td><td>—</td></tr><tr><td>03</td><td><code>03-k6-concepts.md</code></td><td>Lifecycle (init / setup / default / teardown), VUs vs iterations, <code>__ENV</code>, options, JMeter → k6 cheat sheet</td><td><code>01-first-test.js</code></td></tr><tr><td>04</td><td><code>04-recording.md</code></td><td>Browser HAR → <code>har-to-k6</code>, cleaning the output, why I usually hand-write API scripts</td><td>—</td></tr><tr><td>05</td><td><code>05-auth-correlation-data.md</code></td><td>Both auth patterns, extracting <code>id</code> / <code>payUrl</code> from JSON, <code>SharedArray</code> + CSV, unique data per VU</td><td><code>02-auth.js</code>, <code>03-order-flow.js</code></td></tr><tr><td>06</td><td><code>06-checks-thresholds.md</code></td><td>Checks vs thresholds, per-endpoint thresholds via tags, <code>abortOnFail</code>, groups, custom <code>Trend</code> / <code>Counter</code></td><td><code>04-thresholds.js</code></td></tr><tr><td>07</td><td><code>07-debug.md</code></td><td><code>-u 1 -i 1</code>, <code>--http-debug</code>, <code>console.log</code>, <code>k6 inspect</code>, common errors</td><td>any</td></tr><tr><td>08</td><td><code>08-load-model.md</code></td><td>All six test types; every executor (shared-iterations, per-vu-iterations, constant-vus, ramping-vus, constant-arrival-rate, ramping-arrival-rate); VUs vs arrival rate; several scenarios in one run; think time; <code>X-Mock-Delay</code> slow third-party demo</td><td><code>05-load-model.js</code></td></tr><tr><td>09</td><td><code>09-execute-analyze.md</code></td><td>End-of-test summary line by line, <code>--out json</code> / <code>csv</code>, web dashboard (<code>K6_WEB_DASHBOARD=true</code>), reading p95 and error rate, order-number sanity check</td><td><code>05-load-model.js</code></td></tr><tr><td>10</td><td><code>10-reporting.md</code></td><td><code>handleSummary()</code> to JSON and an HTML report, what goes into the report to the client</td><td><code>05-load-model.js</code></td></tr><tr><td>99</td><td><code>99-future-to-explore.md</code></td><td>Grafana/InfluxDB, distributed runs, CI, browser module, k6 Cloud</td><td>—</td></tr></tbody></table>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="5-site-wiring">5. Site wiring<a href="#5-site-wiring" class="hash-link" aria-label="Direct link to 5. Site wiring" title="Direct link to 5. Site wiring" translate="no">​</a></h2>
+<p>Follow commit <code>b24053f</code> (Playground track):</p>
+<ul>
+<li class=""><code>sidebars.js</code>: new <code>k6Sidebar</code> with Basics (01–07), Applying Load (08–10), Appendix (99).</li>
+<li class=""><code>src/data/tools.js</code>: k6 card from &quot;Coming soon&quot; (<code>soon: true</code>) to &quot;In progress&quot;, <code>to: /docs/k6</code>.</li>
+<li class=""><code>src/pages/k6.js</code>: replace the coming-soon page with a redirect to <code>/docs/k6</code>.</li>
+<li class=""><code>docusaurus.config.js</code>: navbar k6 link to <code>/docs/k6</code>.</li>
+<li class=""><code>README.md</code> (root): k6 row to &quot;In progress&quot; with a link; add <code>k6/</code> to the structure in <code>CLAUDE.md</code>.</li>
+<li class=""><code>performance-testing/03-mapping-to-k6.md</code>: one line linking to the new track.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="6-validation">6. Validation<a href="#6-validation" class="hash-link" aria-label="Direct link to 6. Validation" title="Direct link to 6. Validation" translate="no">​</a></h2>
+<ul>
+<li class="">Every script is run against a local playground while writing. <code>npm run build</code> must pass.</li>
+<li class="">Long profiles (stress, endurance, spike) are checked with <code>k6 inspect</code> and a short run with the durations scaled down. The status table says &quot;Validated (scaled)&quot; for those rows rather than claiming a full 4-hour run.</li>
+<li class="">Screenshots (web dashboard, HTML report) go under <code>docs/k6/images/</code>, or stay as <code>&lt;!-- TODO: Screenshot - ... --&gt;</code> where not captured.</li>
+<li class="">Status table columns: Page | Written | Validated | Screenshots.</li>
+</ul></div><footer class="theme-doc-footer docusaurus-mt-lg"><div class="row margin-top--sm theme-doc-footer-edit-meta-row"><div class="col noPrint_WFHX"></div><div class="col lastUpdated_JAkA"><span class="theme-last-updated">Last updated<!-- --> on <b><time datetime="2026-09-28T04:26:32.000Z" itemprop="dateModified">Sep 28, 2026</time></b></span></div></div></footer></article><div><nav class="docusaurus-mt-lg pagination-nav" aria-label="Docs pages"></nav></div></div></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#1-purpose" class="table-of-contents__link toc-highlight">1. Purpose</a></li><li><a href="#2-decisions" class="table-of-contents__link toc-highlight">2. Decisions</a></li><li><a href="#3-sample-project" class="table-of-contents__link toc-highlight">3. Sample project</a></li><li><a href="#4-pages" class="table-of-contents__link toc-highlight">4. Pages</a></li><li><a href="#5-site-wiring" class="table-of-contents__link toc-highlight">5. Site wiring</a></li><li><a href="#6-validation" class="table-of-contents__link toc-highlight">6. Validation</a></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer"><div class="container container-fluid"><div class="row footer__links"><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Guides</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/docs/performance-testing">Performance Testing</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/automation">Automation</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter">JMeter</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/loadlitmus">LoadLitmus</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/playwright">Playwright</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/k6">k6</a></li><li class="footer__item"><a class="footer__link-item" href="/soapui">SoapUI</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/playground">Playground</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Start here</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter/01-install-tools">Install Tools</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter/03-jmeter-elements">JMeter Elements</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter/08-load-model">Design Load Model</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">More</div><ul class="footer__items clean-list"><li class="footer__item"><a href="https://github.com/Dhawi1902/testing-knowledge-base" target="_blank" rel="noopener noreferrer" class="footer__link-item">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div></div><div class="footer__bottom text--center"><div class="footer__copyright">Testing Knowledge Base — built by the QA team, from markdown.</div></div></div></footer></div>
+</body>
+</html>
