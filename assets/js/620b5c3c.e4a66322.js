@@ -1,0 +1,1 @@
+"use strict";(globalThis.webpackChunktesting_knowledge_base=globalThis.webpackChunktesting_knowledge_base||[]).push([[2875],{3251(e,s,t){t.r(s),t.d(s,{default:()=>k});t(6540);var n=t(6347),a=t(4848);function k(){return(0,a.jsx)(n.rd,{to:"/docs/k6"})}}}]);

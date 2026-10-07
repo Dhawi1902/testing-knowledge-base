@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en" dir="ltr" class="docs-wrapper plugin-docs plugin-id-default docs-version-current docs-doc-page docs-doc-id-automation/01-automation-in-general" data-has-hydrated="false">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="Docusaurus v3.10.2">
+<title data-rh="true">Automation in General | Testing KB</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:image" content="https://testing.dhawilabs.com/img/logo.svg"><meta data-rh="true" name="twitter:image" content="https://testing.dhawilabs.com/img/logo.svg"><meta data-rh="true" property="og:url" content="https://testing.dhawilabs.com/docs/automation/01-automation-in-general"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Automation in General | Testing KB"><meta data-rh="true" name="description" content="What automation is, the four parts every automation has, why we automate, when it is worth it and what it costs, before any testing tool."><meta data-rh="true" property="og:description" content="What automation is, the four parts every automation has, why we automate, when it is worth it and what it costs, before any testing tool."><link data-rh="true" rel="icon" href="/img/logo.svg"><link data-rh="true" rel="canonical" href="https://testing.dhawilabs.com/docs/automation/01-automation-in-general"><link data-rh="true" rel="alternate" href="https://testing.dhawilabs.com/docs/automation/01-automation-in-general" hreflang="en"><link data-rh="true" rel="alternate" href="https://testing.dhawilabs.com/docs/automation/01-automation-in-general" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Automation","item":"https://testing.dhawilabs.com/docs/automation/"},{"@type":"ListItem","position":2,"name":"Automation in General","item":"https://testing.dhawilabs.com/docs/automation/01-automation-in-general"}]}</script><link rel="stylesheet" href="/assets/css/styles.3b2dd252.css">
+<script src="/assets/js/runtime~main.dc294f87.js" defer="defer"></script>
+<script src="/assets/js/main.4cea39c3.js" defer="defer"></script>
+</head>
+<body>
+<svg style="display: none;"><defs>
+<symbol id="theme-svg-external-link" viewBox="0 0 24 24"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"/></symbol>
+</defs></svg>
+<script>!function(){var t=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme")}catch(t){}}();document.documentElement.setAttribute("data-theme",t||(window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light")),document.documentElement.setAttribute("data-theme-choice",t||"system")}(),function(){try{const c=new URLSearchParams(window.location.search).entries();for(var[t,e]of c)if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}()</script><div id="__docusaurus"><div role="region" aria-label="Skip to main content"><a class="skipToContent_fXgn" href="#__docusaurus_skipToContent_fallback">Skip to main content</a></div><nav aria-label="Main" class="theme-layout-navbar navbar navbar--fixed-top"><div class="navbar__inner"><div class="theme-layout-navbar-left navbar__items"><button aria-label="Toggle navigation bar" aria-expanded="false" class="navbar__toggle clean-btn" type="button"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" href="/"><div class="navbar__logo"><img src="/img/logo.svg" alt="Testing Knowledge Base" class="themedComponent_mlkZ themedComponent--light_NVdE"><img src="/img/logo.svg" alt="Testing Knowledge Base" class="themedComponent_mlkZ themedComponent--dark_xIcU"></div><b class="navbar__title text--truncate">Testing KB</b></a><a class="navbar__item navbar__link" href="/">Home</a><a aria-current="page" class="navbar__item navbar__link navbar__link--active" href="/docs">Guides</a></div><div class="theme-layout-navbar-right navbar__items navbar__items--right"><a class="navbar__item navbar__link navbar-cta" href="/docs/jmeter/01-install-tools">Get started</a><div class="toggle_vylO colorModeToggle_DEke"><button class="clean-btn toggleButton_gllP toggleButtonDisabled_aARS" type="button" disabled="" title="system mode" aria-label="Switch between dark and light mode (currently system mode)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP lightToggleIcon_pyhR"><path fill="currentColor" d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP darkToggleIcon_wfgR"><path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_g3eP systemToggleIcon_QzmC"><path fill="currentColor" d="m12 21c4.971 0 9-4.029 9-9s-4.029-9-9-9-9 4.029-9 9 4.029 9 9 9zm4.95-13.95c1.313 1.313 2.05 3.093 2.05 4.95s-0.738 3.637-2.05 4.95c-1.313 1.313-3.093 2.05-4.95 2.05v-14c1.857 0 3.637 0.737 4.95 2.05z"></path></svg></button></div><div class="navbarSearchContainer_Bca1"><div class="navbar__search searchBarContainer_NW3z" dir="ltr"><input placeholder="Search" aria-label="Search" class="navbar__search-input" value=""><div class="loadingRing_RJI3 searchBarLoadingRing_YnHq"><div></div><div></div><div></div><div></div></div></div></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div id="__docusaurus_skipToContent_fallback" class="theme-layout-main main-wrapper mainWrapper_z2l0"><div class="docsWrapper_hBAB"><button aria-label="Scroll back to top" class="clean-btn theme-back-to-top-button backToTopButton_sjWU" type="button"></button><div class="docRoot_UBD9"><aside class="theme-doc-sidebar-container docSidebarContainer_YfHR"><div class="sidebarViewport_aRkj"><div class="sidebar_njMd"><nav aria-label="Docs sidebar" class="menu thin-scrollbar menu_SIkG"><ul class="theme-doc-sidebar-menu menu__list"><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--active" href="/docs/automation/"><span class="categoryLinkLabel_W154">Automation</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-2 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_byQd menu__link menu__link--active" tabindex="0"><span class="categoryLinkLabel_W154">Basics</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item row_2X3Q"><a class="menu__link menu__link--active" aria-current="page" tabindex="0" href="/docs/automation/01-automation-in-general"><span class="linkLabel_CDUV">Automation in General</span></a><button type="button" class="tick_hZUr" aria-pressed="false" aria-label="Mark Automation in General as done" title="Mark as done"></button></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item row_2X3Q"><a class="menu__link" tabindex="0" href="/docs/automation/02-test-automation-fundamentals"><span class="linkLabel_CDUV">Test Automation Fundamentals</span></a><button type="button" class="tick_hZUr" aria-pressed="false" aria-label="Mark Test Automation Fundamentals as done" title="Mark as done"></button></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-3 menu__list-item row_2X3Q"><a class="menu__link" tabindex="0" href="/docs/automation/02a-test-automation-process"><span class="linkLabel_CDUV">Test Automation Process</span></a><button type="button" class="tick_hZUr" aria-pressed="false" aria-label="Mark Test Automation Process as done" title="Mark as done"></button></li></ul></li></ul></li></ul></nav></div></div></aside><main class="docMainContainer_TBSr"><div class="container padding-top--md padding-bottom--lg"><div class="row"><div class="col docItemCol_VOVn"><div class="docItemContainer_Djhp"><article><nav class="theme-doc-breadcrumbs breadcrumbsContainer_Z_bl" aria-label="Breadcrumbs"><ul class="breadcrumbs"><li class="breadcrumbs__item"><a aria-label="Home page" class="breadcrumbs__link" href="/"><svg viewBox="0 0 24 24" class="breadcrumbHomeIcon_YNFT"><path d="M10 19v-5h4v5c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-7h1.7c.46 0 .68-.57.33-.87L12.67 3.6c-.38-.34-.96-.34-1.34 0l-8.36 7.53c-.34.3-.13.87.33.87H5v7c0 .55.45 1 1 1h3c.55 0 1-.45 1-1z" fill="currentColor"></path></svg></a></li><li class="breadcrumbs__item"><a class="breadcrumbs__link" href="/docs/automation/"><span>Automation</span></a></li><li class="breadcrumbs__item"><span class="breadcrumbs__link">Basics</span></li><li class="breadcrumbs__item breadcrumbs__item--active"><span class="breadcrumbs__link">Automation in General</span></li></ul></nav><div class="tocCollapsible_ETCw theme-doc-toc-mobile tocMobile_ITEo"><button type="button" class="clean-btn tocCollapsibleButton_TO0P">On this page</button></div><div class="theme-doc-markdown markdown"><header><h1>Automation in General</h1></header>
+<p><strong>Automation</strong> means a machine does a task by following fixed instructions, so a person does not have to do each step by hand. The person still decides what the task is and what a good result looks like. The machine does it the same way every time, as often as needed.</p>
+<p>This page is about automation in general, not testing. Get this mental model first. <a class="" href="/docs/automation/02-test-automation-fundamentals">Test automation</a> is the same idea pointed at one job.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="automation-you-already-use">Automation you already use<a href="#automation-you-already-use" class="hash-link" aria-label="Direct link to Automation you already use" title="Direct link to Automation you already use" translate="no">​</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Example</th><th>What it does for you</th></tr></thead><tbody><tr><td>Washing machine</td><td>Fills, washes, rinses and spins without you standing there</td></tr><tr><td>Auto bill payment</td><td>Pays the electricity bill on the 1st of every month</td></tr><tr><td>Email filter</td><td>Moves every newsletter to a folder as it arrives</td></tr><tr><td>Factory line</td><td>Fills, caps and labels thousands of bottles an hour</td></tr><tr><td>Phone backup</td><td>Copies your photos to the cloud every night while charging</td></tr></tbody></table>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="the-shape-of-every-automation">The shape of every automation<a href="#the-shape-of-every-automation" class="hash-link" aria-label="Direct link to The shape of every automation" title="Direct link to The shape of every automation" translate="no">​</a></h2>
+<p>Every one of those examples has the same four parts. Once you see this shape, you will recognise it in every automation tool you meet, including test tools.</p>
+<p><img decoding="async" loading="lazy" alt="The shape of every automation: a trigger starts fixed instructions, a check decides if it worked, and the outcome is reported back to a person; a failed check raises an alert" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MDAgMjMwIiB3aWR0aD0iODAwIiBmb250LWZhbWlseT0iLWFwcGxlLXN5c3RlbSwgQmxpbmtNYWNTeXN0ZW1Gb250LCBTZWdvZSBVSSwgSGVsdmV0aWNhLCBBcmlhbCwgc2Fucy1zZXJpZiIgcm9sZT0iaW1nIiBhcmlhLWxhYmVsPSJFdmVyeSBhdXRvbWF0aW9uIGhhcyBmb3VyIHBhcnRzOiBhIHRyaWdnZXIgc3RhcnRzIGl0LCBmaXhlZCBpbnN0cnVjdGlvbnMgcnVuLCBhIGNoZWNrIGRlY2lkZXMgaWYgaXQgd29ya2VkLCBhbmQgdGhlIG91dGNvbWUgaXMgcmVwb3J0ZWQgYmFjayB0byBhIHBlcnNvbi4gQSBmYWlsZWQgY2hlY2sgcmFpc2VzIGFuIGFsZXJ0LiI+PHJlY3Qgd2lkdGg9IjgwMCIgaGVpZ2h0PSIyMzAiIGZpbGw9IiNmZmZmZmYiLz48ZGVmcz48bWFya2VyIGlkPSJhcnIiIHZpZXdCb3g9IjAgMCAxMCAxMCIgcmVmWD0iOSIgcmVmWT0iNSIgbWFya2VyV2lkdGg9IjYiIG1hcmtlckhlaWdodD0iNiIgb3JpZW50PSJhdXRvLXN0YXJ0LXJldmVyc2UiPjxwYXRoIGQ9Ik0wIDBMMTAgNUwwIDEweiIgZmlsbD0iI2I0YjJhOSIvPjwvbWFya2VyPjxtYXJrZXIgaWQ9ImFyclIiIHZpZXdCb3g9IjAgMCAxMCAxMCIgcmVmWD0iOSIgcmVmWT0iNSIgbWFya2VyV2lkdGg9IjYiIG1hcmtlckhlaWdodD0iNiIgb3JpZW50PSJhdXRvLXN0YXJ0LXJldmVyc2UiPjxwYXRoIGQ9Ik0wIDBMMTAgNUwwIDEweiIgZmlsbD0iI2MwMzkyYiIvPjwvbWFya2VyPjwvZGVmcz48dGV4dCB4PSIyNCIgeT0iMzQiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiMyQzJDMkEiIGZvbnQtd2VpZ2h0PSI2MDAiPlRoZSBzaGFwZSBvZiBldmVyeSBhdXRvbWF0aW9uPC90ZXh0Pjx0ZXh0IHg9IjI0IiB5PSI1NCIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzg4ODc4MCI+VHJpZ2dlciwgaW5zdHJ1Y3Rpb25zLCBjaGVjaywgcmVwb3J0IGJhY2s8L3RleHQ+PHJlY3QgeD0iMjQiIHk9IjkwIiB3aWR0aD0iMTcwIiBoZWlnaHQ9IjY0IiByeD0iOCIgZmlsbD0iI0Y4RjdGMyIgc3Ryb2tlPSIjYjRiMmE5IiBzdHJva2Utd2lkdGg9IjEuMiIvPjx0ZXh0IHg9IjM4IiB5PSIxMTAiIGZvbnQtc2l6ZT0iMTEiIGZpbGw9IiM4ODg3ODAiIGZvbnQtd2VpZ2h0PSI2MDAiPjE8L3RleHQ+PHRleHQgeD0iMzgiIHk9IjEyOCIgZm9udC1zaXplPSIxMy41IiBmaWxsPSIjMkMyQzJBIiBmb250LXdlaWdodD0iNjAwIj5UcmlnZ2VyPC90ZXh0Pjx0ZXh0IHg9IjM4IiB5PSIxNDYiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiM1RjVFNUEiPndoYXQgc3RhcnRzIGl0PC90ZXh0PjxwYXRoIGQ9Ik0xOTQgMTIySDIyMiIgc3Ryb2tlPSIjYjRiMmE5IiBzdHJva2Utd2lkdGg9IjEuMiIgZmlsbD0ibm9uZSIgbWFya2VyLWVuZD0idXJsKCNhcnIpIi8+PHJlY3QgeD0iMjI0IiB5PSI5MCIgd2lkdGg9IjE3MCIgaGVpZ2h0PSI2NCIgcng9IjgiIGZpbGw9IiNFQUYyRkMiIHN0cm9rZT0iIzJhNzhkNiIgc3Ryb2tlLXdpZHRoPSIxLjIiLz48dGV4dCB4PSIyMzgiIHk9IjExMCIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzg4ODc4MCIgZm9udC13ZWlnaHQ9IjYwMCI+MjwvdGV4dD48dGV4dCB4PSIyMzgiIHk9IjEyOCIgZm9udC1zaXplPSIxMy41IiBmaWxsPSIjMkMyQzJBIiBmb250LXdlaWdodD0iNjAwIj5JbnN0cnVjdGlvbnM8L3RleHQ+PHRleHQgeD0iMjM4IiB5PSIxNDYiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiM1RjVFNUEiPmZpeGVkIHN0ZXBzLCBldmVyeSB0aW1lPC90ZXh0PjxwYXRoIGQ9Ik0zOTQgMTIySDQyMiIgc3Ryb2tlPSIjYjRiMmE5IiBzdHJva2Utd2lkdGg9IjEuMiIgZmlsbD0ibm9uZSIgbWFya2VyLWVuZD0idXJsKCNhcnIpIi8+PHJlY3QgeD0iNDI0IiB5PSI5MCIgd2lkdGg9IjE3MCIgaGVpZ2h0PSI2NCIgcng9IjgiIGZpbGw9IiNGOEY3RjMiIHN0cm9rZT0iI2I0YjJhOSIgc3Ryb2tlLXdpZHRoPSIxLjIiLz48dGV4dCB4PSI0MzgiIHk9IjExMCIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzg4ODc4MCIgZm9udC13ZWlnaHQ9IjYwMCI+MzwvdGV4dD48dGV4dCB4PSI0MzgiIHk9IjEyOCIgZm9udC1zaXplPSIxMy41IiBmaWxsPSIjMkMyQzJBIiBmb250LXdlaWdodD0iNjAwIj5DaGVjazwvdGV4dD48dGV4dCB4PSI0MzgiIHk9IjE0NiIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzVGNUU1QSI+ZGlkIGl0IHdvcms/PC90ZXh0PjxwYXRoIGQ9Ik01OTQgMTIySDYyMiIgc3Ryb2tlPSIjYjRiMmE5IiBzdHJva2Utd2lkdGg9IjEuMiIgZmlsbD0ibm9uZSIgbWFya2VyLWVuZD0idXJsKCNhcnIpIi8+PHJlY3QgeD0iNjI0IiB5PSI5MCIgd2lkdGg9IjE1MiIgaGVpZ2h0PSI2NCIgcng9IjgiIGZpbGw9IiNGOEY3RjMiIHN0cm9rZT0iI2I0YjJhOSIgc3Ryb2tlLXdpZHRoPSIxLjIiLz48dGV4dCB4PSI2MzgiIHk9IjExMCIgZm9udC1zaXplPSIxMSIgZmlsbD0iIzg4ODc4MCIgZm9udC13ZWlnaHQ9IjYwMCI+NDwvdGV4dD48dGV4dCB4PSI2MzgiIHk9IjEyOCIgZm9udC1zaXplPSIxMy41IiBmaWxsPSIjMkMyQzJBIiBmb250LXdlaWdodD0iNjAwIj5SZXBvcnQgYmFjazwvdGV4dD48dGV4dCB4PSI2MzgiIHk9IjE0NiIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzVGNUU1QSI+YSBwZXJzb24gc2VlcyBpdDwvdGV4dD48cGF0aCBkPSJNNTA5IDE1NFYxOTBINzAwVjE1OCIgc3Ryb2tlPSIjYzAzOTJiIiBzdHJva2Utd2lkdGg9IjEuMiIgc3Ryb2tlLWRhc2hhcnJheT0iNSA0IiBmaWxsPSJub25lIiBtYXJrZXItZW5kPSJ1cmwoI2FyclIpIi8+PHRleHQgeD0iNTMwIiB5PSIyMDgiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiNjMDM5MmIiIGZvbnQtd2VpZ2h0PSI0MDAiIHRleHQtYW5jaG9yPSJzdGFydCI+Y2hlY2sgZmFpbHM6IHJhaXNlIGFuIGFsZXJ0PC90ZXh0Pjwvc3ZnPg==" width="800" height="230" class="img_ev3q"></p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Part</th><th>Question it answers</th></tr></thead><tbody><tr><td><strong>Trigger</strong></td><td>What starts it? A button, a time, an event</td></tr><tr><td><strong>Instructions</strong></td><td>What steps does it follow? The same ones every time</td></tr><tr><td><strong>Check</strong></td><td>Did it work? Compare the result to what it should be</td></tr><tr><td><strong>Report back</strong></td><td>Who finds out, and how? A message, a log, an alert</td></tr></tbody></table>
+<p>Here are the four parts filled in for the examples above:</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Example</th><th>Trigger</th><th>Instructions</th><th>Check</th><th>Report back</th></tr></thead><tbody><tr><td>Washing machine</td><td>You press Start</td><td>Fill, wash, rinse, spin</td><td>Water level sensor, door locked, drum balanced</td><td>Beep when done; error code if the drain is blocked</td></tr><tr><td>Auto bill payment</td><td>1st of the month</td><td>Transfer the amount to the biller</td><td>Is there enough balance?</td><td>Receipt by email, or a &quot;payment failed&quot; alert</td></tr><tr><td>Factory line</td><td>Bottle reaches the station</td><td>Fill, cap, label</td><td>Camera checks fill level and label position</td><td>Bad bottles pushed off the line and counted</td></tr><tr><td>Phone backup</td><td>Night time, charging, on Wi-Fi</td><td>Copy new photos to the cloud</td><td>Did every file upload?</td><td>&quot;Backup complete&quot; or &quot;Backup failed&quot; message</td></tr></tbody></table>
+<p>Automation without the check and the report back is a machine running blind. Nobody knows when it goes wrong.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="why-we-automate">Why we automate<a href="#why-we-automate" class="hash-link" aria-label="Direct link to Why we automate" title="Direct link to Why we automate" translate="no">​</a></h2>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Benefit</th><th>What it means</th></tr></thead><tbody><tr><td><strong>Speed</strong></td><td>A machine does in seconds what takes a person minutes or hours</td></tr><tr><td><strong>Consistency</strong></td><td>The same steps every time. No skipped step because someone was tired on a Friday</td></tr><tr><td><strong>Scale</strong></td><td>Doing it 10 times or 10,000 times costs about the same</td></tr><tr><td><strong>Any time</strong></td><td>It runs at night, on weekends and the moment something changes</td></tr><tr><td><strong>People freed up</strong></td><td>People move from repeating work to work that needs judgement</td></tr></tbody></table>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="when-it-is-worth-it">When it is worth it<a href="#when-it-is-worth-it" class="hash-link" aria-label="Direct link to When it is worth it" title="Direct link to When it is worth it" translate="no">​</a></h2>
+<p>Not every task should be automated. A task is a good candidate when most of these are true:</p>
+<ul>
+<li class=""><strong>It repeats often.</strong> Something done once a year rarely pays back the effort.</li>
+<li class=""><strong>The steps are fixed.</strong> The same rules every time, with no &quot;it depends&quot; judgement in the middle.</li>
+<li class=""><strong>The input is predictable.</strong> The machine knows what it will receive.</li>
+<li class=""><strong>The result can be checked.</strong> There is a clear right and wrong answer.</li>
+<li class=""><strong>Mistakes are costly.</strong> A human slip would hurt, so consistency is worth paying for.</li>
+</ul>
+<p>Tasks that need taste, judgement or a conversation (designing a screen, deciding if something &quot;feels right&quot;, talking to a client) stay with people. Automation handles the repeating part around them.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="what-automation-costs">What automation costs<a href="#what-automation-costs" class="hash-link" aria-label="Direct link to What automation costs" title="Direct link to What automation costs" translate="no">​</a></h2>
+<ul>
+<li class=""><strong>Building it.</strong> Someone has to work out the exact steps and write them down for the machine. That takes longer than doing the task once by hand.</li>
+<li class=""><strong>Keeping it working.</strong> When the task changes, the automation must change too. A new biller account number breaks the auto payment until someone updates it.</li>
+<li class=""><strong>Watching it.</strong> Someone must read the reports. An alert nobody reads is the same as no check at all.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="automation-in-a-software-team">Automation in a software team<a href="#automation-in-a-software-team" class="hash-link" aria-label="Direct link to Automation in a software team" title="Direct link to Automation in a software team" translate="no">​</a></h2>
+<p>A software team automates many of its own repeating tasks, and each one has the same four parts.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<table><thead><tr><th>Task</th><th>Trigger</th><th>Instructions</th><th>Check</th><th>Report back</th></tr></thead><tbody><tr><td>Build</td><td>Developer pushes code</td><td>Compile and package the app</td><td>Did it compile?</td><td>Build passed or failed</td></tr><tr><td>Deploy</td><td>Build passed</td><td>Copy the new version to a server</td><td>Is the app up and answering?</td><td>Deployment status</td></tr><tr><td>Backup</td><td>Every night</td><td>Copy the database to storage</td><td>Is the copy complete and readable?</td><td>Backup report</td></tr><tr><td>Monitoring</td><td>Every minute</td><td>Call the website</td><td>Fast enough? Any errors?</td><td>Alert to the on-call person</td></tr><tr><td><strong>Testing</strong></td><td>New version deployed</td><td>Run the test cases</td><td>Does the app behave as expected?</td><td>Test report, pass or fail</td></tr></tbody></table>
+<p>The last row is test automation. It is not a separate world. It is the same idea pointed at one job: checking that the software still does what it should. <a class="" href="/docs/automation/02-test-automation-fundamentals">Test Automation Fundamentals</a> zooms in on that row.</p>
+<h2 class="anchor anchorTargetStickyNavbar_Vzrq" id="tips">Tips<a href="#tips" class="hash-link" aria-label="Direct link to Tips" title="Direct link to Tips" translate="no">​</a></h2>
+<ul>
+<li class=""><strong>Automate a messy process and you get a fast messy process.</strong> Fix and simplify the manual steps first, then automate them.</li>
+<li class=""><strong>Do it by hand a few times first.</strong> You cannot write down steps you have not done yourself. The manual runs show you the exceptions the machine must handle.</li>
+<li class=""><strong>Decide who reads the report before you build.</strong> If nobody owns the alert, the check is wasted.</li>
+<li class=""><strong>Count the payback.</strong> Time to build plus time to maintain, against time saved per run times the number of runs. A task done weekly for years almost always pays back; a one-off rarely does.</li>
+</ul></div><footer class="theme-doc-footer docusaurus-mt-lg"><div class="row margin-top--sm theme-doc-footer-tags-row"><div class="col"><b>Tags:</b><ul class="tags_jXut padding--none margin-left--sm"><li class="tag_QGVx"><a rel="tag" class="tag_zVej tagRegular_sFm0" href="/docs/tags/automation">automation</a></li><li class="tag_QGVx"><a rel="tag" class="tag_zVej tagRegular_sFm0" href="/docs/tags/concepts">concepts</a></li><li class="tag_QGVx"><a rel="tag" class="tag_zVej tagRegular_sFm0" href="/docs/tags/qa">qa</a></li></ul></div></div><div class="row margin-top--sm theme-doc-footer-edit-meta-row"><div class="col noPrint_WFHX"></div><div class="col lastUpdated_JAkA"><span class="theme-last-updated">Last updated<!-- --> on <b><time datetime="2026-10-01T05:15:23.000Z" itemprop="dateModified">Oct 1, 2026</time></b></span></div></div></footer></article><div><nav class="docusaurus-mt-lg pagination-nav" aria-label="Docs pages"><a class="pagination-nav__link pagination-nav__link--prev" href="/docs/automation/"><div class="pagination-nav__sublabel">Previous</div><div class="pagination-nav__label">Automation</div></a><a class="pagination-nav__link pagination-nav__link--next" href="/docs/automation/02-test-automation-fundamentals"><div class="pagination-nav__sublabel">Next</div><div class="pagination-nav__label">Test Automation Fundamentals</div></a></nav></div></div></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#automation-you-already-use" class="table-of-contents__link toc-highlight">Automation you already use</a></li><li><a href="#the-shape-of-every-automation" class="table-of-contents__link toc-highlight">The shape of every automation</a></li><li><a href="#why-we-automate" class="table-of-contents__link toc-highlight">Why we automate</a></li><li><a href="#when-it-is-worth-it" class="table-of-contents__link toc-highlight">When it is worth it</a></li><li><a href="#what-automation-costs" class="table-of-contents__link toc-highlight">What automation costs</a></li><li><a href="#automation-in-a-software-team" class="table-of-contents__link toc-highlight">Automation in a software team</a></li><li><a href="#tips" class="table-of-contents__link toc-highlight">Tips</a></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer"><div class="container container-fluid"><div class="row footer__links"><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Guides</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/docs/performance-testing">Performance Testing</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/automation">Automation</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter">JMeter</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/loadlitmus">LoadLitmus</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/playwright">Playwright</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/k6">k6</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/monitoring">Monitoring</a></li><li class="footer__item"><a class="footer__link-item" href="/soapui">SoapUI</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/playground">Playground</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Start here</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter/01-install-tools">Install Tools</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter/03-jmeter-elements">JMeter Elements</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/jmeter/08-load-model">Design Load Model</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">More</div><ul class="footer__items clean-list"><li class="footer__item"><a href="https://github.com/Dhawi1902/testing-knowledge-base" target="_blank" rel="noopener noreferrer" class="footer__link-item">GitHub<svg width="13.5" height="13.5" aria-label="(opens in new tab)" class="iconExternalLink_nPIU"><use href="#theme-svg-external-link"></use></svg></a></li></ul></div></div><div class="footer__bottom text--center"><div class="footer__copyright">Testing Knowledge Base — built by the QA team, from markdown.</div></div></div></footer></div>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 676" width="760" font-family="-apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial, sans-serif">
+<rect width="760" height="676" rx="10" fill="#ffffff"/>
+<line x1="18" y1="24" x2="36" y2="24" stroke="#2a78d6" stroke-width="2.5"/><text x="42" y="28" font-size="12" fill="#5F5E5A">virtual users (VUs) over time, drawn from each profile's stages</text>
+<rect x="18" y="44" width="352" height="190" rx="8" fill="#F8F7F3" stroke="#e1e0d9"/>
+<text x="32" y="66" font-size="13.5" font-weight="600" fill="#2C2C2A">smoke</text>
+<text x="356" y="66" text-anchor="end" font-size="11" fill="#888780" font-family="SFMono-Regular, Menlo, monospace">-e PROFILE=smoke</text>
+<line x1="68" y1="82.0" x2="354" y2="82.0" stroke="#e1e0d9" stroke-dasharray="3 3"/>
+<text x="62" y="86.0" text-anchor="end" font-size="10.5" fill="#5F5E5A">5 VUs</text>
+<line x1="68" y1="190" x2="354" y2="190" stroke="#b4b2a9"/><line x1="68" y1="78" x2="68" y2="190" stroke="#b4b2a9"/>
+<text x="62" y="194" text-anchor="end" font-size="10.5" fill="#5F5E5A">0</text>
+<polygon points="68.0,190 68.0,190.0 354.0,82.0 354.0,190" fill="#2a78d6" fill-opacity="0.10"/>
+<polyline points="68.0,190.0 354.0,82.0" fill="none" stroke="#2a78d6" stroke-width="2.2" stroke-linejoin="round"/>
+<line x1="68.0" y1="190" x2="68.0" y2="194" stroke="#b4b2a9"/>
+<text x="68.0" y="206" text-anchor="start" font-size="10.5" fill="#5F5E5A">0</text>
+<line x1="354.0" y1="190" x2="354.0" y2="194" stroke="#b4b2a9"/>
+<text x="354.0" y="206" text-anchor="end" font-size="10.5" fill="#5F5E5A">1m</text>
+<text x="32" y="222" font-size="11.5" fill="#444441">Ramps 0 → 5 VUs over 1 min, then stops · 1 min</text>
+<rect x="390" y="44" width="352" height="190" rx="8" fill="#F8F7F3" stroke="#e1e0d9"/>
+<text x="404" y="66" font-size="13.5" font-weight="600" fill="#2C2C2A">load</text>
+<text x="728" y="66" text-anchor="end" font-size="11" fill="#888780" font-family="SFMono-Regular, Menlo, monospace">-e PROFILE=load</text>
+<line x1="440" y1="165.5" x2="726" y2="165.5" stroke="#e1e0d9" stroke-dasharray="3 3"/>
+<text x="434" y="169.5" text-anchor="end" font-size="10.5" fill="#5F5E5A">½ PEAK</text>
+<line x1="440" y1="140.9" x2="726" y2="140.9" stroke="#e1e0d9" stroke-dasharray="3 3"/>
+<text x="434" y="144.9" text-anchor="end" font-size="10.5" fill="#5F5E5A">PEAK</text>
+<line x1="440" y1="116.4" x2="726" y2="116.4" stroke="#e1e0d9" stroke-dasharray="3 3"/>
+<text x="434" y="120.4" text-anchor="end" font-size="10.5" fill="#5F5E5A">1.5×</text>
+<line x1="440" y1="91.8" x2="726" y2="91.8" stroke="#e1e0d9" stroke-dasharray="3 3"/>
+<text x="434" y="95.8" text-anchor="end" font-size="10.5" fill="#5F5E5A">2×</text>
+<line x1="440" y1="190" x2="726" y2="190" stroke="#b4b2a9"/><line x1="440" y1="78" x2="440" y2="190" stroke="#b4b2a9"/>
+<text x="434" y="194" text-anchor="end" font-size="10.5" fill="#5F5E5A">0</text>
+<polygon points="440.0,190 440.0,190.0 444.5,140.9 716.9,140.9 726.0,190.0 726.0,190" fill="#2a78d6" fill-opacity="0.10"/>
+<polyline points="440.0,190.0 444.5,140.9 716.9,140.9 726.0,190.0" fill="none" stroke="#2a78d6" stroke-width="2.2" stroke-linejoin="round"/>
+<line x1="440.0" y1="190" x2="440.0" y2="194" stroke="#b4b2a9"/>
+<text x="440.0" y="206" text-anchor="start" font-size="10.5" fill="#5F5E5A">0</text>
+<line x1="726.0" y1="190" x2="726.0" y2="194" stroke="#b4b2a9"/>
+<text x="726.0" y="206" text-anchor="end" font-size="10.5" fill="#5F5E5A">31m30s</text>
+<text x="404" y="222" font-size="11.5" fill="#444441">30 s ramp → 30 min at PEAK → 1 min down · 31.5 min</text>
+<rect x="18" y="250" width="352" height="190" rx="8" fill="#F8F7F3" stroke="#e1e0d9"/>
+<text x="32" y="272" font-size="13.5" font-weight="600" fill="#2C2C2A">stress</text>
+<text x="356" y="272" text-anchor="end" font-size="11" fill="#888780" font-family="SFMono-Regular, Menlo, monospace">-e PROFILE=stress</text>
+<line x1="68" y1="337.1" x2="354" y2="337.1" stroke="#e1e0d9" stroke-dasharray="3 3"/>
+<text x="62" y="341.1" text-anchor="end" font-size="10.5" fill="#5F5E5A">1.2×</text>
+<line x1="68" y1="322.4" x2="354" y2="322.4" stroke="#e1e0d9" stroke-dasharray="3 3"/>
+<text x="62" y="326.4" text-anchor="end" font-size="10.5" fill="#5F5E5A">1.5×</text>
+<line x1="68" y1="297.8" x2="354" y2="297.8" stroke="#e1e0d9" stroke-dasharray="3 3"/>
+<text x="62" y="301.8" text-anchor="end" font-size="10.5" fill="#5F5E5A">2×</text>
+<line x1="68" y1="396" x2="354" y2="396" stroke="#b4b2a9"/><line x1="68" y1="284" x2="68" y2="396" stroke="#b4b2a9"/>
+<text x="62" y="400" text-anchor="end" font-size="10.5" fill="#5F5E5A">0</text>
+<polygon points="68.0,396 68.0,396.0 92.9,337.1 155.0,337.1 179.9,322.4 242.1,322.4 267.0,297.8 329.1,297.8 354.0,396.0 354.0,396" fill="#2a78d6" fill-opacity="0.10"/>
+<polyline points="68.0,396.0 92.9,337.1 155.0,337.1 179.9,322.4 242.1,322.4 267.0,297.8 329.1,297.8 354.0,396.0" fill="none" stroke="#2a78d6" stroke-width="2.2" stroke-linejoin="round"/>
+<line x1="68.0" y1="396" x2="68.0" y2="400" stroke="#b4b2a9"/>
+<text x="68.0" y="412" text-anchor="start" font-size="10.5" fill="#5F5E5A">0</text>
+<line x1="155.0" y1="396" x2="155.0" y2="400" stroke="#b4b2a9"/>
+<text x="155.0" y="412" text-anchor="middle" font-size="10.5" fill="#5F5E5A">7m</text>
+<line x1="242.1" y1="396" x2="242.1" y2="400" stroke="#b4b2a9"/>
+<text x="242.1" y="412" text-anchor="middle" font-size="10.5" fill="#5F5E5A">14m</text>
+<line x1="354.0" y1="396" x2="354.0" y2="400" stroke="#b4b2a9"/>
+<text x="354.0" y="412" text-anchor="end" font-size="10.5" fill="#5F5E5A">23m</text>
+<text x="32" y="428" font-size="11.5" fill="#444441">Steps 1.2× → 1.5× → 2× PEAK, 5 min each · 23 min</text>
+<rect x="390" y="250" width="352" height="190" rx="8" fill="#F8F7F3" stroke="#e1e0d9"/>
+<text x="404" y="272" font-size="13.5" font-weight="600" fill="#2C2C2A">endurance</text>
+<text x="728" y="272" text-anchor="end" font-size="11" fill="#888780" font-family="SFMono-Regular, Menlo, monospace">-e PROFILE=endurance</text>
+<line x1="440" y1="371.5" x2="726" y2="371.5" stroke="#e1e0d9" stroke-dasharray="3 3"/>
+<text x="434" y="375.5" text-anchor="end" font-size="10.5" fill="#5F5E5A">½ PEAK</text>
+<line x1="440" y1="346.9" x2="726" y2="346.9" stroke="#e1e0d9" stroke-dasharray="3 3"/>
+<text x="434" y="350.9" text-anchor="end" font-size="10.5" fill="#5F5E5A">PEAK</text>
+<line x1="440" y1="322.4" x2="726" y2="322.4" stroke="#e1e0d9" stroke-dasharray="3 3"/>
+<text x="434" y="326.4" text-anchor="end" font-size="10.5" fill="#5F5E5A">1.5×</text>
+<line x1="440" y1="297.8" x2="726" y2="297.8" stroke="#e1e0d9" stroke-dasharray="3 3"/>
+<text x="434" y="301.8" text-anchor="end" font-size="10.5" fill="#5F5E5A">2×</text>
+<line x1="440" y1="396" x2="726" y2="396" stroke="#b4b2a9"/><line x1="440" y1="284" x2="440" y2="396" stroke="#b4b2a9"/>
+<text x="434" y="400" text-anchor="end" font-size="10.5" fill="#5F5E5A">0</text>
+<polygon points="440.0,396 440.0,396.0 451.2,346.9 720.4,346.9 726.0,396.0 726.0,396" fill="#2a78d6" fill-opacity="0.10"/>
+<polyline points="440.0,396.0 451.2,346.9 720.4,346.9 726.0,396.0" fill="none" stroke="#2a78d6" stroke-width="2.2" stroke-linejoin="round"/>
+<line x1="440.0" y1="396" x2="440.0" y2="400" stroke="#b4b2a9"/>
+<text x="440.0" y="412" text-anchor="start" font-size="10.5" fill="#5F5E5A">0</text>
+<line x1="726.0" y1="396" x2="726.0" y2="400" stroke="#b4b2a9"/>
+<text x="726.0" y="412" text-anchor="end" font-size="10.5" fill="#5F5E5A">4h15m</text>
+<text x="404" y="428" font-size="11.5" fill="#444441">10 min ramp → 4 h at PEAK → 5 min down · 4 h 15 min</text>
+<rect x="18" y="456" width="352" height="190" rx="8" fill="#F8F7F3" stroke="#e1e0d9"/>
+<text x="32" y="478" font-size="13.5" font-weight="600" fill="#2C2C2A">spike</text>
+<text x="356" y="478" text-anchor="end" font-size="11" fill="#888780" font-family="SFMono-Regular, Menlo, monospace">-e PROFILE=spike</text>
+<line x1="68" y1="577.5" x2="354" y2="577.5" stroke="#e1e0d9" stroke-dasharray="3 3"/>
+<text x="62" y="581.5" text-anchor="end" font-size="10.5" fill="#5F5E5A">½ PEAK</text>
+<line x1="68" y1="552.9" x2="354" y2="552.9" stroke="#e1e0d9" stroke-dasharray="3 3"/>
+<text x="62" y="556.9" text-anchor="end" font-size="10.5" fill="#5F5E5A">PEAK</text>
+<line x1="68" y1="528.4" x2="354" y2="528.4" stroke="#e1e0d9" stroke-dasharray="3 3"/>
+<text x="62" y="532.4" text-anchor="end" font-size="10.5" fill="#5F5E5A">1.5×</text>
+<line x1="68" y1="503.8" x2="354" y2="503.8" stroke="#e1e0d9" stroke-dasharray="3 3"/>
+<text x="62" y="507.8" text-anchor="end" font-size="10.5" fill="#5F5E5A">2×</text>
+<line x1="68" y1="602" x2="354" y2="602" stroke="#b4b2a9"/><line x1="68" y1="490" x2="68" y2="602" stroke="#b4b2a9"/>
+<text x="62" y="606" text-anchor="end" font-size="10.5" fill="#5F5E5A">0</text>
+<polygon points="68.0,602 68.0,602.0 138.0,577.5 141.0,503.8 246.0,503.8 248.9,577.5 354.0,577.5 354.0,602" fill="#2a78d6" fill-opacity="0.10"/>
+<polyline points="68.0,602.0 138.0,577.5 141.0,503.8 246.0,503.8 248.9,577.5 354.0,577.5" fill="none" stroke="#2a78d6" stroke-width="2.2" stroke-linejoin="round"/>
+<line x1="68.0" y1="602" x2="68.0" y2="606" stroke="#b4b2a9"/>
+<text x="68.0" y="618" text-anchor="start" font-size="10.5" fill="#5F5E5A">0</text>
+<line x1="138.0" y1="602" x2="138.0" y2="606" stroke="#b4b2a9"/>
+<text x="138.0" y="618" text-anchor="middle" font-size="10.5" fill="#5F5E5A">2m</text>
+<line x1="246.0" y1="602" x2="246.0" y2="606" stroke="#b4b2a9"/>
+<text x="246.0" y="618" text-anchor="middle" font-size="10.5" fill="#5F5E5A">5m5s</text>
+<line x1="354.0" y1="602" x2="354.0" y2="606" stroke="#b4b2a9"/>
+<text x="354.0" y="618" text-anchor="end" font-size="10.5" fill="#5F5E5A">8m10s</text>
+<text x="32" y="634" font-size="11.5" fill="#444441">½ PEAK → 2× in 5 s → hold 3 min → back → recover · 8 min</text>
+<rect x="390" y="456" width="352" height="190" rx="8" fill="#F8F7F3" stroke="#e1e0d9"/>
+<text x="404" y="478" font-size="13.5" font-weight="600" fill="#2C2C2A">scalability</text>
+<text x="728" y="478" text-anchor="end" font-size="11" fill="#888780" font-family="SFMono-Regular, Menlo, monospace">-e PROFILE=stress, per size</text>
+<text x="404" y="514" font-size="12.5" fill="#444441">No stages of its own. Run the stress profile</text>
+<text x="404" y="533" font-size="12.5" fill="#444441">once per infrastructure size (2 app servers,</text>
+<text x="404" y="552" font-size="12.5" fill="#444441">then 4) and compare the level where p95 or</text>
+<text x="404" y="571" font-size="12.5" fill="#444441">the error rate crosses the NFR.</text>
+<text x="404" y="590" font-size="12.5" fill="#444441"></text>
+<text x="404" y="609" font-size="12.5" fill="#444441">If capacity doubles with the servers, it scales.</text>
+<text x="742" y="664" text-anchor="end" font-size="11" fill="#888780">Each panel has its own time axis. Heights share one scale (PEAK = USERS), except smoke.</text>
+</svg>
